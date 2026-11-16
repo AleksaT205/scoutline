@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="sr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Scoutline — Leads</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:#09090B; --surface:#111113; --surface-2:#18181B; --border:#232326; --border-2:#2E2E33;
+    --text:#FAFAFA; --muted:#A1A1AA; --faint:#71717A;
+    --accent:#7C6CFF; --accent-soft:rgba(124,108,255,.14);
+    --success:#22C55E; --success-soft:rgba(34,197,94,.12);
+    --warning:#F59E0B; --warning-soft:rgba(245,158,11,.12);
+    --danger:#EF4444;
+    --shadow:0 10px 30px -12px rgba(0,0,0,.6);
+  }
+  @media (prefers-color-scheme: light) {
+    :root {
+      --bg:#FAFAFA; --surface:#FFFFFF; --surface-2:#F4F4F5; --border:#E4E4E7; --border-2:#D4D4D8;
+      --text:#09090B; --muted:#52525B; --faint:#A1A1AA;
+      --accent:#5B4BFF; --accent-soft:rgba(91,75,255,.10);
+      --success:#16A34A; --success-soft:rgba(22,163,74,.10);
+      --warning:#D97706; --warning-soft:rgba(217,119,6,.10);
+      --shadow:0 10px 30px -12px rgba(0,0,0,.15);
+    }
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { background:var(--bg); color:var(--text); font:14px/1.5 "Geist", system-ui, sans-serif; -webkit-font-smoothing:antialiased; }
+  .mono, .num { font-family:"Geist Mono", ui-monospace, monospace; font-variant-numeric:tabular-nums; }
+  svg { display:block; }
+  .app { display:grid; grid-template-columns:232px 1fr; min-height:100vh; }
+
+  /* Sidebar */
+  .side { border-right:1px solid var(--border); padding:16px 12px; display:flex; flex-direction:column; gap:20px; position:sticky; top:0; height:100vh; }
+  .brand { display:flex; align-items:center; gap:10px; padding:4px 8px; font-weight:600; letter-spacing:-.01em; }
+  .logo { width:26px; height:26px; border-radius:7px; background:linear-gradient(135deg, var(--accent), #B4A9FF); display:grid; place-items:center; box-shadow:0 0 0 1px rgba(255,255,255,.08) inset, 0 6px 18px -6px var(--accent); }
+  .ws { margin-left:auto; font-size:11px; color:var(--faint); border:1px solid var(--border); border-radius:5px; padding:1px 6px; }
+  .nav { display:flex; flex-direction:column; gap:2px; }
+  .nav-label { font-size:11px; color:var(--faint); padding:0 8px 6px; text-transform:uppercase; letter-spacing:.06em; }
+  .nav a { display:flex; align-items:center; gap:10px; padding:7px 8px; border-radius:6px; color:var(--muted); text-decoration:none; font-size:13.5px; }
+  .nav a:hover { background:var(--surface-2); color:var(--text); }
+  .nav a.active { background:var(--surface-2); color:var(--text); box-shadow:0 0 0 1px var(--border) inset; }
+  .nav a .count { margin-left:auto; font-size:11px; color:var(--muted); }
+  .nav a.active .count { color:var(--accent); }
+  .side-foot { margin-top:auto; border:1px solid var(--border); border-radius:10px; padding:12px; background:var(--surface); font-size:12px; color:var(--muted); }
+  .side-foot b { color:var(--text); font-weight:500; }
+  .dot { width:7px; height:7px; border-radius:50%; background:var(--success); box-shadow:0 0 0 3px var(--success-soft); display:inline-block; }
+
+  /* Main */
+  .main { min-width:0; }
+  .top { height:56px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; padding:0 24px; position:sticky; top:0; background:color-mix(in srgb, var(--bg) 82%, transparent); backdrop-filter:blur(10px); z-index:5; }
+  .crumbs { color:var(--muted); font-size:13px; } .crumbs b { color:var(--text); font-weight:500; }
+  .search { margin-left:auto; display:flex; align-items:center; gap:8px; width:320px; height:34px; padding:0 10px; border:1px solid var(--border); border-radius:8px; background:var(--surface); color:var(--faint); font-size:13px; }
+  .kbd { margin-left:auto; font-size:11px; border:1px solid var(--border-2); border-radius:4px; padding:0 5px; color:var(--muted); }
+  .avatar { width:30px; height:30px; border-radius:50%; background:linear-gradient(135deg,#3F3F46,#27272A); display:grid; place-items:center; font-size:12px; font-weight:500; border:1px solid var(--border-2); color:#fff; }
+  .content { padding:28px 24px 40px; max-width:1480px; }
+  .head { display:flex; align-items:flex-end; gap:16px; margin-bottom:22px; }
+  h1 { font-size:24px; font-weight:600; letter-spacing:-.02em; }
+  .sub { color:var(--muted); font-size:13.5px; margin-top:2px; }
+  .btn { height:34px; padding:0 12px; border-radius:7px; border:1px solid var(--border); background:var(--surface); color:var(--text); font:500 13px "Geist",sans-serif; display:inline-flex; align-items:center; gap:7px; cursor:pointer; }
+  .btn:hover { background:var(--surface-2); }
+  .btn.primary { background:var(--text); color:var(--bg); border-color:transparent; }
+  .actions { margin-left:auto; display:flex; gap:8px; }
+
+  /* KPIs */
+  .kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:20px; }
+  .kpi { position:relative; overflow:hidden; border:1px solid var(--border); background:var(--surface); border-radius:12px; padding:16px 16px 12px; }
+  .kpi.glow::before { content:""; position:absolute; inset:-40% -20% auto auto; width:220px; height:220px; background:radial-gradient(circle, var(--accent-soft), transparent 65%); pointer-events:none; }
+  .kpi-label { color:var(--muted); font-size:12.5px; display:flex; align-items:center; gap:6px; }
+  .kpi-val { font-size:30px; font-weight:600; letter-spacing:-.03em; margin-top:6px; line-height:1.1; }
+  .kpi-row { display:flex; align-items:flex-end; justify-content:space-between; gap:10px; }
+  .trend { font-size:12px; color:var(--success); display:inline-flex; align-items:center; gap:3px; margin-top:6px; }
+  .trend span { color:var(--faint); }
+
+  /* Filters */
+  .filters { display:flex; flex-wrap:wrap; align-items:center; gap:8px; margin-bottom:12px; }
+  .chip { height:30px; padding:0 10px; border-radius:999px; border:1px solid var(--border); background:var(--surface); color:var(--muted); font-size:12.5px; display:inline-flex; align-items:center; gap:6px; }
+  .chip.on { color:var(--text); border-color:color-mix(in srgb, var(--accent) 55%, var(--border)); background:var(--accent-soft); }
+  .chip .x { color:var(--faint); }
+  .sep { width:1px; height:20px; background:var(--border); margin:0 2px; }
+  .result { margin-left:auto; color:var(--faint); font-size:12.5px; }
+
+  /* Grid */
+  .grid { display:grid; grid-template-columns:minmax(0,1fr) 400px; gap:16px; align-items:start; }
+  .card { border:1px solid var(--border); background:var(--surface); border-radius:12px; overflow:hidden; }
+  .detail.card { overflow:visible; }
+  table { width:100%; border-collapse:collapse; }
+  th { text-align:left; font-weight:500; font-size:12px; color:var(--faint); padding:10px 10px; border-bottom:1px solid var(--border); white-space:nowrap; }
+  td { padding:10px 10px; border-bottom:1px solid var(--border); font-size:13px; vertical-align:middle; white-space:nowrap; }
+  tr:last-child td { border-bottom:0; }
+  tbody tr { transition:background .15s; cursor:pointer; }
+  tbody tr:hover { background:var(--surface-2); }
+  tbody tr.sel { background:var(--accent-soft); box-shadow:inset 2px 0 0 var(--accent); }
+  .lead-title { font-weight:500; color:var(--text); max-width:270px; overflow:hidden; text-overflow:ellipsis; }
+  .lead-co { color:var(--muted); font-size:12px; margin-top:1px; }
+  .ring { position:relative; width:34px; height:34px; }
+  .ring b { position:absolute; inset:0; display:grid; place-items:center; font:500 11px "Geist Mono",monospace; }
+  .geo { display:inline-flex; align-items:center; gap:6px; }
+  .tier { font:500 10.5px "Geist Mono",monospace; padding:1px 5px; border-radius:4px; border:1px solid var(--border-2); color:var(--muted); }
+  .tier.t1 { color:var(--accent); border-color:color-mix(in srgb, var(--accent) 45%, transparent); background:var(--accent-soft); }
+  .tag { font-size:11.5px; padding:2px 8px; border-radius:999px; background:var(--surface-2); color:var(--muted); border:1px solid var(--border); }
+  .budget { font-family:"Geist Mono",monospace; font-size:12.5px; }
+  .time { color:var(--faint); font-size:12px; }
+  .src { color:var(--muted); font-size:12px; }
+
+  /* Detail */
+  .detail { position:sticky; top:72px; padding:18px; box-shadow:var(--shadow); }
+  .d-top { display:flex; gap:12px; align-items:flex-start; }
+  .d-title { font-size:16px; font-weight:600; letter-spacing:-.01em; line-height:1.35; }
+  .d-meta { color:var(--muted); font-size:12.5px; margin-top:4px; display:flex; flex-wrap:wrap; gap:6px 10px; }
+  .big-ring { position:relative; width:64px; height:64px; flex:none; }
+  .big-ring b { position:absolute; inset:0; display:grid; place-items:center; font:600 18px "Geist Mono",monospace; }
+  .section { margin-top:18px; }
+  .s-label { font-size:11.5px; color:var(--faint); text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; }
+  .signals { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .signal { border:1px solid var(--border); border-radius:8px; padding:9px 10px; background:var(--bg); }
+  .signal small { display:block; color:var(--faint); font-size:11.5px; }
+  .signal span { font-size:13px; font-weight:500; }
+  .ok { color:var(--success); }
+  .why { font-size:13px; color:var(--muted); line-height:1.6; }
+  .why li { margin-left:16px; margin-bottom:3px; }
+  .why b { color:var(--text); font-weight:500; }
+  .email { border:1px solid var(--border); border-radius:10px; background:var(--bg); padding:12px; font-size:12.5px; color:var(--muted); line-height:1.6; }
+  .email .subj { color:var(--text); font-weight:500; margin-bottom:6px; }
+  .d-actions { display:flex; gap:8px; margin-top:16px; }
+  .d-actions .btn { flex:1; justify-content:center; }
+  .ai-badge { display:inline-flex; align-items:center; gap:5px; font-size:11px; color:var(--accent); background:var(--accent-soft); border-radius:999px; padding:1px 8px; margin-left:6px; text-transform:none; letter-spacing:0; }
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="side">
+    <div class="brand">
+      <div class="logo"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></div>
+      Scoutline <span class="ws">Beta</span>
+    </div>
+    <nav class="nav">
+      <div class="nav-label">Prospecting</div>
+      <a href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>Overview</a>
+      <a href="#" class="active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>Leads <span class="count num">128</span></a>
+      <a href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="5" height="16" rx="1.5"/><rect x="10" y="4" width="5" height="11" rx="1.5"/><rect x="17" y="4" width="4" height="7" rx="1.5"/></svg>Pipeline <span class="count num">14</span></a>
+      <a href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 11a9 9 0 0 1 9 9M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1.5"/></svg>Sources <span class="count num">9</span></a>
+      <a href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg>Analytics</a>
+    </nav>
+    <nav class="nav">
+      <div class="nav-label">Workspace</div>
+      <a href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M21.5 20a6.5 6.5 0 0 0-4-6"/></svg>Team</a>
+      <a href="#"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>Settings</a>
+    </nav>
+    <div class="side-foot">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span class="dot"></span><b>All systems normal</b></div>
+      9 sources live · last sync <span class="num">2m</span> ago<br>AI cost this month: <b class="num">€0.00</b>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <header class="top">
+      <div class="crumbs">Prospecting / <b>Leads</b></div>
+      <div class="search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        Search leads, companies, sources… <span class="kbd">⌘K</span>
+      </div>
+      <button class="btn" aria-label="Notifications"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8M10.3 21a2 2 0 0 0 3.4 0"/></svg></button>
+      <div class="avatar">AT</div>
+    </header>
+
+    <div class="content">
+      <div class="head">
+        <div>
+          <h1>Leads</h1>
+          <div class="sub">New opportunities from 9 sources, scored and filtered for your services.</div>
+        </div>
+        <div class="actions">
+          <button class="btn"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>Share view</button>
+          <button class="btn primary"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>Add source</button>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <section class="kpis">
+        <div class="kpi glow">
+          <div class="kpi-label">New today</div>
+          <div class="kpi-row">
+            <div><div class="kpi-val num">47</div><div class="trend">↑ 18% <span>vs yesterday</span></div></div>
+            <svg width="92" height="36" viewBox="0 0 92 36"><defs><linearGradient id="g1" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="var(--accent)" stop-opacity=".35"/><stop offset="1" stop-color="var(--accent)" stop-opacity="0"/></linearGradient></defs><path d="M0 28 L12 24 L24 26 L36 18 L48 20 L60 12 L72 14 L84 6 L92 8 L92 36 L0 36Z" fill="url(#g1)"/><path d="M0 28 L12 24 L24 26 L36 18 L48 20 L60 12 L72 14 L84 6 L92 8" fill="none" stroke="var(--accent)" stroke-width="1.6"/></svg>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">High fit (score ≥ 70)</div>
+          <div class="kpi-row">
+            <div><div class="kpi-val num">12</div><div class="trend">↑ 4 <span>vs yesterday</span></div></div>
+            <svg width="92" height="36" viewBox="0 0 92 36"><path d="M0 26 L12 27 L24 22 L36 23 L48 17 L60 19 L72 13 L84 11 L92 9" fill="none" stroke="var(--success)" stroke-width="1.6"/></svg>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">From Tier 1 markets</div>
+          <div class="kpi-row">
+            <div><div class="kpi-val num">68%</div><div class="trend">↑ 6 pts <span>this week</span></div></div>
+            <svg width="44" height="44" viewBox="0 0 44 44"><circle cx="22" cy="22" r="17" fill="none" stroke="var(--border)" stroke-width="5"/><circle cx="22" cy="22" r="17" fill="none" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" stroke-dasharray="72.6 106.8" transform="rotate(-90 22 22)"/></svg>
+          </div>
+        </div>
+        <div class="kpi">
+          <div class="kpi-label">Pipeline value</div>
+          <div class="kpi-row">
+            <div><div class="kpi-val num">€42.8k</div><div class="trend">↑ €9.4k <span>this month</span></div></div>
+            <svg width="92" height="36" viewBox="0 0 92 36"><g fill="var(--accent)"><rect x="2" y="22" width="9" height="14" rx="2" opacity=".35"/><rect x="15" y="18" width="9" height="18" rx="2" opacity=".45"/><rect x="28" y="20" width="9" height="16" rx="2" opacity=".5"/><rect x="41" y="13" width="9" height="23" rx="2" opacity=".6"/><rect x="54" y="15" width="9" height="21" rx="2" opacity=".7"/><rect x="67" y="9" width="9" height="27" rx="2" opacity=".85"/><rect x="80" y="4" width="9" height="32" rx="2"/></g></svg>
+          </div>
+        </div>
+      </section>
+
+      <!-- Filters -->
+      <div class="filters">
+        <span class="chip on">Tier 1 <span class="x">×</span></span>
+        <span class="chip on">Tier 2 <span class="x">×</span></span>
+        <span class="chip">🇷🇸 Domestic</span>
+        <span class="sep"></span>
+        <span class="chip on">Score ≥ 70 <span class="x">×</span></span>
+        <span class="chip on">Budget ≥ €3k <span class="x">×</span></span>
+        <span class="chip on">Remote-friendly <span class="x">×</span></span>
+        <span class="chip">Category ▾</span>
+        <span class="chip">Industry ▾</span>
+        <span class="chip">Source ▾</span>
+        <span class="result"><span class="num">12</span> of <span class="num">128</span> leads</span>
+      </div>
+
+      <div class="grid">
+        <!-- Table -->
+        <div class="card">
+          <table>
+            <thead><tr><th>Score</th><th>Opportunity</th><th>Market</th><th>Category</th><th>Budget</th><th>Source</th></tr></thead>
+            <tbody>
+              <tr class="sel">
+                <td><div class="ring"><svg width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="14" fill="none" stroke="var(--border)" stroke-width="3"/><circle cx="17" cy="17" r="14" fill="none" stroke="var(--success)" stroke-width="3" stroke-linecap="round" stroke-dasharray="80.9 88" transform="rotate(-90 17 17)"/></svg><b>92</b></div></td>
+                <td><div class="lead-title">Full-stack developer for patient portal MVP</div><div class="lead-co">Kite Health Inc. · Healthcare</div></td>
+                <td><span class="geo">🇺🇸 <span class="tier t1">T1</span></span></td>
+                <td><span class="tag">Full-stack app</span></td>
+                <td class="budget">€18–25k</td>
+                <td class="src">HN Hiring<div class="time">12m ago</div></td>
+              </tr>
+              <tr>
+                <td><div class="ring"><svg width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="14" fill="none" stroke="var(--border)" stroke-width="3"/><circle cx="17" cy="17" r="14" fill="none" stroke="var(--success)" stroke-width="3" stroke-linecap="round" stroke-dasharray="77.4 88" transform="rotate(-90 17 17)"/></svg><b>88</b></div></td>
+                <td><div class="lead-title">Integrate LLM assistant into existing SaaS dashboard</div><div class="lead-co">Fjord Analytics AB · SaaS</div></td>
+                <td><span class="geo">🇸🇪 <span class="tier t1">T1</span></span></td>
+                <td><span class="tag">AI integration</span></td>
+                <td class="budget">€90/h</td>
+                <td class="src">RemoteOK<div class="time">38m ago</div></td>
+              </tr>
+              <tr>
+                <td><div class="ring"><svg width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="14" fill="none" stroke="var(--border)" stroke-width="3"/><circle cx="17" cy="17" r="14" fill="none" stroke="var(--success)" stroke-width="3" stroke-linecap="round" stroke-dasharray="74.8 88" transform="rotate(-90 17 17)"/></svg><b>85</b></div></td>
+                <td><div class="lead-title">Migrate Laravel shop to Next.js + headless commerce</div><div class="lead-co">Lumen Retail GmbH · E-commerce</div></td>
+                <td><span class="geo">🇩🇪 <span class="tier t1">T1</span></span></td>
+                <td><span class="tag">Web frontend</span></td>
+                <td class="budget">€12k</td>
+                <td class="src">Arbeitnow<div class="time">1h ago</div></td>
+              </tr>
+              <tr>
+                <td><div class="ring"><svg width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="14" fill="none" stroke="var(--border)" stroke-width="3"/><circle cx="17" cy="17" r="14" fill="none" stroke="var(--success)" stroke-width="3" stroke-linecap="round" stroke-dasharray="71.3 88" transform="rotate(-90 17 17)"/></svg><b>81</b></div></td>
+                <td><div class="lead-title">DevOps: move from Heroku to AWS with CI/CD</div><div class="lead-co">Harbor &amp; Co · Fintech</div></td>
+                <td><span class="geo">🇬🇧 <span class="tier t1">T1</span></span></td>
+                <td><span class="tag">DevOps / deploy</span></td>
+                <td class="budget">€8–10k</td>
+                <td class="src">WWR<div class="time">2h ago</div></td>
+              </tr>
+              <tr>
+                <td><div class="ring"><svg width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="14" fill="none" stroke="var(--border)" stroke-width="3"/><circle cx="17" cy="17" r="14" fill="none" stroke="var(--success)" stroke-width="3" stroke-linecap="round" stroke-dasharray="68.6 88" transform="rotate(-90 17 17)"/></svg><b>78</b></div></td>
+                <td><div class="lead-title">Customer support automation with n8n + OpenAI</div><div class="lead-co">Mesa Freight LLC · Logistics</div></td>
+                <td><span class="geo">🇨🇦 <span class="tier t1">T1</span></span></td>
+                <td><span class="tag">Automation</span></td>
+                <td class="budget">€6k</td>
+                <td class="src">Remotive<div class="time">3h ago</div></td>
+              </tr>
+              <tr>
+                <td><div class="ring"><svg width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="14" fill="none" stroke="var(--border)" stroke-width="3"/><circle cx="17" cy="17" r="14" fill="none" stroke="var(--warning)" stroke-width="3" stroke-linecap="round" stroke-dasharray="65.1 88" transform="rotate(-90 17 17)"/></svg><b>74</b></div></td>
+                <td><div class="lead-title">Fix performance issues in React Native app</div><div class="lead-co">Solace Studio · Wellness</div></td>
+                <td><span class="geo">🇪🇸 <span class="tier">T2</span></span></td>
+                <td><span class="tag">Bug fix / maintenance</span></td>
+                <td class="budget">€55/h</td>
+                <td class="src">RemoteOK<div class="time">4h ago</div></td>
+              </tr>
+              <tr>
+                <td><div class="ring"><svg width="34" height="34" viewBox="0 0 34 34"><circle cx="17" cy="17" r="14" fill="none" stroke="var(--border)" stroke-width="3"/><circle cx="17" cy="17" r="14" fill="none" stroke="var(--warning)" stroke-width="3" stroke-linecap="round" stroke-dasharray="62.5 88" transform="rotate(-90 17 17)"/></svg><b>71</b></div></td>
+                <td><div class="lead-title">Public tender: web portal for municipal services</div><div class="lead-co">EU TED · Public sector</div></td>
+                <td><span class="geo">🇦🇹 <span class="tier t1">T1</span></span></td>
+                <td><span class="tag">Full-stack app</span></td>
+                <td class="budget">€40k</td>
+                <td class="src">EU TED<div class="time">6h ago</div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Detail -->
+        <aside class="card detail">
+          <div class="d-top">
+            <div class="big-ring"><svg width="64" height="64" viewBox="0 0 64 64"><circle cx="32" cy="32" r="27" fill="none" stroke="var(--border)" stroke-width="5"/><circle cx="32" cy="32" r="27" fill="none" stroke="var(--success)" stroke-width="5" stroke-linecap="round" stroke-dasharray="156 170" transform="rotate(-90 32 32)"/></svg><b>92</b></div>
+            <div>
+              <div class="d-title">Full-stack developer for patient portal MVP</div>
+              <div class="d-meta"><span>Kite Health Inc.</span><span>🇺🇸 Austin, TX</span><span>HN Hiring · 12m ago</span></div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="s-label">Signals</div>
+            <div class="signals">
+              <div class="signal"><small>Budget</small><span class="num">€18–25k</span></div>
+              <div class="signal"><small>Remote</small><span class="ok">Worldwide ✓</span></div>
+              <div class="signal"><small>Company size</small><span>11–50, no in-house dev</span></div>
+              <div class="signal"><small>Urgency</small><span>Launch in Q1</span></div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="s-label">Why it fits <span class="ai-badge">✦ AI</span></div>
+            <ul class="why">
+              <li>Needs a <b>complete web app</b> (React + Node + Postgres) — matches full-stack offer.</li>
+              <li>Asks for <b>AI-assisted intake form</b> — upsell for AI integration.</li>
+              <li><b>Contract role, worldwide</b> — open to agencies outside the US.</li>
+            </ul>
+          </div>
+
+          <div class="section">
+            <div class="s-label">Suggested first email <span class="ai-badge">✦ AI</span></div>
+            <div class="email">
+              <div class="subj">Patient portal MVP — shipped in 8 weeks</div>
+              Hi Sarah, saw you're building a patient portal with an AI-assisted intake. We've delivered similar React/Node apps with HIPAA-aware hosting and could share a 2-page plan for your MVP. Would a 20-minute call next week be useful?
+            </div>
+          </div>
+
+          <div class="d-actions">
+            <button class="btn">Copy</button>
+            <button class="btn">Hide</button>
+            <button class="btn primary">Mark contacted</button>
+          </div>
+        </aside>
+      </div>
+    </div>
+  </main>
+</div>
+</body>
+</html>

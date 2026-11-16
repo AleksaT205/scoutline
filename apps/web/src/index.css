@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+/* Dizajn tokeni — docs/DESIGN.md */
+:root {
+  --bg: #fafafa; --surface: #ffffff; --surface-2: #f4f4f5; --border: #e4e4e7;
+  --text: #09090b; --muted: #52525b; --faint: #a1a1aa; --accent: #5b4bff; --success: #16a34a;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #09090b; --surface: #111113; --surface-2: #18181b; --border: #232326;
+    --text: #fafafa; --muted: #a1a1aa; --faint: #71717a; --accent: #7c6cff; --success: #22c55e;
+  }
+}
+@theme inline {
+  --color-bg: var(--bg); --color-surface: var(--surface); --color-surface-2: var(--surface-2);
+  --color-line: var(--border); --color-fg: var(--text); --color-muted: var(--muted);
+  --color-faint: var(--faint); --color-accent: var(--accent); --color-success: var(--success);
+  --font-sans: "Geist", system-ui, sans-serif; --font-mono: "Geist Mono", ui-monospace, monospace;
+}
+body { @apply bg-bg text-fg font-sans antialiased; }

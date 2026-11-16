@@ -1,0 +1,68 @@
+# Pokretanje: docker compose -f infra/docker-compose.yml --env-file .env up -d
+name: radar
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: radar
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?postavi POSTGRES_PASSWORD u .env}
+      POSTGRES_DB: radar
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U radar"]
+      interval: 10s
+      retries: 5
+
+  ollama:
+    image: ollama/ollama:latest
+    restart: unless-stopped
+    volumes:
+      - ollama:/root/.ollama
+
+  litellm:
+    image: ghcr.io/berriai/litellm:main-stable
+    restart: unless-stopped
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    environment:
+      DATABASE_URL: postgres://radar:${POSTGRES_PASSWORD}@postgres:5432/litellm
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?postavi LITELLM_MASTER_KEY u .env}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+    volumes:
+      - ./litellm.config.yaml:/app/config.yaml:ro
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  api:
+    build: { context: .., args: { APP: api } }
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://radar:${POSTGRES_PASSWORD}@postgres:5432/radar
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
+      PORT: "3000"
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  worker:
+    build: { context: .., args: { APP: worker } }
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgres://radar:${POSTGRES_PASSWORD}@postgres:5432/radar
+      LITELLM_URL: http://litellm:4000
+      LITELLM_KEY: ${LITELLM_MASTER_KEY}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+    depends_on:
+      postgres: { condition: service_healthy }
+      litellm: { condition: service_started }
+
+volumes:
+  pgdata:
+  ollama:

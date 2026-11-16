@@ -1,0 +1,26 @@
+# Svi modeli su besplatni. Nazive modela proveriti na sajtu provajdera pre pokretanja —
+# besplatni modeli i limiti se često menjaju.
+model_list:
+  # Glavni: besplatni cloud nivoi
+  - model_name: scorer
+    litellm_params:
+      model: gemini/gemini-2.5-flash        # proveriti aktuelan besplatan model
+      api_key: os.environ/GEMINI_API_KEY
+  - model_name: scorer
+    litellm_params:
+      model: groq/llama-3.1-8b-instant      # proveriti aktuelan besplatan model
+      api_key: os.environ/GROQ_API_KEY
+  # Rezerva: lokalni mali model na mini PC-u (preuzeti: ollama pull <model>)
+  - model_name: scorer-local
+    litellm_params:
+      model: ollama/llama3.2:3b
+      api_base: http://ollama:11434
+
+router_settings:
+  routing_strategy: simple-shuffle
+  num_retries: 2
+  fallbacks:
+    - scorer: ["scorer-local"]
+
+litellm_settings:
+  drop_params: true
