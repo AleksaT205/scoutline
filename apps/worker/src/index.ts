@@ -5,7 +5,7 @@
 import { createDb } from "@radar/db";
 import { CONNECTORS } from "./connectors/sources.js";
 import { aiConfigured } from "@radar/scoring";
-import { telegramConfigured } from "./pipeline/notify.js";
+import { telegramConfigured } from "@radar/scoring";
 import { ingest, notifyNew, registerSources, scorePending } from "./pipeline/run.js";
 
 const TICK_MS = Number(process.env.WORKER_INTERVAL_MS ?? 60_000);

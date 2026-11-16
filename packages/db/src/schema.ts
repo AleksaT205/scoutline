@@ -114,3 +114,10 @@ export const clients = pgTable("clients", {
   status: clientStatusEnum("status").default("active").notNull(),
   ...timestamps,
 });
+
+/** Podešavanja aplikacije (npr. koje leadove šaljemo na Telegram). */
+export const settings = pgTable("settings", {
+  key: text("key").primaryKey(),
+  value: jsonb("value").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+});

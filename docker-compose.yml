@@ -54,6 +54,10 @@ services:
       # Ručno dodati leadovi se odmah ocenjuju preko LiteLLM-a
       LITELLM_URL: http://litellm:4000
       LITELLM_KEY: ${LITELLM_MASTER_KEY}
+      # Za dugme "Send test" u podešavanjima obaveštenja
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      DASHBOARD_URL: ${DASHBOARD_URL:-https://scoutline-app.netlify.app}
     ports:
       - "${API_PORT:-3100}:3000"
     healthcheck:

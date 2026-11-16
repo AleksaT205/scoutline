@@ -1,10 +1,10 @@
 import { createHash } from "node:crypto";
 import { and, desc, eq, gte, isNull, ne } from "drizzle-orm";
-import { leads, rawItems, sources, type Db } from "@radar/db";
-import { detectCountry, remoteFriendly, tierOf } from "@radar/shared";
+import { leads, rawItems, settings, sources, type Db } from "@radar/db";
+import { detectCountry, normalizeAlerts, remoteFriendly, tierOf, type AlertSettings } from "@radar/shared";
 import { aiActive, passesPrefilter, scoreItem } from "@radar/scoring";
 import type { Connector } from "../connectors/types.js";
-import { sendLeadToTelegram, telegramConfigured } from "./notify.js";
+import { sendLeadToTelegram, telegramConfigured } from "@radar/scoring";
 
 const MAX_AGE_DAYS = Number(process.env.MAX_AGE_DAYS ?? 14);
 const NOTIFY_MIN_SCORE = Number(process.env.NOTIFY_MIN_SCORE ?? 75);
@@ -108,18 +108,34 @@ export async function scorePending(db: Db, aiBatch: number) {
   if (rows.length) console.log(`[score] ocenjeno ${rows.length} (AI: ${byAi}, pravila: ${rows.length - byAi})`);
 }
 
-/** Pošalje na Telegram dobre, sveže leadove koji još nisu poslati. */
+/** Učita podešavanja obaveštenja (menjaju se iz dashboard-a). */
+export async function loadAlerts(db: Db): Promise<AlertSettings> {
+  const [row] = await db.select().from(settings).where(eq(settings.key, "alerts")).limit(1);
+  const alerts = normalizeAlerts(row?.value);
+  // Ako je NOTIFY_MIN_SCORE postavljen na serveru, a u dashboard-u još ništa nije sačuvano — koristi njega
+  if (!row && process.env.NOTIFY_MIN_SCORE) alerts.minScore = NOTIFY_MIN_SCORE;
+  return alerts;
+}
+
+/** Pošalje na Telegram dobre, sveže leadove koji još nisu poslati — po podešavanjima iz dashboard-a. */
 export async function notifyNew(db: Db) {
   if (!telegramConfigured()) return;
-  const since = new Date(Date.now() - 48 * 3_600_000);
-  const rows = await db
+  const alerts = await loadAlerts(db);
+  if (!alerts.enabled) return;
+  const since = new Date(Date.now() - alerts.maxAgeHours * 3_600_000);
+  const candidates = await db
     .select({ lead: leads, raw: rawItems, source: sources.name })
     .from(leads)
     .innerJoin(rawItems, eq(leads.rawItemId, rawItems.id))
     .innerJoin(sources, eq(rawItems.sourceId, sources.id))
-    .where(and(isNull(leads.notifiedAt), eq(leads.status, "new"), gte(leads.score, NOTIFY_MIN_SCORE), gte(rawItems.postedAt, since)))
+    .where(and(isNull(leads.notifiedAt), eq(leads.status, "new"), gte(leads.score, alerts.minScore), gte(rawItems.postedAt, since)))
     .orderBy(desc(leads.score))
-    .limit(10);
+    .limit(100);
+  const rows = candidates
+    .filter(({ lead }) => alerts.markets.includes(lead.tier ?? "UNKNOWN"))
+    .filter(({ lead }) => !alerts.categories.length || (lead.category && alerts.categories.includes(lead.category)))
+    .filter(({ lead }) => !alerts.remoteOnly || lead.remoteOk === true)
+    .slice(0, 10);
   for (const { lead, raw, source } of rows) {
     const ok = await sendLeadToTelegram({
       score: lead.score ?? 0,

@@ -6,7 +6,7 @@ const remoteok: Connector = {
   id: "remoteok",
   name: "RemoteOK",
   kind: "api",
-  intervalMinutes: 60,
+  intervalMinutes: 30,
   async fetch() {
     type Job = { id: string; company?: string; position?: string; description?: string; location?: string; salary_min?: number; salary_max?: number; date?: string; url?: string; tags?: string[] };
     const data = await getJson<Array<Job | { legal: string }>>("https://remoteok.com/api");
@@ -38,7 +38,7 @@ const wwr: Connector = {
   id: "wwr",
   name: "We Work Remotely",
   kind: "rss",
-  intervalMinutes: 60,
+  intervalMinutes: 30,
   async fetch() {
     const out: RawItem[] = [];
     for (const feed of WWR_FEEDS) {
@@ -93,7 +93,7 @@ const arbeitnow: Connector = {
   id: "arbeitnow",
   name: "Arbeitnow",
   kind: "api",
-  intervalMinutes: 120,
+  intervalMinutes: 60,
   async fetch() {
     type Job = { slug: string; company_name: string; title: string; description?: string; remote?: boolean; url: string; location?: string; created_at?: number; tags?: string[]; job_types?: string[] };
     const data = await getJson<{ data: Job[] }>("https://www.arbeitnow.com/api/job-board-api");
@@ -150,7 +150,7 @@ const himalayas: Connector = {
   id: "himalayas",
   name: "Himalayas",
   kind: "api",
-  intervalMinutes: 120,
+  intervalMinutes: 60,
   async fetch() {
     type Job = { title: string; companyName?: string; description?: string; excerpt?: string; employmentType?: string; minSalary?: number | null; maxSalary?: number | null; currency?: string | null; salaryPeriod?: string; locationRestrictions?: string[]; categories?: string[]; pubDate?: number; applicationLink?: string; guid: string };
     const out: RawItem[] = [];
@@ -179,7 +179,7 @@ const jobicy: Connector = {
   id: "jobicy",
   name: "Jobicy",
   kind: "api",
-  intervalMinutes: 180,
+  intervalMinutes: 60,
   async fetch() {
     type Job = { id: number; url: string; jobTitle: string; companyName?: string; jobType?: string[]; jobGeo?: string; jobLevel?: string; jobDescription?: string; jobExcerpt?: string; pubDate?: string; salaryMin?: number; salaryMax?: number; salaryCurrency?: string };
     const data = await getJson<{ jobs?: Job[] }>("https://jobicy.com/api/v2/remote-jobs?count=50&industry=dev");

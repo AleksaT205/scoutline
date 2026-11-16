@@ -2,9 +2,9 @@ import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { and, count, desc, eq, gte, inArray, lt, ne, sql, type SQL } from "drizzle-orm";
-import { leads, rawItems, sources, type Db } from "@radar/db";
-import { detectCountry, remoteFriendly } from "@radar/shared";
-import { htmlTitle, mainText, scoreItem } from "@radar/scoring";
+import { leads, rawItems, settings, sources, type Db } from "@radar/db";
+import { detectCountry, normalizeAlerts, remoteFriendly } from "@radar/shared";
+import { htmlTitle, mainText, scoreItem, sendLeadToTelegram, telegramConfigured } from "@radar/scoring";
 import { safeFetchHtml } from "./safe-fetch.js";
 import { llmProxy, routerAdmin } from "./router.js";
 
@@ -61,7 +61,7 @@ export function createApp(getDb: () => Db) {
     cors({
       // U razvoju dozvoli bilo koji localhost port; u produkciji samo CORS_ORIGINS.
       origin: (origin) => (origins.includes(origin) || (isDev && /^http:\/\/localhost:\d+$/.test(origin)) ? origin : null),
-      allowMethods: ["GET", "POST", "PATCH", "OPTIONS"],
+      allowMethods: ["GET", "POST", "PATCH", "PUT", "OPTIONS"],
       allowHeaders: ["Content-Type", "Authorization"],
     }),
   );
@@ -84,6 +84,41 @@ export function createApp(getDb: () => Db) {
     await next();
   });
   app.route("/router", routerAdmin(getDb));
+
+  // Podešavanja Telegram obaveštenja (koje leadove pratimo)
+  app.use("/settings/*", async (c, next) => {
+    const ok = authorized(c);
+    if (ok === "disabled") return c.json({ error: "Settings are disabled: set API_TOKEN on the server." }, 503);
+    if (!ok) return c.json({ error: "Wrong team password." }, 401);
+    await next();
+  });
+  app.get("/settings/alerts", async (c) => {
+    const [row] = await getDb().select().from(settings).where(eq(settings.key, "alerts")).limit(1);
+    return c.json({ alerts: normalizeAlerts(row?.value), telegram: telegramConfigured() });
+  });
+  app.put("/settings/alerts", async (c) => {
+    const alerts = normalizeAlerts(await c.req.json().catch(() => ({})));
+    await getDb()
+      .insert(settings)
+      .values({ key: "alerts", value: alerts })
+      .onConflictDoUpdate({ target: settings.key, set: { value: alerts, updatedAt: new Date() } });
+    return c.json({ alerts });
+  });
+  app.post("/settings/alerts/test", async (c) => {
+    if (!telegramConfigured()) return c.json({ error: "Telegram is not configured on the server (TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID)." }, 400);
+    const ok = await sendLeadToTelegram({
+      score: 88,
+      title: "Test alert from Scoutline",
+      company: "Your dashboard",
+      country: "RS",
+      tier: "DOMESTIC",
+      budgetEur: null,
+      source: "Test",
+      url: process.env.DASHBOARD_URL ?? "https://scoutline-app.netlify.app",
+      why: ["If you see this, Telegram alerts work."],
+    });
+    return ok ? c.json({ ok: true }) : c.json({ error: "Telegram rejected the message — check the bot token and chat ID." }, 502);
+  });
 
   // GET /leads?minScore=0&tiers=T1,T2&limit=100 — ocenjeni leadovi, spremni za dashboard
   app.get("/leads", async (c) => {

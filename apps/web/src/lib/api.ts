@@ -46,13 +46,17 @@ export interface LeadsState {
   newToday?: number;
   total?: number;
   aiCostUsd?: number;
+  loadedAt?: number;
+  /** Ponovo učitaj odmah. */
+  reload: () => void;
   /** Doda lead odmah u listu (npr. posle ručnog dodavanja). */
   add: (lead: UiLead) => void;
 }
 
 /** Učitava prave leadove; ako ih još nema (ili API nije dostupan), vraća live=false. */
 export function useLeads(): LeadsState {
-  const [state, setState] = useState<Omit<LeadsState, "add">>({ leads: null, live: false });
+  const [state, setState] = useState<Omit<LeadsState, "add" | "reload">>({ leads: null, live: false });
+  const [tick, setTick] = useState(0);
   const add = (lead: UiLead) =>
     setState((s) => ({ ...s, live: true, leads: [lead, ...(s.live && s.leads ? s.leads.filter((l) => l.id !== lead.id) : [])] }));
   useEffect(() => {
@@ -65,17 +69,17 @@ export function useLeads(): LeadsState {
         ]);
         if (!alive) return;
         const items = (l.items ?? []) as UiLead[];
-        setState({ leads: items, live: items.length > 0, newToday: s.newToday, total: s.total, aiCostUsd: s.aiCostUsd });
+        setState({ leads: items, live: items.length > 0, newToday: s.newToday, total: s.total, aiCostUsd: s.aiCostUsd, loadedAt: Date.now() });
       } catch {
         if (alive) setState({ leads: [], live: false });
       }
     };
     void load();
-    const id = setInterval(load, 120_000);
+    const id = setInterval(load, 60_000); // dashboard se osvežava svakog minuta
     return () => {
       alive = false;
       clearInterval(id);
     };
-  }, []);
-  return { ...state, add };
+  }, [tick]);
+  return { ...state, add, reload: () => setTick((t) => t + 1) };
 }

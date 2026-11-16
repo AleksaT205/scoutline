@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bell, Link2, Menu, Moon, Plus, Search, Sun } from "lucide-react";
+import { Bell, BellRing, Menu, Moon, Plus, RefreshCw, Search, Sun } from "lucide-react";
 import { DEMO_LEADS } from "./data/demo";
 import { useApiStatus, useLeads } from "./lib/api";
 import { Sidebar } from "./components/Sidebar";
@@ -10,6 +10,7 @@ import { LeadDetail } from "./components/LeadDetail";
 import { AddLeadDialog } from "./components/AddLeadDialog";
 import { RouterPage } from "./components/RouterPage";
 import { SourcesPage } from "./components/SourcesPage";
+import { AlertsDialog } from "./components/AlertsDialog";
 
 type Theme = "light" | "dark";
 const systemTheme = (): Theme => (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
@@ -55,6 +56,12 @@ export function App() {
   const api = useLeads();
   const [menuOpen, setMenuOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  const [alertsOpen, setAlertsOpen] = useState(false);
+  const [, forceTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => forceTick((t) => t + 1), 30_000); // osveži "Updated X ago"
+    return () => clearInterval(id);
+  }, []);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [selectedId, setSelectedId] = useState<string>();
 
@@ -112,10 +119,21 @@ export function App() {
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
               <p className="mt-0.5 text-[13.5px] text-muted">New opportunities from 7 sources, scored and filtered for your services.</p>
+              {api.live && api.loadedAt && (
+                <p className="mt-1 inline-flex items-center gap-1.5 text-[12px] text-faint">
+                  Updated {Math.max(0, Math.round((Date.now() - api.loadedAt) / 60_000)) || "<1"} min ago · refreshes every minute · sources sync every 30–60 min
+                  <button onClick={api.reload} className="inline-flex items-center gap-1 text-muted hover:text-fg" aria-label="Refresh now">
+                    <RefreshCw size={11} /> Refresh
+                  </button>
+                </p>
+              )}
             </div>
             <div className="flex gap-2 sm:ml-auto">
-              <button className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2">
-                <Link2 size={14} /> Share view
+              <button
+                onClick={() => setAlertsOpen(true)}
+                className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2"
+              >
+                <BellRing size={14} /> Telegram alerts
               </button>
               <button
                 onClick={() => setAddOpen(true)}
@@ -144,6 +162,7 @@ export function App() {
           )}
         </div>
       </main>
+      <AlertsDialog open={alertsOpen} onClose={() => setAlertsOpen(false)} />
       <AddLeadDialog
         open={addOpen}
         onClose={() => setAddOpen(false)}

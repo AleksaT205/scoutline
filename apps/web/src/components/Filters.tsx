@@ -13,6 +13,7 @@ export interface FilterState {
   category: string; // "all" | ServiceCategory
   industry: string; // "all" | Industry
   query: string;
+  maxAgeHours: number; // 0 = bilo kada (po vremenu objave oglasa)
 }
 
 export const DEFAULT_FILTERS: FilterState = {
@@ -23,6 +24,7 @@ export const DEFAULT_FILTERS: FilterState = {
   category: "all",
   industry: "all",
   query: "",
+  maxAgeHours: 0,
 };
 
 export const marketOf = (l: UiLead): Market => l.tier ?? "UNKNOWN";
@@ -38,7 +40,8 @@ export function applyFilters(leads: UiLead[], f: FilterState): UiLead[] {
       (!f.remoteOnly || l.remoteOk === true || (l.remoteOk === undefined && /remote|worldwide|eu/i.test(l.remote))) &&
       (f.category === "all" || l.category === f.category) &&
       (f.industry === "all" || norm(l.industry) === norm(f.industry)) &&
-      (!q || `${l.title} ${l.company} ${l.city}`.toLowerCase().includes(q)),
+      (!q || `${l.title} ${l.company} ${l.city}`.toLowerCase().includes(q)) &&
+      (!f.maxAgeHours || (l.postedMinutesAgo !== null && l.postedMinutesAgo <= f.maxAgeHours * 60)),
   );
 }
 
@@ -93,6 +96,7 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
     value.category === "all" &&
     value.industry === "all" &&
     !value.query &&
+    !value.maxAgeHours &&
     value.markets.size === DEFAULT_FILTERS.markets.size;
 
   return (
@@ -120,6 +124,13 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
             </button>
           ))}
         </div>
+        <Select label="Posted" value={String(value.maxAgeHours)} onChange={(v) => onChange({ ...value, maxAgeHours: Number(v) })}>
+          <option value="0">Any time</option>
+          <option value="24">Last 24 h</option>
+          <option value="72">Last 3 days</option>
+          <option value="168">Last 7 days</option>
+          <option value="720">Last 30 days</option>
+        </Select>
         <Select label="Service" value={value.category} onChange={(category) => onChange({ ...value, category })}>
           <option value="all">All</option>
           {SERVICE_CATEGORIES.filter((c) => c !== "not_relevant").map((c) => (
