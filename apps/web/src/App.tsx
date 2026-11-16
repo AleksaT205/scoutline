@@ -1,58 +1,87 @@
-import { useEffect, useState } from "react";
-
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
-type Health = "checking" | "ok" | "down";
-
-const nav = ["Overview", "Leads", "Pipeline", "Sources", "Analytics"];
+import { useMemo, useState } from "react";
+import { Bell, Link2, Menu, Plus, Search } from "lucide-react";
+import { DEMO_LEADS } from "./data/demo";
+import { useApiStatus } from "./lib/api";
+import { Sidebar } from "./components/Sidebar";
+import { Kpis } from "./components/Kpis";
+import { DEFAULT_FILTERS, Filters, type FilterState } from "./components/Filters";
+import { LeadsTable } from "./components/LeadsTable";
+import { LeadDetail } from "./components/LeadDetail";
 
 export function App() {
-  const [health, setHealth] = useState<Health>("checking");
+  const status = useApiStatus();
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+  const [selectedId, setSelectedId] = useState<string>(DEMO_LEADS[0]!.id);
 
-  useEffect(() => {
-    fetch(`${API_URL}/health`)
-      .then((r) => setHealth(r.ok ? "ok" : "down"))
-      .catch(() => setHealth("down"));
-  }, []);
+  // Faza 1: zameniti demo podacima iz API-ja (GET /leads).
+  const allLeads = DEMO_LEADS;
+  const leads = useMemo(
+    () =>
+      allLeads.filter(
+        (l) =>
+          filters.tiers.has(l.tier) &&
+          l.score >= filters.minScore &&
+          l.budgetEur >= filters.minBudget &&
+          (!filters.remoteOnly || /remote|worldwide|eu/i.test(l.remote)),
+      ),
+    [allLeads, filters],
+  );
+  const selected = leads.find((l) => l.id === selectedId) ?? leads[0];
 
   return (
-    <div className="grid min-h-screen grid-cols-[232px_1fr]">
-      <aside className="sticky top-0 flex h-screen flex-col gap-5 border-r border-line px-3 py-4">
-        <div className="flex items-center gap-2.5 px-2 font-semibold tracking-tight">
-          <div className="grid size-[26px] place-items-center rounded-[7px] bg-gradient-to-br from-accent to-[#b4a9ff] text-xs text-white">◎</div>
-          Scoutline
-          <span className="ml-auto rounded border border-line px-1.5 text-[11px] font-normal text-faint">Beta</span>
-        </div>
-        <nav className="flex flex-col gap-0.5">
-          {nav.map((item) => (
-            <a
-              key={item}
-              href="#"
-              className={`rounded-md px-2 py-[7px] text-[13.5px] ${
-                item === "Leads" ? "bg-surface-2 text-fg ring-1 ring-line ring-inset" : "text-muted hover:bg-surface-2 hover:text-fg"
-              }`}
-            >
-              {item}
-            </a>
-          ))}
-        </nav>
-        <div className="mt-auto rounded-[10px] border border-line bg-surface p-3 text-xs text-muted">
-          <div className="mb-1 flex items-center gap-2 font-medium text-fg">
-            <span className={`size-[7px] rounded-full ${health === "ok" ? "bg-success" : health === "down" ? "bg-red-500" : "bg-faint"}`} />
-            {health === "ok" ? "API online" : health === "down" ? "API offline" : "Checking API…"}
+    <div className="lg:grid lg:min-h-screen lg:grid-cols-[232px_1fr]">
+      <Sidebar status={status} open={menuOpen} onClose={() => setMenuOpen(false)} />
+
+      <main className="min-w-0">
+        <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-line bg-bg/80 px-4 backdrop-blur-md sm:px-6">
+          <button className="text-muted lg:hidden" onClick={() => setMenuOpen(true)} aria-label="Open menu">
+            <Menu size={18} />
+          </button>
+          <div className="text-[13px] text-muted">
+            <span className="hidden sm:inline">Prospecting / </span>
+            <b className="font-medium text-fg">Leads</b>
           </div>
-          <span className="font-mono">{API_URL.replace(/^https?:\/\//, "")}</span>
-        </div>
-      </aside>
+          <div className="ml-auto hidden h-[34px] w-80 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-faint md:flex">
+            <Search size={14} /> Search leads, companies, sources…
+            <span className="ml-auto rounded border border-line-2 px-1.5 text-[11px] text-muted">⌘K</span>
+          </div>
+          <button className="ml-auto grid size-[34px] place-items-center rounded-[7px] border border-line bg-surface text-muted hover:bg-surface-2 md:ml-0" aria-label="Notifications">
+            <Bell size={15} />
+          </button>
+          <div className="grid size-[30px] place-items-center rounded-full border border-line-2 bg-gradient-to-br from-zinc-600 to-zinc-800 text-xs font-medium text-white">
+            AT
+          </div>
+        </header>
 
-      <main className="px-6 py-7">
-        <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
-        <p className="mt-0.5 text-[13.5px] text-muted">New opportunities, scored and filtered for your services.</p>
+        <div className="mx-auto max-w-[1480px] px-4 pt-7 pb-10 sm:px-6">
+          <div className="mb-5 flex flex-wrap items-end gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
+              <p className="mt-0.5 text-[13.5px] text-muted">New opportunities from 9 sources, scored and filtered for your services.</p>
+            </div>
+            <div className="flex gap-2 sm:ml-auto">
+              <button className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2">
+                <Link2 size={14} /> Share view
+              </button>
+              <button className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] bg-fg px-3 text-[13px] font-medium text-bg hover:opacity-90">
+                <Plus size={14} /> Add source
+              </button>
+            </div>
+          </div>
 
-        <div className="mt-8 grid place-items-center rounded-xl border border-dashed border-line bg-surface px-6 py-20 text-center">
-          <div className="text-sm font-medium">No leads yet</div>
-          <p className="mt-1 max-w-sm text-[13px] text-muted">
-            Sources start syncing in Phase 1. New opportunities will appear here, scored and ranked automatically.
-          </p>
+          <div className="mb-4 flex items-center gap-2 rounded-lg border border-accent/30 bg-accent-soft px-3 py-2 text-[12.5px] text-muted">
+            <span className="rounded bg-accent px-1.5 py-px text-[11px] font-medium text-white">Preview</span>
+            Showing sample data. Live leads start syncing once sources are connected.
+          </div>
+
+          <Kpis leads={allLeads} />
+          <Filters value={filters} onChange={setFilters} shown={leads.length} total={allLeads.length} />
+
+          <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
+            <LeadsTable leads={leads} selectedId={selected?.id} onSelect={setSelectedId} />
+            {selected && <LeadDetail lead={selected} />}
+          </div>
         </div>
       </main>
     </div>
