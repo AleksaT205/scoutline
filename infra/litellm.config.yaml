@@ -1,26 +1,41 @@
-# Svi modeli su besplatni. Nazive modela proveriti na sajtu provajdera pre pokretanja —
-# besplatni modeli i limiti se često menjaju.
+# AI router za ocenjivanje oglasa. Samo BESPLATNI modeli.
+# Više rezervnih modela u istoj grupi "scorer": ako jedan ne radi (nema ključa, limit, ugašen model),
+# LiteLLM automatski pokuša sledeći. Nazive proveriti povremeno — besplatni modeli se menjaju.
 model_list:
-  # Glavni: besplatni cloud nivoi
+  # OpenRouter — modeli sa ":free" sufiksom ne naplaćuju se (0 $)
   - model_name: scorer
     litellm_params:
-      model: gemini/gemini-2.5-flash        # proveriti aktuelan besplatan model
+      model: openrouter/google/gemma-4-31b-it:free
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: scorer
+    litellm_params:
+      model: openrouter/nvidia/nemotron-3.5-lightning:free
+      api_key: os.environ/OPENROUTER_API_KEY
+  # Google Gemini — besplatan nivo (ako projekat nema uključen billing)
+  - model_name: scorer
+    litellm_params:
+      model: gemini/gemini-flash-latest
       api_key: os.environ/GEMINI_API_KEY
   - model_name: scorer
     litellm_params:
-      model: groq/llama-3.1-8b-instant      # proveriti aktuelan besplatan model
-      api_key: os.environ/GROQ_API_KEY
-  # Rezerva: lokalni mali model na mini PC-u (preuzeti: ollama pull <model>)
-  - model_name: scorer-local
+      model: gemini/gemini-2.5-flash
+      api_key: os.environ/GEMINI_API_KEY
+  # Groq — besplatan nivo
+  - model_name: scorer
     litellm_params:
-      model: ollama/llama3.2:3b
-      api_base: http://ollama:11434
+      model: groq/llama-3.3-70b-versatile
+      api_key: os.environ/GROQ_API_KEY
+  - model_name: scorer
+    litellm_params:
+      model: groq/llama-3.1-8b-instant
+      api_key: os.environ/GROQ_API_KEY
 
 router_settings:
   routing_strategy: simple-shuffle
-  num_retries: 2
-  fallbacks:
-    - scorer: ["scorer-local"]
+  num_retries: 4          # pokušaj druge modele iz grupe ako jedan padne
+  allowed_fails: 1        # model koji padne ide na pauzu…
+  cooldown_time: 300      # …od 5 minuta
 
 litellm_settings:
-  drop_params: true
+  drop_params: true       # izbaci parametre koje neki model ne podržava (npr. response_format)
+  request_timeout: 60

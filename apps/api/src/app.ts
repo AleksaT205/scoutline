@@ -73,9 +73,12 @@ export function createApp(getDb: () => Db) {
     const [today] = await db.select({ n: count() }).from(leads).where(and(gte(leads.createdAt, dayAgo), ne(leads.status, "hidden")));
     const [total] = await db.select({ n: count() }).from(leads).where(ne(leads.status, "hidden"));
     const srcs = await db.select().from(sources);
+    const scoring = await db.select({ by: leads.scoredBy, n: count() }).from(leads).groupBy(leads.scoredBy);
+    const sum = (pred: (by: string | null) => boolean) => scoring.filter((r) => pred(r.by)).reduce((a, r) => a + r.n, 0);
     return c.json({
       newToday: today?.n ?? 0,
       total: total?.n ?? 0,
+      scoring: { ai: sum((b) => !!b?.startsWith("ai")), rules: sum((b) => b === "rules"), pending: sum((b) => b === null) },
       sources: srcs.map((s) => ({ id: s.id, name: s.name, lastSuccessAt: s.lastSuccessAt, lastError: s.lastError })),
     });
   });

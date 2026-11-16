@@ -15,6 +15,8 @@ Legenda statusa: ✅ može odmah · 🟡 proveriti uslove pre upotrebe · 🔴 n
 | Remotive | Javni API | 🟡 | Proveriti limite |
 | Arbeitnow | Javni API | 🟡 | Dobar za Nemačku/EU |
 | EU TED (tenderi) | Zvanični API | 🟡 | Javni podaci EU |
+| Himalayas | Javni API | ✅ | Uslov: navesti Himalayas i koristiti njihov applicationLink — ispunjeno |
+| Jobicy | Javni API | ✅ | Uslov: navesti Jobicy i linkovati originalni oglas — ispunjeno |
 | SAM.gov (US tenderi) | Zvanični API (besplatan ključ) | 🟡 | T1 tržište, ali često traže US registraciju |
 
 ## Svetski — kasnije / ograničeno
@@ -32,7 +34,7 @@ Legenda statusa: ✅ može odmah · 🟡 proveriti uslove pre upotrebe · 🔴 n
 
 | Izvor | Pristup | Status | Napomena |
 |---|---|---|---|
-| Poslovi Infostud | Proveriti RSS/uslove | 🟡 | Najveći domaći sajt |
+| Poslovi Infostud | robots.txt zabranjuje /search i /rss_feed | 🔴 automatski | Ručno dodavanje leada iz linka |
 | HelloWorld.rs | Proveriti RSS/uslove | 🟡 | IT oglasi |
 | Joberty | Proveriti uslove | 🟡 | |
 | Halo oglasi / KupujemProdajem (usluge) | Proveriti uslove | 🟡 | Male firme |

@@ -145,4 +145,55 @@ const hn: Connector = {
   },
 };
 
-export const CONNECTORS: Connector[] = [remoteok, wwr, remotive, arbeitnow, hn];
+/** Himalayas — javni API. Uslov: navesti Himalayas kao izvor i koristiti njihov applicationLink. */
+const himalayas: Connector = {
+  id: "himalayas",
+  name: "Himalayas",
+  kind: "api",
+  intervalMinutes: 120,
+  async fetch() {
+    type Job = { title: string; companyName?: string; description?: string; excerpt?: string; employmentType?: string; minSalary?: number | null; maxSalary?: number | null; currency?: string | null; salaryPeriod?: string; locationRestrictions?: string[]; categories?: string[]; pubDate?: number; applicationLink?: string; guid: string };
+    const out: RawItem[] = [];
+    for (let offset = 0; offset < 200; offset += 20) {
+      const data = await getJson<{ jobs: Job[] }>(`https://himalayas.app/jobs/api?limit=20&offset=${offset}`);
+      if (!data.jobs?.length) break;
+      for (const j of data.jobs) {
+        out.push({
+          externalId: j.guid,
+          url: j.applicationLink ?? j.guid,
+          title: j.title,
+          body: [j.employmentType ? `Job type: ${j.employmentType}` : "", j.categories?.length ? `Categories: ${j.categories.join(", ")}` : "", htmlToText(j.description ?? j.excerpt)].filter(Boolean).join("\n"),
+          companyName: j.companyName ?? null,
+          location: j.locationRestrictions?.length ? j.locationRestrictions.join(", ") : "Worldwide",
+          salaryText: j.minSalary ? `${j.currency ?? "$"} ${j.minSalary}–${j.maxSalary ?? j.minSalary} / ${j.salaryPeriod ?? "year"}` : null,
+          postedAt: j.pubDate ? new Date(j.pubDate * 1000) : null,
+        });
+      }
+    }
+    return out;
+  },
+};
+
+/** Jobicy — javni API (dev oglasi). Uslov: navesti Jobicy i linkovati originalni oglas. */
+const jobicy: Connector = {
+  id: "jobicy",
+  name: "Jobicy",
+  kind: "api",
+  intervalMinutes: 180,
+  async fetch() {
+    type Job = { id: number; url: string; jobTitle: string; companyName?: string; jobType?: string[]; jobGeo?: string; jobLevel?: string; jobDescription?: string; jobExcerpt?: string; pubDate?: string; salaryMin?: number; salaryMax?: number; salaryCurrency?: string };
+    const data = await getJson<{ jobs?: Job[] }>("https://jobicy.com/api/v2/remote-jobs?count=50&industry=dev");
+    return (data.jobs ?? []).map((j) => ({
+      externalId: String(j.id),
+      url: j.url,
+      title: j.jobTitle,
+      body: [j.jobType?.length ? `Job type: ${j.jobType.join(", ")}` : "", j.jobLevel ? `Level: ${j.jobLevel}` : "", htmlToText(j.jobDescription ?? j.jobExcerpt)].filter(Boolean).join("\n"),
+      companyName: j.companyName ?? null,
+      location: j.jobGeo ?? null,
+      salaryText: j.salaryMin ? `${j.salaryCurrency ?? "$"} ${j.salaryMin}–${j.salaryMax ?? j.salaryMin} / year` : null,
+      postedAt: j.pubDate ? new Date(j.pubDate) : null,
+    }));
+  },
+};
+
+export const CONNECTORS: Connector[] = [remoteok, wwr, remotive, arbeitnow, hn, himalayas, jobicy];

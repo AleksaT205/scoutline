@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { Bell, Link2, Menu, Plus, Search } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Bell, Link2, Menu, Moon, Plus, Search, Sun } from "lucide-react";
 import { DEMO_LEADS } from "./data/demo";
 import { useApiStatus, useLeads } from "./lib/api";
 import { Sidebar } from "./components/Sidebar";
@@ -8,7 +8,29 @@ import { DEFAULT_FILTERS, Filters, applyFilters, type FilterState } from "./comp
 import { LeadsTable } from "./components/LeadsTable";
 import { LeadDetail } from "./components/LeadDetail";
 
+type Theme = "light" | "dark";
+const systemTheme = (): Theme => (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+function useTheme(): [Theme, () => void] {
+  const [theme, setTheme] = useState<Theme>(() => {
+    try {
+      return (localStorage.getItem("theme") as Theme | null) ?? systemTheme();
+    } catch {
+      return systemTheme();
+    }
+  });
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    try {
+      localStorage.setItem("theme", theme);
+    } catch {
+      /* privatni režim — samo ne pamtimo */
+    }
+  }, [theme]);
+  return [theme, () => setTheme((t) => (t === "dark" ? "light" : "dark"))];
+}
+
 export function App() {
+  const [theme, toggleTheme] = useTheme();
   const status = useApiStatus();
   const api = useLeads();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -42,7 +64,15 @@ export function App() {
               className="w-full bg-transparent text-fg placeholder:text-faint outline-none"
             />
           </label>
-          <button className="ml-auto grid size-[34px] place-items-center rounded-[7px] border border-line bg-surface text-muted hover:bg-surface-2 md:ml-0" aria-label="Notifications">
+          <button
+            onClick={toggleTheme}
+            className="ml-auto grid size-[34px] place-items-center rounded-[7px] border border-line bg-surface text-muted hover:bg-surface-2 hover:text-fg md:ml-0"
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            title={theme === "dark" ? "Light mode" : "Dark mode"}
+          >
+            {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+          </button>
+          <button className="grid size-[34px] place-items-center rounded-[7px] border border-line bg-surface text-muted hover:bg-surface-2" aria-label="Notifications">
             <Bell size={15} />
           </button>
           <div className="grid size-[30px] place-items-center rounded-full border border-line-2 bg-gradient-to-br from-zinc-600 to-zinc-800 text-xs font-medium text-white">
@@ -54,7 +84,7 @@ export function App() {
           <div className="mb-5 flex flex-wrap items-end gap-4">
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
-              <p className="mt-0.5 text-[13.5px] text-muted">New opportunities from 5 sources, scored and filtered for your services.</p>
+              <p className="mt-0.5 text-[13.5px] text-muted">New opportunities from 7 sources, scored and filtered for your services.</p>
             </div>
             <div className="flex gap-2 sm:ml-auto">
               <button className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2">

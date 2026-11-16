@@ -55,7 +55,11 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 - [x] Javna HTTPS adresa za API: https://aleksaserver.tail32786c.ts.net (Tailscale Funnel → port 3100); `VITE_API_URL` u `netlify.toml`
 - [x] Faza 1 — 5 izvora (RemoteOK, WWR, Remotive, Arbeitnow, HN), prefilter po nazivu pozicije, zemlja/tier, ocena (AI preko LiteLLM ili pravila kao rezerva), Telegram, API `/leads` i `/stats`, dashboard sa pravim podacima
 - [ ] Uneti besplatne AI ključeve (Gemini/Groq) i Telegram bot u Coolify → Redeploy
-- [ ] Domaći izvori (posle provere uslova korišćenja), EU TED tenderi
+- [x] Novi izvori: Himalayas, Jobicy (oba traže navođenje izvora + link na original — ispunjeno dugmetom "Post")
+- [x] Tamna/svetla tema (prekidač gore), filteri tržišta sa brojevima, pretraga
+- [ ] Domaći izvori: Infostud zabranjuje automatsko čitanje (robots.txt: /search, /rss_feed) → ručno dodavanje leada iz linka; HelloWorld — proveriti uslove
+- [ ] Ručno dodavanje leada (nalepiš link/tekst oglasa → AI ga oceni)
+- [ ] Faza 2: router modela (LiteLLM) sa troškovima po klijentu
 
 ## Otvoreno
 - Konačan naziv (predlog: Scoutline)

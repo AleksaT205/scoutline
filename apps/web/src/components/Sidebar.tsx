@@ -5,7 +5,7 @@ const prospecting = (leadCount: number) => [
   { label: "Overview", icon: LayoutGrid },
   { label: "Leads", icon: Search, count: leadCount },
   { label: "Pipeline", icon: Kanban },
-  { label: "Sources", icon: Rss, count: 5 },
+  { label: "Sources", icon: Rss, count: 7 },
   { label: "Analytics", icon: BarChart3 },
 ];
 const workspace = [
