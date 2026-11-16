@@ -1,3 +1,4 @@
+import type { UiLead } from "../data/demo";
 import { useEffect, useState } from "react";
 
 export const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
@@ -36,4 +37,39 @@ export function useApiStatus(): ApiStatus {
   }, []);
 
   return status;
+}
+
+
+export interface LeadsState {
+  leads: UiLead[] | null; // null = još se učitava
+  live: boolean; // true = pravi podaci iz API-ja
+  newToday?: number;
+}
+
+/** Učitava prave leadove; ako ih još nema (ili API nije dostupan), vraća live=false. */
+export function useLeads(): LeadsState {
+  const [state, setState] = useState<LeadsState>({ leads: null, live: false });
+  useEffect(() => {
+    let alive = true;
+    const load = async () => {
+      try {
+        const [l, s] = await Promise.all([
+          fetch(`${API_URL}/leads?limit=200`).then((r) => (r.ok ? r.json() : { items: [] })) as Promise<{ items?: UiLead[] }>,
+          fetch(`${API_URL}/stats`).then((r) => (r.ok ? r.json() : {})) as Promise<{ newToday?: number }>,
+        ]);
+        if (!alive) return;
+        const items = (l.items ?? []) as UiLead[];
+        setState({ leads: items, live: items.length > 0, newToday: s.newToday });
+      } catch {
+        if (alive) setState({ leads: [], live: false });
+      }
+    };
+    void load();
+    const id = setInterval(load, 120_000);
+    return () => {
+      alive = false;
+      clearInterval(id);
+    };
+  }, []);
+  return state;
 }

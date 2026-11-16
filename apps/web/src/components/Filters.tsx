@@ -43,7 +43,7 @@ export function Filters({ value, onChange, shown, total }: { value: FilterState;
       <Chip on={value.tiers.has("DOMESTIC")} onClick={() => toggleTier("DOMESTIC")}>🇷🇸 Domestic</Chip>
       <span className="mx-0.5 hidden h-5 w-px bg-line sm:block" />
       <Chip on={value.minScore > 0} onClick={() => onChange({ ...value, minScore: value.minScore ? 0 : 70 })}>Score ≥ 70</Chip>
-      <Chip on={value.minBudget > 0} onClick={() => onChange({ ...value, minBudget: value.minBudget ? 0 : 3000 })}>Budget ≥ €3k</Chip>
+      <Chip on={value.minBudget > 0} onClick={() => onChange({ ...value, minBudget: value.minBudget ? 0 : 3000 })}>Budget ≥ €3k or unknown</Chip>
       <Chip on={value.remoteOnly} onClick={() => onChange({ ...value, remoteOnly: !value.remoteOnly })}>Remote-friendly</Chip>
       <span className="ml-auto text-[12.5px] text-faint">
         <span className="num">{shown}</span> of <span className="num">{total}</span> leads

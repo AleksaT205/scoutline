@@ -18,15 +18,15 @@ function Card({ label, value, trend, children, glow }: { label: string; value: s
   );
 }
 
-export function Kpis({ leads }: { leads: UiLead[] }) {
+export function Kpis({ leads, newToday }: { leads: UiLead[]; newToday?: number }) {
   const highFit = leads.filter((l) => l.score >= 70).length;
   const t1Share = Math.round((leads.filter((l) => l.tier === "T1").length / Math.max(leads.length, 1)) * 100);
-  const pipeline = leads.reduce((s, l) => s + l.budgetEur, 0);
+  const pipeline = leads.filter((l) => l.score >= 70).reduce((s, l) => s + l.budgetEur, 0);
   const dash = (t1Share / 100) * 106.8;
 
   return (
     <section className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-      <Card label="New today" value={String(leads.length)} trend={<>↑ 18% <span className="text-faint">vs yesterday</span></>} glow>
+      <Card label="New today" value={String(newToday ?? leads.length)} trend={<>↑ 18% <span className="text-faint">vs yesterday</span></>} glow>
         <svg width="92" height="36" viewBox="0 0 92 36" aria-hidden>
           <defs>
             <linearGradient id="kpi-g1" x1="0" x2="0" y1="0" y2="1">
@@ -49,7 +49,7 @@ export function Kpis({ leads }: { leads: UiLead[] }) {
           <circle cx="22" cy="22" r="17" fill="none" stroke="var(--accent)" strokeWidth="5" strokeLinecap="round" strokeDasharray={`${dash} 106.8`} transform="rotate(-90 22 22)" />
         </svg>
       </Card>
-      <Card label="Pipeline value" value={`€${(pipeline / 1000).toFixed(1)}k`} trend={<>↑ €9.4k <span className="text-faint">this month</span></>}>
+      <Card label="High-fit value" value={`€${(pipeline / 1000).toFixed(1)}k`} trend={<>↑ €9.4k <span className="text-faint">this month</span></>}>
         <svg width="92" height="36" viewBox="0 0 92 36" aria-hidden>
           <g fill="var(--accent)">
             {[22, 18, 20, 13, 15, 9, 4].map((y, i) => (

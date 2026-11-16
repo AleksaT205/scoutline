@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Copy, EyeOff, Mail, Sparkles } from "lucide-react";
+import { Check, Copy, ExternalLink, Mail, Sparkles } from "lucide-react";
 import type { UiLead } from "../data/demo";
 import { ScoreRing, flag, timeAgo } from "./ui";
 
@@ -12,13 +12,18 @@ function Signal({ label, value, ok }: { label: string; value: string; ok?: boole
   );
 }
 
-function Label({ children, ai }: { children: React.ReactNode; ai?: boolean }) {
+function Label({ children, ai, rules }: { children: React.ReactNode; ai?: boolean; rules?: boolean }) {
   return (
     <div className="mb-2 flex items-center text-[11.5px] uppercase tracking-wider text-faint">
       {children}
-      {ai && (
+      {ai && !rules && (
         <span className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 text-[11px] normal-case tracking-normal text-accent">
           <Sparkles size={10} /> AI
+        </span>
+      )}
+      {ai && rules && (
+        <span className="ml-1.5 inline-flex items-center rounded-full bg-surface-2 px-2 text-[11px] normal-case tracking-normal text-muted ring-1 ring-line ring-inset">
+          Rules
         </span>
       )}
     </div>
@@ -55,14 +60,14 @@ export function LeadDetail({ lead }: { lead: UiLead }) {
         <Label>Signals</Label>
         <div className="grid grid-cols-2 gap-2">
           <Signal label="Budget" value={lead.budgetLabel} />
-          <Signal label="Remote" value={`${lead.remote} ✓`} ok />
-          <Signal label="Company size" value={lead.companySize} />
+          <Signal label="Remote" value={lead.remoteOk === true || lead.remoteOk === undefined ? `${lead.remote} ✓` : lead.remote} ok={lead.remoteOk === true || lead.remoteOk === undefined} />
+          <Signal label={lead.companySize ? "Company size" : "Market"} value={lead.companySize ?? (lead.tier === "DOMESTIC" ? "Domestic" : (lead.tier ?? "Unknown"))} />
           <Signal label="Urgency" value={lead.urgency} />
         </div>
       </div>
 
       <div className="mt-[18px]">
-        <Label ai>Why it fits</Label>
+        <Label ai rules={lead.scoredBy === "rules"}>Why it fits</Label>
         <ul className="ml-4 list-disc space-y-1 text-[13px] leading-relaxed text-muted">
           {lead.why.map((w) => (
             <li key={w}>{w}</li>
@@ -71,7 +76,7 @@ export function LeadDetail({ lead }: { lead: UiLead }) {
       </div>
 
       <div className="mt-[18px]">
-        <Label ai>Suggested first email</Label>
+        <Label ai rules={lead.scoredBy === "rules"}>Suggested first email</Label>
         <div className="rounded-[10px] border border-line bg-bg p-3 text-[12.5px] leading-relaxed text-muted">
           <div className="mb-1.5 font-medium text-fg">{lead.email.subject}</div>
           {lead.email.body}
@@ -83,9 +88,11 @@ export function LeadDetail({ lead }: { lead: UiLead }) {
           {copied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
           {copied ? "Copied" : "Copy"}
         </button>
-        <button className="inline-flex h-[34px] flex-1 items-center justify-center gap-1.5 rounded-[7px] border border-line bg-surface text-[13px] font-medium hover:bg-surface-2">
-          <EyeOff size={14} /> Hide
-        </button>
+        {lead.url && (
+          <a href={lead.url} target="_blank" rel="noreferrer" className="inline-flex h-[34px] flex-1 items-center justify-center gap-1.5 rounded-[7px] border border-line bg-surface text-[13px] font-medium hover:bg-surface-2">
+            <ExternalLink size={14} /> Post
+          </a>
+        )}
         <a
           href={`mailto:?subject=${encodeURIComponent(lead.email.subject)}&body=${encodeURIComponent(lead.email.body)}`}
           className="inline-flex h-[34px] flex-[1.4] items-center justify-center gap-1.5 rounded-[7px] bg-fg text-[13px] font-medium text-bg hover:opacity-90"

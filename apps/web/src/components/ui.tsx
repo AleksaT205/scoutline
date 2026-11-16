@@ -13,7 +13,8 @@ export const CATEGORY_LABEL: Record<ServiceCategory, string> = {
   not_relevant: "Not relevant",
 };
 
-export function flag(country: string) {
+export function flag(country: string | null | undefined) {
+  if (!country) return "🌍";
   return country
     .toUpperCase()
     .replace(/./g, (c) => String.fromCodePoint(127397 + c.charCodeAt(0)));
@@ -52,8 +53,8 @@ export function ScoreRing({ score, size = 34, stroke = 3 }: { score: number; siz
   );
 }
 
-export function TierBadge({ tier }: { tier: Tier }) {
-  const label = tier === "DOMESTIC" ? "SR" : tier;
+export function TierBadge({ tier }: { tier: Tier | null }) {
+  const label = tier === "DOMESTIC" ? "SR" : (tier ?? "—");
   const strong = tier === "T1";
   return (
     <span
@@ -74,7 +75,8 @@ export function Tag({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function timeAgo(minutes: number) {
+export function timeAgo(minutes: number | null) {
+  if (minutes == null) return "";
   if (minutes < 60) return `${minutes}m ago`;
   const h = Math.round(minutes / 60);
   return h < 24 ? `${h}h ago` : `${Math.round(h / 24)}d ago`;

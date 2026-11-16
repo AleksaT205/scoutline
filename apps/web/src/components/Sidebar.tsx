@@ -1,11 +1,11 @@
 import { BarChart3, Kanban, LayoutGrid, Rss, Search, Settings, Users, X } from "lucide-react";
 import type { ApiStatus } from "../lib/api";
 
-const prospecting = [
+const prospecting = (leadCount: number) => [
   { label: "Overview", icon: LayoutGrid },
-  { label: "Leads", icon: Search, count: 128 },
-  { label: "Pipeline", icon: Kanban, count: 14 },
-  { label: "Sources", icon: Rss, count: 9 },
+  { label: "Leads", icon: Search, count: leadCount },
+  { label: "Pipeline", icon: Kanban },
+  { label: "Sources", icon: Rss, count: 5 },
   { label: "Analytics", icon: BarChart3 },
 ];
 const workspace = [
@@ -51,7 +51,7 @@ function StatusCard({ status }: { status: ApiStatus }) {
   );
 }
 
-export function Sidebar({ status, open, onClose }: { status: ApiStatus; open: boolean; onClose: () => void }) {
+export function Sidebar({ status, open, onClose, leadCount }: { status: ApiStatus; open: boolean; onClose: () => void; leadCount: number }) {
   return (
     <>
       {open && <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={onClose} />}
@@ -75,7 +75,7 @@ export function Sidebar({ status, open, onClose }: { status: ApiStatus; open: bo
         </div>
         <nav className="flex flex-col gap-0.5">
           <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wider text-faint">Prospecting</div>
-          {prospecting.map((i) => (
+          {prospecting(leadCount).map((i) => (
             <NavItem key={i.label} {...i} active={i.label === "Leads"} />
           ))}
         </nav>

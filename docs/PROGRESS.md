@@ -4,7 +4,7 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 
 ## Gde smo sada
 
-**Faza:** Faza 0 (kostur koda) gotova; server u pripremi.
+**Faza:** Faza 1 gotova u kodu — čeka ključeve (AI, Telegram) na serveru.
 **Sledeći korak:** na serveru Korak 1–3 ispod (Coolify), zatim Faza 1 — prvi izvori (RemoteOK, WWR, HN) + AI ocena + Telegram.
 
 ## Urađeno
@@ -53,7 +53,9 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 - [ ] Prilagoditi dashboard za telefon (sidebar se ne skuplja)
 - [x] Radar (api + worker + baza + LiteLLM) deploy preko Coolify-ja → `http://192.168.100.60:3100/health` radi (port 3000 je na serveru zauzet)
 - [x] Javna HTTPS adresa za API: https://aleksaserver.tail32786c.ts.net (Tailscale Funnel → port 3100); `VITE_API_URL` u `netlify.toml`
-- [ ] Faza 1 — prvi izvori, AI ocena, Telegram
+- [x] Faza 1 — 5 izvora (RemoteOK, WWR, Remotive, Arbeitnow, HN), prefilter po nazivu pozicije, zemlja/tier, ocena (AI preko LiteLLM ili pravila kao rezerva), Telegram, API `/leads` i `/stats`, dashboard sa pravim podacima
+- [ ] Uneti besplatne AI ključeve (Gemini/Groq) i Telegram bot u Coolify → Redeploy
+- [ ] Domaći izvori (posle provere uslova korišćenja), EU TED tenderi
 
 ## Otvoreno
 - Konačan naziv (predlog: Scoutline)

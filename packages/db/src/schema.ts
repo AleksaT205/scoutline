@@ -75,6 +75,13 @@ export const leads = pgTable(
     painPoint: text("pain_point"),
     ourOffer: text("our_offer"),
     redFlags: jsonb("red_flags").$type<string[]>(),
+    why: jsonb("why").$type<string[]>(),
+    urgency: text("urgency"),
+    emailSubject: text("email_subject"),
+    emailBody: text("email_body"),
+    scoredBy: text("scored_by"), // "ai:<model>" | "rules"
+    scoredAt: timestamp("scored_at", { withTimezone: true }),
+    notifiedAt: timestamp("notified_at", { withTimezone: true }),
     status: statusEnum("status").default("new").notNull(),
     ...timestamps,
   },

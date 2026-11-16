@@ -5,17 +5,20 @@ export interface UiLead {
   title: string;
   company: string;
   industry: string;
-  country: string; // ISO alpha-2
+  country: string | null; // ISO alpha-2
   city: string;
-  tier: Tier;
+  tier: Tier | null;
   category: ServiceCategory;
   budgetLabel: string;
   budgetEur: number;
   source: string;
-  postedMinutesAgo: number;
+  postedMinutesAgo: number | null;
+  url?: string;
   score: number;
   remote: string;
-  companySize: string;
+  remoteOk?: boolean | null;
+  scoredBy?: string | null; // "rules" | "ai:<model>"
+  companySize?: string;
   urgency: string;
   why: string[];
   email: { subject: string; body: string };

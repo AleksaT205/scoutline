@@ -67,8 +67,11 @@ services:
       LITELLM_KEY: ${LITELLM_MASTER_KEY}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
+      NOTIFY_MIN_SCORE: ${NOTIFY_MIN_SCORE:-75}
+      SCORE_BATCH: ${SCORE_BATCH:-10}
+      DASHBOARD_URL: ${DASHBOARD_URL:-https://scoutline-app.netlify.app}
     depends_on:
-      postgres: { condition: service_healthy }
+      api: { condition: service_healthy } # API primenjuje migracije baze
       litellm: { condition: service_started }
 
 volumes:
