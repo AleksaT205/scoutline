@@ -47,7 +47,10 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 
 ### Posle toga
 - [x] Faza 0 — kostur koda
-- [ ] Repo na GitHub (privatni) → Netlify povezan sa `apps/web`
+- [x] Repo na GitHub (privatni): github.com/AleksaT205/scoutline
+- [x] Netlify povezan sa `apps/web` → https://scoutline-app.netlify.app (auto-deploy na push u `main`)
+- [x] Coolify instaliran na mini PC (`http://192.168.100.60:8000`)
+- [ ] Prilagoditi dashboard za telefon (sidebar se ne skuplja)
 - [ ] Radar (api + worker + baza) deploy preko Coolify-ja
 - [ ] Faza 1 — prvi izvori, AI ocena, Telegram
 
