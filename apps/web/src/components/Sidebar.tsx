@@ -1,22 +1,32 @@
-import { BarChart3, Kanban, LayoutGrid, Rss, Search, Settings, Users, X } from "lucide-react";
+import { BarChart3, Kanban, LayoutGrid, Route, Rss, Search, Settings, Users, X } from "lucide-react";
 import type { ApiStatus } from "../lib/api";
 
 const prospecting = (leadCount: number) => [
-  { label: "Overview", icon: LayoutGrid },
-  { label: "Leads", icon: Search, count: leadCount },
-  { label: "Pipeline", icon: Kanban },
-  { label: "Sources", icon: Rss, count: 7 },
-  { label: "Analytics", icon: BarChart3 },
+  { label: "Overview", icon: LayoutGrid, soon: true },
+  { label: "Leads", icon: Search, count: leadCount, href: "#/" },
+  { label: "Pipeline", icon: Kanban, soon: true },
+  { label: "Sources", icon: Rss, count: 7, soon: true },
+  { label: "Analytics", icon: BarChart3, soon: true },
 ];
+const aiOps = [{ label: "AI Router", icon: Route, href: "#/router" }];
 const workspace = [
-  { label: "Team", icon: Users },
-  { label: "Settings", icon: Settings },
+  { label: "Team", icon: Users, soon: true },
+  { label: "Settings", icon: Settings, soon: true },
 ];
 
-function NavItem({ label, icon: Icon, count, active }: { label: string; icon: typeof Search; count?: number; active?: boolean }) {
+function NavItem({ label, icon: Icon, count, active, href, soon }: { label: string; icon: typeof Search; count?: number; active?: boolean; href?: string; soon?: boolean }) {
+  if (soon) {
+    return (
+      <span className="flex cursor-default items-center gap-2.5 rounded-md px-2 py-[7px] text-[13.5px] text-faint" title="Coming soon">
+        <Icon size={16} strokeWidth={1.8} />
+        {label}
+        <span className="ml-auto text-[10px] uppercase tracking-wider">soon</span>
+      </span>
+    );
+  }
   return (
     <a
-      href="#"
+      href={href}
       className={`flex items-center gap-2.5 rounded-md px-2 py-[7px] text-[13.5px] transition-colors ${
         active ? "bg-surface-2 text-fg ring-1 ring-line ring-inset" : "text-muted hover:bg-surface-2 hover:text-fg"
       }`}
@@ -51,7 +61,7 @@ function StatusCard({ status }: { status: ApiStatus }) {
   );
 }
 
-export function Sidebar({ status, open, onClose, leadCount }: { status: ApiStatus; open: boolean; onClose: () => void; leadCount: number }) {
+export function Sidebar({ status, open, onClose, leadCount, page }: { status: ApiStatus; open: boolean; onClose: () => void; leadCount: number; page: "leads" | "router" }) {
   return (
     <>
       {open && <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={onClose} />}
@@ -76,7 +86,13 @@ export function Sidebar({ status, open, onClose, leadCount }: { status: ApiStatu
         <nav className="flex flex-col gap-0.5">
           <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wider text-faint">Prospecting</div>
           {prospecting(leadCount).map((i) => (
-            <NavItem key={i.label} {...i} active={i.label === "Leads"} />
+            <NavItem key={i.label} {...i} active={i.label === "Leads" && page === "leads"} />
+          ))}
+        </nav>
+        <nav className="flex flex-col gap-0.5">
+          <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wider text-faint">AI Ops</div>
+          {aiOps.map((i) => (
+            <NavItem key={i.label} {...i} active={page === "router"} />
           ))}
         </nav>
         <nav className="flex flex-col gap-0.5">

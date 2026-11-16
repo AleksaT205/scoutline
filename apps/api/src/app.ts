@@ -6,6 +6,7 @@ import { leads, rawItems, sources, type Db } from "@radar/db";
 import { detectCountry, remoteFriendly } from "@radar/shared";
 import { htmlTitle, mainText, scoreItem } from "@radar/scoring";
 import { safeFetchHtml } from "./safe-fetch.js";
+import { llmProxy, routerAdmin } from "./router.js";
 
 type Tier = "T1" | "T2" | "T3" | "DOMESTIC";
 type LeadRow = { lead: typeof leads.$inferSelect; raw: typeof rawItems.$inferSelect; source: string };
@@ -59,7 +60,7 @@ export function createApp(getDb: () => Db) {
     cors({
       // U razvoju dozvoli bilo koji localhost port; u produkciji samo CORS_ORIGINS.
       origin: (origin) => (origins.includes(origin) || (isDev && /^http:\/\/localhost:\d+$/.test(origin)) ? origin : null),
-      allowMethods: ["GET", "POST", "OPTIONS"],
+      allowMethods: ["GET", "POST", "PATCH", "OPTIONS"],
       allowHeaders: ["Content-Type", "Authorization"],
     }),
   );
@@ -72,6 +73,16 @@ export function createApp(getDb: () => Db) {
       .innerJoin(sources, eq(rawItems.sourceId, sources.id));
 
   app.get("/health", (c) => c.json({ ok: true, service: "radar-api", time: new Date().toISOString() }));
+
+  // AI Router: javni endpoint za aplikacije klijenata (ključ klijenta) + upravljanje (timska lozinka)
+  app.route("/llm", llmProxy());
+  app.use("/router/*", async (c, next) => {
+    const ok = authorized(c);
+    if (ok === "disabled") return c.json({ error: "Router admin is disabled: set API_TOKEN on the server." }, 503);
+    if (!ok) return c.json({ error: "Wrong team password." }, 401);
+    await next();
+  });
+  app.route("/router", routerAdmin(getDb));
 
   // GET /leads?minScore=0&tiers=T1,T2&limit=100 — ocenjeni leadovi, spremni za dashboard
   app.get("/leads", async (c) => {

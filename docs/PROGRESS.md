@@ -5,7 +5,7 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 ## Gde smo sada
 
 **Faza:** Faza 1 gotova u kodu — čeka ključeve (AI, Telegram) na serveru.
-**Sledeći korak:** u Coolify dodati `API_TOKEN` (timska lozinka) → Deploy; zatim Faza 2 — router modela.
+**Sledeći korak:** Deploy u Coolify-ju → proveriti AI ocenjivanje i AI Router na serveru.
 
 ## Urađeno
 
@@ -60,7 +60,8 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 - [ ] Domaći izvori: Infostud zabranjuje automatsko čitanje (robots.txt: /search, /rss_feed) → ručno dodavanje leada iz linka; HelloWorld — proveriti uslove
 - [x] Ručno dodavanje leada: dugme "Add lead" (link ili tekst) → odmah ocenjen; zaštićeno timskom lozinkom (`API_TOKEN`); bezbedno preuzimanje linka (blokira localhost/kućnu mrežu)
 - [x] Ocenjivanje izdvojeno u paket `@radar/scoring` (worker i API koriste isto)
-- [ ] Faza 2: router modela (LiteLLM) sa troškovima po klijentu
+- [x] Faza 2 (MVP): AI Router — javni endpoint `/llm/v1` (OpenAI + Anthropic format), model `auto` bira `fast`/`smart`, klijenti sa sopstvenim ključem i mesečnim budžetom, potrošnja i ušteda po klijentu, opoziv ključa; stranica "AI Router" u dashboard-u
+- [ ] AI Router: plaćeni modeli u grupe `fast`/`smart` kad krenu pravi klijenti; pravila rutiranja po klijentu; izveštaj za klijenta (PDF/link)
 
 ## Otvoreno
 - Konačan naziv (predlog: Scoutline)

@@ -31,6 +31,26 @@ model_list:
       model: groq/openai/gpt-oss-20b
       api_key: os.environ/GROQ_API_KEY
 
+  # ── AI Router za klijente (Faza 2) ─────────────────────────────────────────
+  # "fast" = brzi/jeftini, "smart" = jači model. Klijent šalje model "auto" i mi biramo.
+  # Za sada besplatni modeli; za produkciju dodati plaćene (npr. OpenAI/Anthropic ključ) u iste grupe.
+  - model_name: fast
+    litellm_params:
+      model: openrouter/google/gemma-4-31b-it:free
+      api_key: os.environ/OPENROUTER_API_KEY
+  - model_name: fast
+    litellm_params:
+      model: groq/openai/gpt-oss-20b
+      api_key: os.environ/GROQ_API_KEY
+  - model_name: smart
+    litellm_params:
+      model: gemini/gemini-3.8-flash
+      api_key: os.environ/GEMINI_API_KEY
+  - model_name: smart
+    litellm_params:
+      model: openrouter/nvidia/nemotron-3-ultra-550b-a55b:free
+      api_key: os.environ/OPENROUTER_API_KEY
+
 router_settings:
   routing_strategy: simple-shuffle
   num_retries: 4          # pokušaj druge modele iz grupe ako jedan padne

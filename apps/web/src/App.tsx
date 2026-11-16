@@ -8,6 +8,7 @@ import { DEFAULT_FILTERS, Filters, applyFilters, type FilterState } from "./comp
 import { LeadsTable } from "./components/LeadsTable";
 import { LeadDetail } from "./components/LeadDetail";
 import { AddLeadDialog } from "./components/AddLeadDialog";
+import { RouterPage } from "./components/RouterPage";
 
 type Theme = "light" | "dark";
 const systemTheme = (): Theme => (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
@@ -30,7 +31,23 @@ function useTheme(): [Theme, () => void] {
   return [theme, () => setTheme((t) => (t === "dark" ? "light" : "dark"))];
 }
 
+export type Page = "leads" | "router";
+function useHashPage(): Page {
+  const read = (): Page => (window.location.hash.startsWith("#/router") ? "router" : "leads");
+  const [page, setPage] = useState<Page>(read);
+  useEffect(() => {
+    const on = () => {
+      setPage(read());
+      window.scrollTo(0, 0);
+    };
+    window.addEventListener("hashchange", on);
+    return () => window.removeEventListener("hashchange", on);
+  }, []);
+  return page;
+}
+
 export function App() {
+  const page = useHashPage();
   const [theme, toggleTheme] = useTheme();
   const status = useApiStatus();
   const api = useLeads();
@@ -46,7 +63,7 @@ export function App() {
 
   return (
     <div className="lg:grid lg:min-h-screen lg:grid-cols-[232px_1fr]">
-      <Sidebar status={status} open={menuOpen} onClose={() => setMenuOpen(false)} leadCount={allLeads.length} />
+      <Sidebar status={status} open={menuOpen} onClose={() => setMenuOpen(false)} leadCount={allLeads.length} page={page} />
 
       <main className="min-w-0">
         <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-line bg-bg/80 px-4 backdrop-blur-md sm:px-6">
@@ -54,10 +71,10 @@ export function App() {
             <Menu size={18} />
           </button>
           <div className="text-[13px] text-muted">
-            <span className="hidden sm:inline">Prospecting / </span>
-            <b className="font-medium text-fg">Leads</b>
+            <span className="hidden sm:inline">{page === "router" ? "AI Ops / " : "Prospecting / "}</span>
+            <b className="font-medium text-fg">{page === "router" ? "AI Router" : "Leads"}</b>
           </div>
-          <label className="ml-auto hidden h-[34px] w-80 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-faint focus-within:border-accent/55 md:flex">
+          <label className={`ml-auto h-[34px] w-80 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-faint focus-within:border-accent/55 ${page === "leads" ? "hidden md:flex" : "hidden"}`}>
             <Search size={14} />
             <input
               value={filters.query}
@@ -68,7 +85,7 @@ export function App() {
           </label>
           <button
             onClick={toggleTheme}
-            className="ml-auto grid size-[34px] place-items-center rounded-[7px] border border-line bg-surface text-muted hover:bg-surface-2 hover:text-fg md:ml-0"
+            className={`ml-auto grid size-[34px] place-items-center rounded-[7px] border border-line bg-surface text-muted hover:bg-surface-2 hover:text-fg ${page === "leads" ? "md:ml-0" : ""}`}
             aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             title={theme === "dark" ? "Light mode" : "Dark mode"}
           >
@@ -83,6 +100,10 @@ export function App() {
         </header>
 
         <div className="mx-auto max-w-[1480px] px-4 pt-7 pb-10 sm:px-6">
+          {page === "router" ? (
+            <RouterPage />
+          ) : (
+          <>
           <div className="mb-5 flex flex-wrap items-end gap-4">
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
@@ -115,6 +136,8 @@ export function App() {
             <LeadsTable leads={leads} selectedId={selected?.id} onSelect={setSelectedId} />
             {selected && <LeadDetail lead={selected} />}
           </div>
+          </>
+          )}
         </div>
       </main>
       <AddLeadDialog

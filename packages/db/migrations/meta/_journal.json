@@ -15,6 +15,13 @@
       "when": 1794859365152,
       "tag": "0001_lush_loki",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794864045923,
+      "tag": "0002_cultured_vermin",
+      "breakpoints": true
     }
   ]
 }

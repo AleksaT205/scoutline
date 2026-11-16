@@ -1,4 +1,4 @@
-import { boolean, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, doublePrecision, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { INDUSTRIES, LEAD_STATUSES, SERVICE_CATEGORIES } from "@radar/shared";
 
 export const tierEnum = pgEnum("tier", ["T1", "T2", "T3", "DOMESTIC"]);
@@ -96,4 +96,21 @@ export const leadEvents = pgTable("lead_events", {
   data: jsonb("data"),
   actor: text("actor"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/** AI Router: klijent agencije sa sopstvenim LiteLLM ključem i mesečnim budžetom. */
+export const clientStatusEnum = pgEnum("client_status", ["active", "revoked"]);
+export const routerModeEnum = pgEnum("router_mode", ["auto", "fast", "smart"]);
+
+export const clients = pgTable("clients", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  email: text("email"),
+  keyToken: text("key_token").notNull().unique(), // heš ključa u LiteLLM-u (pravi ključ se ne čuva)
+  keyAlias: text("key_alias").notNull(),
+  keyPreview: text("key_preview").notNull(), // npr. "sk-…nr0g"
+  monthlyBudgetUsd: doublePrecision("monthly_budget_usd").notNull(),
+  defaultMode: routerModeEnum("default_mode").default("auto").notNull(),
+  status: clientStatusEnum("status").default("active").notNull(),
+  ...timestamps,
 });
