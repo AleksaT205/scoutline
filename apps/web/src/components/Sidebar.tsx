@@ -1,4 +1,4 @@
-import { ListTodo, Kanban, LayoutGrid, Route, Rss, Search, Settings, Users, X } from "lucide-react";
+import { Building2, CircleDot, FolderKanban, ListTodo, Kanban, LayoutGrid, Route, Rss, Search, Settings, Users, X } from "lucide-react";
 import type { ApiStatus } from "../lib/api";
 
 const prospecting = (leadCount: number) => [
@@ -7,6 +7,12 @@ const prospecting = (leadCount: number) => [
   { label: "Pipeline", icon: Kanban, href: "#/pipeline" },
   { label: "Sources", icon: Rss, href: "#/sources" },
 ];
+const delivery = [
+  { label: "My issues", icon: CircleDot, href: "#/delivery/issues", page: "issues" },
+  { label: "Projects", icon: FolderKanban, href: "#/delivery", page: "projects" },
+  { label: "Clients", icon: Building2, href: "#/delivery/clients", page: "clients" },
+];
+export const DELIVERY_PAGES = ["issues", "projects", "project", "clients"];
 const aiOps = [{ label: "AI Router", icon: Route, href: "#/router" }];
 const formatCost = (v?: number) => (v === undefined ? "—" : v > 0 && v < 0.01 ? `$${v.toFixed(4)}` : `$${v.toFixed(2)}`);
 
@@ -88,12 +94,34 @@ export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: {
             <X size={16} />
           </button>
         </div>
-        <nav className="flex flex-col gap-0.5">
-          <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wider text-faint">Prospecting</div>
-          {prospecting(leadCount).map((i) => (
-            <NavItem key={i.label} {...i} active={(i.label === "Leads" && page === "leads") || (i.label === "Sources" && page === "sources") || (i.label === "Pipeline" && page === "pipeline") || (i.label === "Overview" && page === "overview")} />
+        {/* Prostor: prodaja (leadovi) ili isporuka (projekti) — kao timovi u Linear-u */}
+        <div className="grid grid-cols-2 rounded-lg border border-line bg-surface p-0.5 text-[12.5px]" role="tablist" aria-label="Workspace area">
+          {(
+            [
+              ["Sales", "#/", !DELIVERY_PAGES.includes(page)],
+              ["Delivery", "#/delivery", DELIVERY_PAGES.includes(page)],
+            ] as const
+          ).map(([label, href, on]) => (
+            <a key={label} href={href} role="tab" aria-selected={on} className={`rounded-md py-1 text-center transition-colors ${on ? "bg-surface-2 font-medium text-fg ring-1 ring-line ring-inset" : "text-muted hover:text-fg"}`}>
+              {label}
+            </a>
           ))}
-        </nav>
+        </div>
+        {DELIVERY_PAGES.includes(page) ? (
+          <nav className="flex flex-col gap-0.5">
+            <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wider text-faint">Delivery</div>
+            {delivery.map((i) => (
+              <NavItem key={i.label} label={i.label} icon={i.icon} href={i.href} active={page === i.page || (i.page === "projects" && page === "project")} />
+            ))}
+          </nav>
+        ) : (
+          <nav className="flex flex-col gap-0.5">
+            <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wider text-faint">Prospecting</div>
+            {prospecting(leadCount).map((i) => (
+              <NavItem key={i.label} {...i} active={(i.label === "Leads" && page === "leads") || (i.label === "Sources" && page === "sources") || (i.label === "Pipeline" && page === "pipeline") || (i.label === "Overview" && page === "overview")} />
+            ))}
+          </nav>
+        )}
         <nav className="flex flex-col gap-0.5">
           <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wider text-faint">AI Ops</div>
           {aiOps.map((i) => (

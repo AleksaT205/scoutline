@@ -16,6 +16,7 @@ import { PipelinePage } from "./components/PipelinePage";
 import { OverviewPage } from "./components/OverviewPage";
 import { SettingsPage } from "./components/SettingsPage";
 import { TasksPage } from "./components/TasksPage";
+import { ClientsPage, MyIssuesPage, ProjectPage, ProjectsPage } from "./components/delivery/pages";
 import { SharePage } from "./components/SharePage";
 import { AcceptInvitePage, LoginPage, SetupPage } from "./components/AuthPages";
 import { clearSession, useSessionUser } from "./lib/session";
@@ -42,7 +43,7 @@ function useTheme(): [Theme, () => void] {
   return [theme, () => setTheme((t) => (t === "dark" ? "light" : "dark"))];
 }
 
-export type Page = "leads" | "router" | "sources" | "pipeline" | "overview" | "settings" | "team" | "tasks";
+export type Page = "leads" | "router" | "sources" | "pipeline" | "overview" | "settings" | "team" | "tasks" | "issues" | "projects" | "project" | "clients";
 const PAGES: Page[] = ["router", "sources", "pipeline", "overview", "settings", "team", "tasks"];
 const readHash = () => window.location.hash;
 function useHash(): string {
@@ -57,7 +58,14 @@ function useHash(): string {
   }, []);
   return hash;
 }
-const pageOf = (hash: string): Page => PAGES.find((p) => hash.startsWith(`#/${p}`)) ?? "leads";
+const pageOf = (hash: string): Page => {
+  // Delivery (Faza 10)
+  if (hash.startsWith("#/delivery/projects/")) return "project";
+  if (hash.startsWith("#/delivery/clients")) return "clients";
+  if (hash.startsWith("#/delivery/issues")) return "issues";
+  if (hash.startsWith("#/delivery")) return "projects";
+  return PAGES.find((p) => hash.startsWith(`#/${p}`)) ?? "leads";
+};
 
 /** Ulaz u aplikaciju: javni linkovi (deljeni pregled, pozivnica), prijava, pa dashboard. */
 export function App() {
@@ -75,10 +83,10 @@ export function App() {
   if (hash.startsWith("#/invite/")) return <AcceptInvitePage token={hash.slice("#/invite/".length)} onDone={() => (window.location.hash = "#/")} />;
   if (hash.startsWith("#/setup")) return <SetupPage onDone={() => (window.location.hash = "#/")} />;
   if (hasUsers && !user?.id) return <LoginPage />;
-  return <Dashboard page={pageOf(hash)} needsSetup={hasUsers === false} />;
+  return <Dashboard page={pageOf(hash)} projectId={hash.startsWith("#/delivery/projects/") ? hash.slice("#/delivery/projects/".length).split(/[?/]/)[0] : undefined} needsSetup={hasUsers === false} />;
 }
 
-function Dashboard({ page, needsSetup }: { page: Page; needsSetup: boolean }) {
+function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: string; needsSetup: boolean }) {
   const user = useSessionUser();
   const [userMenu, setUserMenu] = useState(false);
   const [theme, toggleTheme] = useTheme();
@@ -98,7 +106,8 @@ function Dashboard({ page, needsSetup }: { page: Page; needsSetup: boolean }) {
   // Pravi leadovi iz API-ja; dok ih nema, prikazuju se primeri.
   const allLeads = api.live && api.leads ? api.leads : DEMO_LEADS;
   const leads = useMemo(() => applyFilters(allLeads, filters), [allLeads, filters]);
-  const selected = leads.find((l) => l.id === selectedId) ?? leads[0];
+  // Izabrani lead ostaje otvoren i kad ga filter više ne prikazuje (npr. posle „Won“ — da se vidi „Create project“)
+  const selected = leads.find((l) => l.id === selectedId) ?? allLeads.find((l) => l.id === selectedId) ?? leads[0];
 
   return (
     <div className="lg:grid lg:min-h-screen lg:grid-cols-[232px_1fr]">
@@ -110,8 +119,12 @@ function Dashboard({ page, needsSetup }: { page: Page; needsSetup: boolean }) {
             <Menu size={18} />
           </button>
           <div className="text-[13px] text-muted">
-            <span className="hidden sm:inline">{page === "router" ? "AI Ops / " : page === "settings" || page === "team" || page === "tasks" ? "Workspace / " : "Prospecting / "}</span>
-            <b className="font-medium text-fg">{{ router: "AI Router", sources: "Sources", pipeline: "Pipeline", overview: "Overview", settings: "Settings", team: "Team", tasks: "Tasks", leads: "Leads" }[page]}</b>
+            <span className="hidden sm:inline">
+              {page === "router" ? "AI Ops / " : page === "settings" || page === "team" || page === "tasks" ? "Workspace / " : ["issues", "projects", "project", "clients"].includes(page) ? "Delivery / " : "Prospecting / "}
+            </span>
+            <b className="font-medium text-fg">
+              {{ router: "AI Router", sources: "Sources", pipeline: "Pipeline", overview: "Overview", settings: "Settings", team: "Team", tasks: "Tasks", leads: "Leads", issues: "My issues", projects: "Projects", project: "Project", clients: "Clients" }[page]}
+            </b>
           </div>
           <label className={`ml-auto h-[34px] w-80 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-faint focus-within:border-accent/55 ${page === "leads" ? "hidden md:flex" : "hidden"}`}>
             <Search size={14} />
@@ -175,7 +188,15 @@ function Dashboard({ page, needsSetup }: { page: Page; needsSetup: boolean }) {
               <a href="#/setup" className="font-medium text-accent">Create account →</a>
             </div>
           )}
-          {page === "tasks" ? (
+          {page === "projects" ? (
+            <ProjectsPage />
+          ) : page === "project" && projectId ? (
+            <ProjectPage key={projectId} id={projectId} />
+          ) : page === "issues" ? (
+            <MyIssuesPage />
+          ) : page === "clients" ? (
+            <ClientsPage />
+          ) : page === "tasks" ? (
             <TasksPage />
           ) : page === "settings" || page === "team" ? (
             <SettingsPage initialTab={page === "team" ? "team" : "profile"} onOpenAlerts={() => setAlertsOpen(true)} />

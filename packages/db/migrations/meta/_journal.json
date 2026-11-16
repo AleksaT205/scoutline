@@ -50,6 +50,13 @@
       "when": 1794869569988,
       "tag": "0006_known_archangel",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1794870424224,
+      "tag": "0007_public_multiple_man",
+      "breakpoints": true
     }
   ]
 }

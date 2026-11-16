@@ -117,9 +117,9 @@ Sopstvene tabele (`clients`, `projects`, `issues`, `cycles`, `issue_events`) —
 
 | Faza | Šta | Veličina |
 |---|---|---|
-| **8** | Lead model 2.0: tip leada, novi prompt, filter; **tenderi**: EU TED, UK (Contracts Finder + Find a Tender), CanadaBuys; RSS signali investicija | srednja |
-| **9** | **Email-in** (Upwork, PeoplePerHour, Malt, Portal javnih nabavki…), Freelancer.com API (posle provere uslova), SAM.gov, BiH | srednja |
-| **10** | **Delivery MVP**: prekidač prostora, Clients, Projects, Issues board (Linear stil), Lead → Project | velika |
+| **8** ✅ | Lead model 2.0: tip leada, novi prompt, filter; **tenderi**: EU TED, UK (Contracts Finder + Find a Tender), CanadaBuys; RSS signali investicija | srednja |
+| **9** ✅ | **Email-in** (Upwork, PeoplePerHour, Malt, Portal javnih nabavki…), Freelancer.com API (posle provere uslova), SAM.gov, BiH | srednja |
+| **10** ✅ | **Delivery MVP**: prekidač prostora, Clients, Projects, Issues board (Linear stil), Lead → Project | velika |
 | **11** | Cycles, Triage inbox, GitHub PR sinhronizacija, Assign to Claude/Codex, klijent portal | velika |
 | **12** | Izveštaji: profitabilnost po projektu, vreme, ušteda AI-a po projektu | srednja |
 

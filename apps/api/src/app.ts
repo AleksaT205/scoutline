@@ -11,6 +11,7 @@ import { auth, type Actor } from "./auth.js";
 import { checkHealth } from "./monitor.js";
 import { devTasks } from "./dev.js";
 import { llmProxy, routerAdmin } from "./router.js";
+import { deliveryRoutes } from "./delivery.js";
 
 type Tier = "T1" | "T2" | "T3" | "DOMESTIC";
 type LeadRow = { lead: typeof leads.$inferSelect; raw: typeof rawItems.$inferSelect; source: string };
@@ -184,6 +185,8 @@ export function createApp(getDb: () => Db) {
   });
   app.route("/auth", a.routes);
   app.route("/team", a.team);
+  // Delivery (Faza 10): klijenti, projekti, taskovi
+  app.route("/delivery", deliveryRoutes(getDb, a));
   app.use("/dev/*", a.require("member"));
   app.route("/dev/tasks", devTasks());
 

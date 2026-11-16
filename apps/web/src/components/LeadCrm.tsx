@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowRight, EyeOff, Loader2, Lock, MessageSquarePlus, Send } from "lucide-react";
+import { ArrowRight, EyeOff, FolderPlus, Loader2, Lock, MessageSquarePlus, Send } from "lucide-react";
 import type { LeadStatus } from "@radar/shared";
 import type { UiLead } from "../data/demo";
 import { getTeamToken, setTeamToken, teamFetch } from "../lib/team";
@@ -65,6 +65,27 @@ export function StatusBar({ lead, live, onUpdated }: { lead: UiLead; live: boole
           </button>
         ))}
       </div>
+      {canEdit(user) && status === "won" && (
+        <button
+          onClick={async () => {
+            if (!live) return setError("This is sample data — projects are created from live leads.");
+            setBusy(true);
+            setError(null);
+            try {
+              const { project } = await teamFetch<{ project: { id: string } }>(`/delivery/from-lead/${lead.id}`, { method: "POST", body: "{}" });
+              window.location.hash = `#/delivery/projects/${project.id}`;
+            } catch (e) {
+              setError((e as Error).message);
+            } finally {
+              setBusy(false);
+            }
+          }}
+          disabled={busy}
+          className="mt-2 inline-flex h-[32px] w-full items-center justify-center gap-1.5 rounded-[7px] bg-success text-[12.5px] font-medium text-white hover:opacity-90 disabled:opacity-50"
+        >
+          {busy ? <Loader2 size={13} className="animate-spin" /> : <FolderPlus size={13} />} Create project in Delivery
+        </button>
+      )}
       {canEdit(user) && (
       <div className="mt-2 flex gap-2">
         {next && (

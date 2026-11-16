@@ -1,5 +1,5 @@
 import { boolean, doublePrecision, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
-import { INDUSTRIES, LEAD_STATUSES, LEAD_TYPES, SERVICE_CATEGORIES } from "@radar/shared";
+import { INDUSTRIES, ISSUE_STATUSES, LEAD_STATUSES, LEAD_TYPES, PROJECT_STATUSES, SERVICE_CATEGORIES } from "@radar/shared";
 
 export const tierEnum = pgEnum("tier", ["T1", "T2", "T3", "DOMESTIC"]);
 export const categoryEnum = pgEnum("service_category", SERVICE_CATEGORIES);
@@ -167,3 +167,77 @@ export const shareLinks = pgTable("share_links", {
   lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+// ── Delivery (Faza 10): klijenti, projekti, taskovi — kao Linear ─────────────
+// (Tabela `clients` iznad je AI Router; firme za koje radimo su `customers`, u UI-ju „Clients“.)
+export const projectStatusEnum = pgEnum("project_status", PROJECT_STATUSES);
+export const issueStatusEnum = pgEnum("issue_status", ISSUE_STATUSES);
+
+export const customers = pgTable("customers", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  website: text("website"),
+  country: text("country"),
+  contactName: text("contact_name"),
+  contactEmail: text("contact_email"),
+  notes: text("notes"),
+  leadId: uuid("lead_id").references(() => leads.id), // iz kog leada je nastao
+  ...timestamps,
+});
+
+export const projects = pgTable(
+  "projects",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    key: text("key").notNull(), // ACME → taskovi ACME-1, ACME-2…
+    name: text("name").notNull(),
+    description: text("description"),
+    customerId: uuid("customer_id").references(() => customers.id),
+    leadId: uuid("lead_id").references(() => leads.id),
+    status: projectStatusEnum("status").default("planned").notNull(),
+    budgetEur: integer("budget_eur"),
+    startDate: timestamp("start_date", { withTimezone: true }),
+    dueDate: timestamp("due_date", { withTimezone: true }),
+    ownerId: uuid("owner_id").references(() => users.id),
+    repoUrl: text("repo_url"),
+    issueSeq: integer("issue_seq").default(0).notNull(), // poslednji broj taska
+    ...timestamps,
+  },
+  (t) => [uniqueIndex("projects_key_idx").on(t.key)],
+);
+
+export const issues = pgTable(
+  "issues",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id").references(() => projects.id, { onDelete: "cascade" }).notNull(),
+    number: integer("number").notNull(),
+    title: text("title").notNull(),
+    description: text("description"),
+    status: issueStatusEnum("status").default("todo").notNull(),
+    priority: integer("priority").default(0).notNull(), // 0 bez, 1 hitno … 4 nizak
+    assigneeId: uuid("assignee_id").references(() => users.id, { onDelete: "set null" }),
+    estimate: integer("estimate"), // poeni (1, 2, 3, 5, 8)
+    labels: text("labels").array().default([]).notNull(),
+    dueDate: timestamp("due_date", { withTimezone: true }),
+    sortOrder: doublePrecision("sort_order").default(0).notNull(), // redosled u koloni
+    createdBy: text("created_by"),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [uniqueIndex("issues_project_number_idx").on(t.projectId, t.number), index("issues_status_idx").on(t.status)],
+);
+
+/** Istorija taska: komentari i promene (status, prioritet, dodela…). */
+export const issueEvents = pgTable(
+  "issue_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    issueId: uuid("issue_id").references(() => issues.id, { onDelete: "cascade" }).notNull(),
+    type: text("type").notNull(), // created | comment | status | priority | assignee | title | estimate
+    data: jsonb("data"),
+    actor: text("actor"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("issue_events_issue_idx").on(t.issueId)],
+);

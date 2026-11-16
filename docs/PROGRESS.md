@@ -17,13 +17,19 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 | 7 | Dev workflow: AGENTS.md/CLAUDE.md, GitHub Issues kao taskovi (+ stranica Tasks u dashboard-u), @claude akcija preko pretplate, šabloni; vidi [WORKFLOW.md](WORKFLOW.md) | ✅ |
 | 8 | Lead model 2.0 + tenderi: tip leada (tender / project / intent / hiring signal), EU TED, UK Contracts Finder, UK Find a Tender, CanadaBuys, TechCrunch funding, Startit; rok i vrednost tendera; filter **Type**; Telegram po tipu · GitHub #8 | ✅ |
 | 9 | Email-in (IMAP: Upwork, PeoplePerHour, Malt, Portal javnih nabavki, LinkedIn, prosleđeni upiti) + Freelancer.com API + e-Nabavke BiH + SAM.gov (uz ključ) · [EMAIL-IN.md](EMAIL-IN.md) · #9 | ✅ |
-| **10** | **Delivery MVP**: Clients, Projects, Issues (Linear stil), Lead → Project · #10 | ⏭ sledeće |
-| 11 | Cycles, Triage, GitHub PR sync, Assign to Claude/Codex, klijent portal · #11 | |
+| 10 | Delivery MVP: prekidač Sales/Delivery, Projects, Clients, My issues, tabla taskova (Linear stil, prevlačenje), detalj taska (status, prioritet, osoba, procena, oznake, rok, komentari, istorija), prečica C, Lead (Won) → Project · #10 | ✅ |
+| **11** | **Cycles**, Triage, GitHub PR sync, Assign to Claude/Codex, klijent portal · #11 | ⏭ sledeće |
 | 12 | Izveštaji: profitabilnost po projektu, vreme, ušteda AI-a | |
 
-**Sledeći korak:** Redeploy u Coolify-ju → podesiti Email-in po [EMAIL-IN.md](EMAIL-IN.md) (Gmail + App password u Coolify) i, po želji, `SAM_API_KEY`. Zatim Faza 10 (Delivery MVP) po [ROADMAP.md](ROADMAP.md).
+**Sledeći korak:** Redeploy u Coolify-ju → podesiti Email-in po [EMAIL-IN.md](EMAIL-IN.md) (Gmail + App password u Coolify) i, po želji, `SAM_API_KEY`. Zatim Faza 11 (Cycles, Triage, GitHub sync, Assign to Claude) po [ROADMAP.md](ROADMAP.md).
 
 ## Urađeno
+
+- **17. 11. 2026. — Faza 10 (Delivery MVP)**
+  - Baza: `customers` (u UI-ju Clients; `clients` ostaje AI Router), `projects` (ključ npr. ACME, status, budžet, rok, vođa, repo), `issues` (ACME-12, status, prioritet 0–4 kao Linear, osoba, procena, oznake, rok, redosled), `issue_events` (komentari + istorija). Migracija 0007.
+  - API `/delivery/*`: klijenti, projekti (sa napretkom), taskovi (filter po projektu / „me“ / otvoreni), komentari, istorija, `POST /delivery/from-lead/:id` (klijent + projekat iz leada, lead → Won).
+  - Web: prekidač **Sales / Delivery** u meniju; **Projects** (lista, napredak, novi/izmena), **projekat** (Board / List / Overview, pretraga, status projekta), **My issues** (moji / svi otvoreni), **Clients**; tabla sa prevlačenjem (status + redosled), detalj taska kao bočni panel, novi task (prečica **C**, ⌘Enter, „Create more“); dugme **Create project in Delivery** na Won leadu.
+  - Provereno u pregledaču (lokalno): lead → projekat, novi task sa osobom i prioritetom, promena statusa, komentar i istorija, prevlačenje u drugu kolonu (sačuvano), tamna i svetla tema, uska širina.
 
 - **17. 11. 2026. — Faza 9**
   - **Email-in**: worker čita posebno IMAP sanduče (Gmail + App password), od svakog projekta iz obaveštenja pravi lead; AI izvlači naslov/opis/budžet/link, bez AI-a rezervno parsiranje. Prepoznaje platformu po pošiljaocu ili „From:“ u prosleđenom mejlu (Upwork, PeoplePerHour, Malt, Freelancer, Guru, Contra, Portal javnih nabavki, e-Nabavke BiH, LinkedIn); ostalo = „Email inbox“ (direktni upiti). Bez duplikata iz više mejlova.
