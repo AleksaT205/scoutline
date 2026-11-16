@@ -16,14 +16,21 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 | 6 | Produkcija: dnevni backup baze, monitoring (Telegram + `/health/deep`), zaštita prijave, sigurnosna zaglavlja, Cloudflare Tunnel spreman; ručni koraci u [PRODUCTION.md](PRODUCTION.md) | ✅ (kod) |
 | 7 | Dev workflow: AGENTS.md/CLAUDE.md, GitHub Issues kao taskovi (+ stranica Tasks u dashboard-u), @claude akcija preko pretplate, šabloni; vidi [WORKFLOW.md](WORKFLOW.md) | ✅ |
 | 8 | Lead model 2.0 + tenderi: tip leada (tender / project / intent / hiring signal), EU TED, UK Contracts Finder, UK Find a Tender, CanadaBuys, TechCrunch funding, Startit; rok i vrednost tendera; filter **Type**; Telegram po tipu · GitHub #8 | ✅ |
-| **9** | **Email-in** (Upwork, PeoplePerHour, Malt, Portal javnih nabavki) + Freelancer.com · #9 | ⏭ sledeće |
-| 10 | Delivery MVP: Clients, Projects, Issues (Linear stil), Lead → Project · #10 | |
+| 9 | Email-in (IMAP: Upwork, PeoplePerHour, Malt, Portal javnih nabavki, LinkedIn, prosleđeni upiti) + Freelancer.com API + e-Nabavke BiH + SAM.gov (uz ključ) · [EMAIL-IN.md](EMAIL-IN.md) · #9 | ✅ |
+| **10** | **Delivery MVP**: Clients, Projects, Issues (Linear stil), Lead → Project · #10 | ⏭ sledeće |
 | 11 | Cycles, Triage, GitHub PR sync, Assign to Claude/Codex, klijent portal · #11 | |
 | 12 | Izveštaji: profitabilnost po projektu, vreme, ušteda AI-a | |
 
-**Sledeći korak:** Redeploy u Coolify-ju (nova migracija 0005 se primeni sama) → proveriti tendere u dashboard-u. Zatim Faza 9 (Email-in) po [ROADMAP.md](ROADMAP.md).
+**Sledeći korak:** Redeploy u Coolify-ju → podesiti Email-in po [EMAIL-IN.md](EMAIL-IN.md) (Gmail + App password u Coolify) i, po želji, `SAM_API_KEY`. Zatim Faza 10 (Delivery MVP) po [ROADMAP.md](ROADMAP.md).
 
 ## Urađeno
+
+- **17. 11. 2026. — Faza 9**
+  - **Email-in**: worker čita posebno IMAP sanduče (Gmail + App password), od svakog projekta iz obaveštenja pravi lead; AI izvlači naslov/opis/budžet/link, bez AI-a rezervno parsiranje. Prepoznaje platformu po pošiljaocu ili „From:“ u prosleđenom mejlu (Upwork, PeoplePerHour, Malt, Freelancer, Guru, Contra, Portal javnih nabavki, e-Nabavke BiH, LinkedIn); ostalo = „Email inbox“ (direktni upiti). Bez duplikata iz više mejlova.
+  - **Freelancer.com** (zvanični API, 10 pretraga na sat; opis se briše posle 24 h po uslovima API-ja), **e-Nabavke BiH** (otvoreni OData, usluge + IT ključne reči), **SAM.gov** (jednom dnevno, samo uz `SAM_API_KEY`; bez set-aside tendera).
+  - Worker posle restarta ne zove izvore koji nisu na redu (SAM.gov ima 10 poziva dnevno); izvori bez podešavanja se preskaču.
+  - Sources: opisi za sve nove izvore, kartica „Connect Email-in“ dok sanduče nije povezano. Uputstvo: [EMAIL-IN.md](EMAIL-IN.md).
+  - Provereno lokalno: test mejl server (GreenMail) → 3 mejla → 5 leadova sa pravim izvorima; Freelancer 214 → 68 leadova, BiH 11 tendera; testovi 24/24.
 
 - **16. 11. 2026. — Faza 8**
   - Tip leada u bazi (`lead_type`) + rok, vrednost i zemlja iz izvora (`raw_items`), migracija 0005.

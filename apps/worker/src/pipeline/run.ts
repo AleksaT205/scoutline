@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, desc, eq, gte, isNull, ne } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lt, ne } from "drizzle-orm";
 import { leads, rawItems, settings, sources, type Db } from "@radar/db";
 import { detectCountry, normalizeAlerts, remoteFriendly, tierOf, type AlertSettings } from "@radar/shared";
 import { CONTRACT, aiActive, passesPrefilter, scoreItem } from "@radar/scoring";
@@ -27,16 +27,27 @@ export async function ingest(db: Db, c: Connector) {
   try {
     const items = await c.fetch();
     fetched = items.length;
+    // Jedan konektor može da puni više izvora (Email-in → Upwork, PeoplePerHour…) — registruj ih pri prvom oglasu
+    const subSources = new Set<string>();
+    for (const it of items) {
+      if (!it.sourceId || subSources.has(it.sourceId)) continue;
+      subSources.add(it.sourceId);
+      const name = it.sourceName ?? it.sourceId;
+      await db
+        .insert(sources)
+        .values({ id: it.sourceId, name, kind: c.kind, intervalMinutes: c.intervalMinutes })
+        .onConflictDoUpdate({ target: sources.id, set: { name, lastSuccessAt: new Date(), lastError: null, updatedAt: new Date() } });
+    }
     const cutoff = Date.now() - MAX_AGE_DAYS * 86_400_000;
     for (const it of items) {
       if (it.postedAt && it.postedAt.getTime() < cutoff) continue;
       const [row] = await db
         .insert(rawItems)
         .values({
-          sourceId: c.id,
+          sourceId: it.sourceId ?? c.id,
           externalId: it.externalId,
           url: it.url,
-          urlHash: sha1(it.url),
+          urlHash: sha1(it.dedupeKey ?? it.url),
           title: it.title.slice(0, 300),
           body: it.body.slice(0, 20_000),
           companyName: it.companyName,
@@ -54,7 +65,7 @@ export async function ingest(db: Db, c: Connector) {
       fresh++;
       const type = it.leadType ?? c.defaultType;
       // Tenderi i signali su već filtrirani u konektoru (CPV / ključne reči); oglasi prolaze prefilter za developere.
-      if ((type === "hiring_signal" || type === "project") && !passesPrefilter(it.title, it.body, { allowBody: c.id === "hn" })) continue;
+      if (!c.curated && (type === "hiring_signal" || type === "project") && !passesPrefilter(it.title, it.body, { allowBody: c.id === "hn" })) continue;
       if (it.deadline && it.deadline.getTime() < Date.now()) continue; // rok prošao
       const country = it.country ?? detectCountry({ location: it.location, salaryText: it.salaryText });
       const leadType = type === "hiring_signal" && CONTRACT.test(`${it.title}\n${it.body.slice(0, 2000)}`) ? "project" : type;
@@ -119,6 +130,20 @@ export async function scorePending(db: Db, aiBatch: number) {
     await db.update(leads).set({ ...fields, scoredAt: new Date(), updatedAt: new Date() }).where(eq(leads.id, lead.id));
   }
   if (rows.length) console.log(`[score] ocenjeno ${rows.length} (AI: ${byAi}, pravila: ${rows.length - byAi})`);
+}
+
+/** Freelancer.com uslovi: podaci iz API-ja ne smeju da stoje duže od 24 h — brišemo opis, ostaju naslov, link i ocena. */
+export async function purgeExpired(db: Db) {
+  await db
+    .update(rawItems)
+    .set({ body: "[Description removed after 24 h — Freelancer.com API terms. Open the project link for details.]", updatedAt: new Date() })
+    .where(and(eq(rawItems.sourceId, "freelancer"), lt(rawItems.createdAt, new Date(Date.now() - 86_400_000)), ne(rawItems.body, "")));
+}
+
+/** Kad je izvor poslednji put uspeo (posle restarta worker ne zove ponovo izvore koji nisu na redu — npr. SAM.gov ima 10 poziva dnevno). */
+export async function lastSuccess(db: Db): Promise<Map<string, number>> {
+  const rows = await db.select({ id: sources.id, at: sources.lastSuccessAt }).from(sources);
+  return new Map(rows.filter((r) => r.at).map((r) => [r.id, r.at!.getTime()]));
 }
 
 /** Učita podešavanja obaveštenja (menjaju se iz dashboard-a). */

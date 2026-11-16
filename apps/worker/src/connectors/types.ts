@@ -13,16 +13,25 @@ export interface RawItem {
   deadline?: Date | null;
   budgetEur?: number | null;
   country?: string | null; // ISO alpha-2
+  /** Ključ za duplikate kad URL nije stalan (linkovi za praćenje u mejlovima); podrazumevano URL */
+  dedupeKey?: string;
+  /** Kad jedan konektor puni više izvora (Email-in: Upwork, PeoplePerHour…) */
+  sourceId?: string;
+  sourceName?: string;
 }
 
 export interface Connector {
   id: string; // ključ u tabeli sources
   name: string;
-  kind: "api" | "rss";
+  kind: "api" | "rss" | "email";
   intervalMinutes: number;
   /** Podrazumevani tip leada za ovaj izvor (oglasi za posao → hiring_signal) */
   defaultType: "tender" | "project" | "intent" | "hiring_signal";
   fetch(): Promise<RawItem[]>;
+  /** false = izvor nije podešen (npr. nema ključa) i ne pokreće se */
+  enabled?: () => boolean;
+  /** Oglasi su već izabrani (sačuvane pretrage, prosleđeni mejlovi) — bez prefiltera */
+  curated?: boolean;
 }
 
 export const USER_AGENT = "Mozilla/5.0 (compatible; ScoutlineBot/0.1; job-board aggregator)";
@@ -42,7 +51,7 @@ export async function getText(url: string): Promise<string> {
 export { htmlToText } from "@radar/scoring";
 
 /** Približni kursevi u EUR (za poređenje budžeta tendera; ne za računovodstvo). */
-const EUR_RATE: Record<string, number> = { EUR: 1, GBP: 1.17, USD: 0.92, CAD: 0.67, AUD: 0.6, CHF: 1.05, SEK: 0.087, NOK: 0.085, DKK: 0.134, PLN: 0.23, CZK: 0.04, HUF: 0.0025, RON: 0.2, BGN: 0.51, RSD: 0.0085 };
+const EUR_RATE: Record<string, number> = { EUR: 1, GBP: 1.17, USD: 0.92, CAD: 0.67, AUD: 0.6, CHF: 1.05, SEK: 0.087, NOK: 0.085, DKK: 0.134, PLN: 0.23, CZK: 0.04, HUF: 0.0025, RON: 0.2, BGN: 0.51, BAM: 0.51, RSD: 0.0085, INR: 0.011, NZD: 0.55, SGD: 0.68, HKD: 0.12, JPY: 0.0061, ZAR: 0.05, BRL: 0.17, MXN: 0.05, PHP: 0.016, PKR: 0.0033, AED: 0.25 };
 export function toEur(amount: unknown, currency: unknown): number | null {
   const n = Number(amount);
   const rate = EUR_RATE[String(currency ?? "EUR").toUpperCase()];

@@ -6,14 +6,16 @@ import { createDb, settings } from "@radar/db";
 import { CONNECTORS } from "./connectors/sources.js";
 import { aiConfigured } from "@radar/scoring";
 import { telegramConfigured } from "@radar/scoring";
-import { ingest, notifyNew, registerSources, scorePending } from "./pipeline/run.js";
+import { ingest, lastSuccess, notifyNew, purgeExpired, registerSources, scorePending } from "./pipeline/run.js";
 
 const TICK_MS = Number(process.env.WORKER_INTERVAL_MS ?? 60_000);
 const SCORE_BATCH = Number(process.env.SCORE_BATCH ?? 10);
 const ENABLED = (process.env.SOURCES ?? CONNECTORS.map((c) => c.id).join(",")).split(",");
 
 const db = createDb();
-const connectors = CONNECTORS.filter((c) => ENABLED.includes(c.id));
+// Izvor bez podešavanja (npr. Email-in bez IMAP naloga, SAM.gov bez ključa) se ne pokreće
+const connectors = CONNECTORS.filter((c) => ENABLED.includes(c.id) && (c.enabled?.() ?? true));
+const skipped = CONNECTORS.filter((c) => c.enabled && !c.enabled()).map((c) => c.id);
 const lastRun = new Map<string, number>();
 let busy = false;
 
@@ -29,6 +31,7 @@ async function tick() {
     }
     await scorePending(db, SCORE_BATCH);
     await notifyNew(db);
+    await purgeExpired(db);
     // Otkucaj srca — API proverava da worker radi (monitoring)
     const beat = { at: new Date().toISOString(), ai: aiConfigured() };
     await db.insert(settings).values({ key: "worker_heartbeat", value: beat }).onConflictDoUpdate({ target: settings.key, set: { value: beat, updatedAt: new Date() } });
@@ -40,8 +43,9 @@ async function tick() {
 }
 
 await registerSources(db, connectors);
+for (const [id, at] of await lastSuccess(db)) lastRun.set(id, at);
 console.log(
-  `[worker] start · izvori: ${connectors.map((c) => c.id).join(", ")} · AI: ${aiConfigured() ? "da" : "ne (pravila)"} · Telegram: ${telegramConfigured() ? "da" : "ne"}`,
+  `[worker] start · izvori: ${connectors.map((c) => c.id).join(", ")}${skipped.length ? ` (nije podešeno: ${skipped.join(", ")})` : ""} · AI: ${aiConfigured() ? "da" : "ne (pravila)"} · Telegram: ${telegramConfigured() ? "da" : "ne"}`,
 );
 await tick();
 setInterval(() => void tick(), TICK_MS);

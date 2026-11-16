@@ -83,6 +83,14 @@ services:
       NOTIFY_MIN_SCORE: ${NOTIFY_MIN_SCORE:-75}
       SCORE_BATCH: ${SCORE_BATCH:-10}
       DASHBOARD_URL: ${DASHBOARD_URL:-https://scoutline-app.netlify.app}
+      # Email-in (Faza 9): IMAP sanduče za obaveštenja platformi — docs/EMAIL-IN.md
+      IMAP_HOST: ${IMAP_HOST:-}
+      IMAP_PORT: ${IMAP_PORT:-993}
+      IMAP_USER: ${IMAP_USER:-}
+      IMAP_PASSWORD: ${IMAP_PASSWORD:-}
+      IMAP_MAILBOX: ${IMAP_MAILBOX:-INBOX}
+      # SAM.gov (US tenderi): besplatan javni API ključ sa sam.gov naloga
+      SAM_API_KEY: ${SAM_API_KEY:-}
     depends_on:
       api: { condition: service_healthy } # API primenjuje migracije baze
       litellm: { condition: service_started }

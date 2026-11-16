@@ -8,7 +8,7 @@
     "build": "tsup",
     "start": "node dist/index.js",
     "typecheck": "tsc -p .",
-    "test": "echo no tests"
+    "test": "vitest run"
   },
   "dependencies": {
     "@radar/db": "workspace:*",
@@ -16,9 +16,12 @@
     "@radar/shared": "workspace:*",
     "csv-parse": "^7.0.3",
     "drizzle-orm": "^0.45.4",
-    "fast-xml-parser": "^5.12.1"
+    "fast-xml-parser": "^5.12.1",
+    "imapflow": "^2.12.1",
+    "mailparser": "^3.14.5"
   },
   "devDependencies": {
+    "@types/mailparser": "^3.9.0",
     "tsup": "^9.0.0",
     "tsx": "^4.23.15",
     "vitest": "^5.1.0"

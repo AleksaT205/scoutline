@@ -20,13 +20,16 @@ Legenda statusa: ✅ može odmah · 🟡 proveriti uslove pre upotrebe · 🔴 n
 | CanadaBuys | Dnevni CSV otvorenih tendera | ✅ radi | Samo usluge (SRV) + IT ključne reči (Faza 8) |
 | Himalayas | Javni API | ✅ | Uslov: navesti Himalayas i koristiti njihov applicationLink — ispunjeno |
 | Jobicy | Javni API | ✅ | Uslov: navesti Jobicy i linkovati originalni oglas — ispunjeno |
-| SAM.gov (US tenderi) | Zvanični API (besplatan ključ) | 🟡 | T1 tržište, ali često traže US registraciju |
+| SAM.gov (US tenderi) | Zvanični API (besplatan ključ, 10 poziva/dan bez uloge) | ✅ uz ključ | Jednom dnevno; preskaču se set-aside tenderi; za ponudu obično treba SAM registracija (strani dobavljači do $40k za rad van SAD) |
+| Freelancer.com | Zvanični API, pretraga bez tokena (200/min, 1000/h) | ✅ radi | Uslovi: samo za naše licitiranje, bez objavljivanja dalje, podaci najviše 24 h (opis se briše) |
+| e-Nabavke BiH | Otvoreni podaci (OData, open.ejn.gov.ba), bez ključa | ✅ radi | Licenca nije objavljena — „slobodan pristup“; pitanja: kontakt@javnenabavke.gov.ba |
 
 ## Svetski — kasnije / ograničeno
 
 | Izvor | Pristup | Status | Napomena |
 |---|---|---|---|
-| Upwork | RSS ugašen avgusta 2024; zvanični API uslovi zabranjuju kontinuirano praćenje | 🔴 automatski | Koristiti Upwork-ove sačuvane pretrage + email obaveštenja; tim ručno šalje predloge |
+| Upwork | RSS ugašen avgusta 2024; zvanični API uslovi zabranjuju kontinuirano praćenje | 📧 Email-in | Sačuvane pretrage + email obaveštenja → Email-in (docs/EMAIL-IN.md); tim ručno šalje predloge |
+| PeoplePerHour, Malt, Guru, Contra | Bez javnog API-ja | 📧 Email-in | Obaveštenja sačuvanih pretraga → Email-in |
 | LinkedIn | Uslovi zabranjuju scraping | 🔴 | Samo ručno (Sales Navigator ako se odlučite da platite) |
 | Reddit | Komercijalna upotreba traži odobrenje Reddit-a (od nov. 2025 svi novi klijenti) | 🟡 | Podneti zahtev; do tada ručno |
 | Indeed / Glassdoor | Ograničen pristup | 🔴 | Ne automatizovati |
@@ -41,7 +44,7 @@ Legenda statusa: ✅ može odmah · 🟡 proveriti uslove pre upotrebe · 🔴 n
 | HelloWorld.rs | Proveriti RSS/uslove | 🟡 | IT oglasi |
 | Joberty | Proveriti uslove | 🟡 | |
 | Halo oglasi / KupujemProdajem (usluge) | Proveriti uslove | 🟡 | Male firme |
-| Portal javnih nabavki | Javni podaci | 🟡 | Tenderi za softver/digitalizaciju |
+| Portal javnih nabavki | Nema javnog API-ja (`/api` traži prijavu) | 📧 Email-in | Sačuvan filter (CPV 72/48, ključne reči) → email obaveštenja → Email-in |
 | APR (nove firme) | Javni podaci | 🟡 | Kasnije, za obogaćivanje |
 
 Ako sajt ne dozvoljava automatsko preuzimanje — pitati ih za partnerstvo/feed ili ostaviti ručno.

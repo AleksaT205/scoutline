@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, ExternalLink, Plus, Rss } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, Mail, Plus, Rss } from "lucide-react";
 import { API_URL } from "../lib/api";
 import { authHeaders } from "../lib/team";
 
@@ -27,6 +27,22 @@ const META: Record<string, { site: string; note: string }> = {
   himalayas: { site: "https://himalayas.app", note: "Public API · credit + application link" },
   jobicy: { site: "https://jobicy.com", note: "Public API · credit + link to post" },
   manual: { site: "", note: "Added from the dashboard (“Add lead”)" },
+  ted: { site: "https://ted.europa.eu", note: "EU tenders · official API · IT & software CPV codes" },
+  "uk-cf": { site: "https://www.contractsfinder.service.gov.uk", note: "UK tenders · OCDS API · Open Government Licence" },
+  "uk-fat": { site: "https://www.find-tender.service.gov.uk", note: "UK tenders (larger) · OCDS API" },
+  canadabuys: { site: "https://canadabuys.canada.ca", note: "Canada federal tenders · daily open-data CSV" },
+  "tc-funding": { site: "https://techcrunch.com/category/venture/", note: "Funding news (RSS) · intent signal" },
+  startit: { site: "https://startit.rs", note: "Serbian startup news (RSS) · intent signal" },
+  sam: { site: "https://sam.gov", note: "US federal tenders · official API (free key)" },
+  freelancer: { site: "https://www.freelancer.com", note: "Freelancer.com projects · official API" },
+  ejn: { site: "https://www.ejn.gov.ba", note: "Bosnia & Herzegovina tenders · open data" },
+  email: { site: "", note: "Reads alert emails from the connected inbox" },
+  "email-upwork": { site: "https://www.upwork.com", note: "Saved-search alerts → Email-in" },
+  "email-pph": { site: "https://www.peopleperhour.com", note: "Project alerts → Email-in" },
+  "email-malt": { site: "https://www.malt.com", note: "Mission alerts → Email-in" },
+  "email-jnportal": { site: "https://jnportal.ujn.gov.rs", note: "Serbian public procurement notifications → Email-in" },
+  "email-linkedin": { site: "https://www.linkedin.com", note: "Job alerts → Email-in (hiring signals)" },
+  "email-inbox": { site: "", note: "Forwarded emails and direct client inquiries" },
 };
 
 function ago(iso: string | null) {
@@ -72,7 +88,7 @@ export function SourcesPage() {
       <div className="mb-5 flex flex-wrap items-end gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Sources</h1>
-          <p className="mt-0.5 text-[13.5px] text-muted">Where leads come from. Every source uses an official API or RSS feed and respects its terms.</p>
+          <p className="mt-0.5 text-[13.5px] text-muted">Where leads come from. Every source uses an official API, open data, RSS or your own email alerts — and respects its terms.</p>
         </div>
         <a href="#/" className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2 sm:ml-auto">
           <Plus size={14} /> Add a lead manually
@@ -116,7 +132,7 @@ export function SourcesPage() {
                     <td className="px-3 py-2.5">
                       <div className="flex items-center gap-2 font-medium">
                         <span className="grid size-6 place-items-center rounded-md bg-surface-2 text-muted ring-1 ring-line">
-                          <Rss size={12} />
+                          {s.kind === "email" ? <Mail size={12} /> : <Rss size={12} />}
                         </span>
                         {s.name}
                         {meta?.site && (
@@ -159,6 +175,28 @@ export function SourcesPage() {
           </table>
         </div>
       </div>
+      {items && !items.some((s) => s.id === "email") && (
+        <div className="mt-4 rounded-xl border border-line bg-surface p-5">
+          <div className="mb-1.5 flex items-center gap-2 text-[14px] font-medium">
+            <Mail size={15} className="text-accent" /> Connect Email-in
+          </div>
+          <p className="mb-2.5 text-[13px] text-muted">
+            Upwork, PeoplePerHour, Malt and the Serbian procurement portal have no API, but they email you new matches for saved searches. Send those emails to one inbox and Scoutline turns every
+            project in them into a scored lead. You can also forward any client inquiry there.
+          </p>
+          <ol className="ml-4 list-decimal space-y-1 text-[13px] text-muted">
+            <li>
+              Create a separate Gmail (e.g. <span className="text-fg">leads.yourcompany@gmail.com</span>), turn on 2-Step Verification and create an <b className="text-fg">App password</b>.
+            </li>
+            <li>
+              In Coolify add <code className="num text-fg">IMAP_HOST=imap.gmail.com</code>, <code className="num text-fg">IMAP_USER</code> and <code className="num text-fg">IMAP_PASSWORD</code> (the app password), then
+              Redeploy.
+            </li>
+            <li>On each platform save a search and set alerts to that address.</li>
+          </ol>
+          <p className="mt-3 text-[12.5px] text-faint">Full guide: docs/EMAIL-IN.md</p>
+        </div>
+      )}
       <p className="mt-4 text-[12px] text-faint">
         Domestic job boards (Infostud, HelloWorld…) don’t allow automated reading — add those leads with “Add lead” (link or pasted text).
       </p>

@@ -201,7 +201,7 @@ function Dashboard({ page, needsSetup }: { page: Page; needsSetup: boolean }) {
           <div className="mb-5 flex flex-wrap items-end gap-4">
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
-              <p className="mt-0.5 text-[13.5px] text-muted">Projects for the team — public tenders, contract work and growth signals from 13 sources, scored for your services.</p>
+              <p className="mt-0.5 text-[13.5px] text-muted">Projects for the team — public tenders, marketplace projects, email alerts and growth signals, scored for your services.</p>
               {api.live && api.loadedAt && (
                 <p className="mt-1 inline-flex items-center gap-1.5 text-[12px] text-faint">
                   Updated {Math.max(0, Math.round((Date.now() - api.loadedAt) / 60_000)) || "<1"} min ago · refreshes every minute · sources sync every 30–60 min

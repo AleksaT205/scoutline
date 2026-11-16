@@ -5,7 +5,7 @@ export const tierEnum = pgEnum("tier", ["T1", "T2", "T3", "DOMESTIC"]);
 export const categoryEnum = pgEnum("service_category", SERVICE_CATEGORIES);
 export const industryEnum = pgEnum("industry", INDUSTRIES);
 export const statusEnum = pgEnum("lead_status", LEAD_STATUSES);
-export const sourceKindEnum = pgEnum("source_kind", ["api", "rss", "scrape", "manual"]);
+export const sourceKindEnum = pgEnum("source_kind", ["api", "rss", "scrape", "manual", "email"]);
 export const leadTypeEnum = pgEnum("lead_type", LEAD_TYPES);
 
 const timestamps = {
