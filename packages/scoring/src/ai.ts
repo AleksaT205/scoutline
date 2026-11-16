@@ -87,9 +87,10 @@ async function callOnce(user: string): Promise<AiResult | null> {
         ],
         temperature: 0.2,
         max_tokens: 900,
+        reasoning_effort: "low", // "razmišljajući" modeli: kratko razmišljanje (ostali ignorišu)
         response_format: { type: "json_object" },
       }),
-      signal: AbortSignal.timeout(60_000),
+      signal: AbortSignal.timeout(30_000),
     });
     if (!res.ok) {
       console.warn(`[ai] HTTP ${res.status}: ${(await res.text()).replace(/\s+/g, " ").slice(0, 220)}`);

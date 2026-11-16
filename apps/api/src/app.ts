@@ -1,7 +1,7 @@
 import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
-import { and, count, desc, eq, gte, inArray, ne, type SQL } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, lt, ne, sql, type SQL } from "drizzle-orm";
 import { leads, rawItems, sources, type Db } from "@radar/db";
 import { detectCountry, remoteFriendly } from "@radar/shared";
 import { htmlTitle, mainText, scoreItem } from "@radar/scoring";
@@ -29,6 +29,7 @@ function toUiLead({ lead, raw, source }: LeadRow) {
     budgetEur: lead.budgetEur ?? 0,
     source,
     url: raw.url.startsWith("http") ? raw.url : undefined,
+    createdAt: lead.createdAt.toISOString(),
     postedMinutesAgo: raw.postedAt ? Math.max(1, Math.round((Date.now() - raw.postedAt.getTime()) / 60_000)) : null,
     score: lead.score ?? 0,
     remote: lead.remoteOk === true ? "Remote-friendly" : lead.remoteOk === false ? "Not remote" : "Unknown",
@@ -88,7 +89,7 @@ export function createApp(getDb: () => Db) {
   app.get("/leads", async (c) => {
     const minScore = Number(c.req.query("minScore") ?? 0);
     const tiers = c.req.query("tiers")?.split(",").filter(Boolean) as Tier[] | undefined;
-    const limit = Math.min(Number(c.req.query("limit") ?? 100), 300);
+    const limit = Math.min(Number(c.req.query("limit") ?? 100), 1000);
     const where: SQL[] = [gte(leads.score, minScore), ne(leads.status, "hidden")];
     if (tiers?.length) where.push(inArray(leads.tier, tiers));
     const rows = await selectLeads()
@@ -187,18 +188,68 @@ export function createApp(getDb: () => Db) {
     return c.json({ lead: toUiLead(row!) }, 201);
   });
 
+  // GET /sources — stanje svakog izvora + broj leadova
+  app.get("/sources", async (c) => {
+    const db = getDb();
+    const dayAgo = new Date(Date.now() - 86_400_000).toISOString();
+    const rows = await db.execute<{
+      id: string; name: string; kind: string; enabled: boolean; interval_minutes: number; last_success_at: string | null; last_error: string | null;
+      items: number; leads: number; leads_24h: number; good: number;
+    }>(sql`
+      select s.id, s.name, s.kind, s.enabled, s.interval_minutes, s.last_success_at, s.last_error,
+             count(distinct r.id)::int as items,
+             count(l.id) filter (where l.status <> 'hidden')::int as leads,
+             count(l.id) filter (where l.status <> 'hidden' and l.created_at >= ${dayAgo}::timestamptz)::int as leads_24h,
+             count(l.id) filter (where l.status <> 'hidden' and l.score >= 70)::int as good
+      from sources s
+      left join raw_items r on r.source_id = s.id
+      left join leads l on l.raw_item_id = r.id
+      group by s.id order by leads desc`);
+    return c.json({
+      items: [...rows].map((r) => ({
+        id: r.id,
+        name: r.name,
+        kind: r.kind,
+        enabled: r.enabled,
+        intervalMinutes: r.interval_minutes,
+        lastSuccessAt: r.last_success_at,
+        lastError: r.last_error,
+        items: r.items,
+        leads: r.leads,
+        leads24h: r.leads_24h,
+        good: r.good,
+      })),
+    });
+  });
+
   // GET /stats — brojevi za KPI kartice i stanje izvora
   app.get("/stats", async (c) => {
     const db = getDb();
     const dayAgo = new Date(Date.now() - 86_400_000);
+    const twoDaysAgo = new Date(Date.now() - 2 * 86_400_000);
     const [today] = await db.select({ n: count() }).from(leads).where(and(gte(leads.createdAt, dayAgo), ne(leads.status, "hidden")));
+    const [yesterday] = await db
+      .select({ n: count() })
+      .from(leads)
+      .where(and(gte(leads.createdAt, twoDaysAgo), lt(leads.createdAt, dayAgo), ne(leads.status, "hidden")));
+    // Trošak AI-a ovog meseca (LiteLLM beleži sve pozive: ocenjivanje + AI Router)
+    let aiCostUsd = 0;
+    try {
+      const month = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).toISOString();
+      const [row] = await db.execute<{ spend: number }>(sql`select coalesce(sum(spend),0)::float as spend from "LiteLLM_SpendLogs" where "startTime" >= ${month}::timestamptz`);
+      aiCostUsd = Number(row?.spend ?? 0);
+    } catch {
+      /* LiteLLM tabele još ne postoje */
+    }
     const [total] = await db.select({ n: count() }).from(leads).where(ne(leads.status, "hidden"));
     const srcs = await db.select().from(sources);
     const scoring = await db.select({ by: leads.scoredBy, n: count() }).from(leads).groupBy(leads.scoredBy);
     const sum = (pred: (by: string | null) => boolean) => scoring.filter((r) => pred(r.by)).reduce((a, r) => a + r.n, 0);
     return c.json({
       newToday: today?.n ?? 0,
+      newYesterday: yesterday?.n ?? 0,
       total: total?.n ?? 0,
+      aiCostUsd,
       scoring: { ai: sum((b) => !!b?.startsWith("ai")), rules: sum((b) => b === "rules"), pending: sum((b) => b === null) },
       sources: srcs.map((s) => ({ id: s.id, name: s.name, lastSuccessAt: s.lastSuccessAt, lastError: s.lastError })),
     });

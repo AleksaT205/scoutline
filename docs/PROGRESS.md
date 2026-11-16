@@ -2,10 +2,20 @@
 
 Ažurirati posle svakog radnog dana. Najnovije gore.
 
-## Gde smo sada
+## Faze
 
-**Faza:** Faza 1 gotova u kodu — čeka ključeve (AI, Telegram) na serveru.
-**Sledeći korak:** Deploy u Coolify-ju → proveriti AI ocenjivanje i AI Router na serveru.
+| Faza | Šta | Status |
+|---|---|---|
+| 0 | Temelj: monorepo, baza, Docker, Netlify, Coolify, GitHub | ✅ |
+| 1 | Izvori oglasa (7), filter, ocena (AI/pravila), Telegram | ✅ |
+| 1.5 | Dashboard: dizajn, filteri, pretraga, tema, ručno dodavanje leada, stranica Sources, pravi brojevi | ✅ |
+| 2 | AI Router (MVP): endpoint `/llm/v1`, auto rutiranje fast/smart, klijenti, budžeti, ušteda | ✅ |
+| **3** | **Pipeline / CRM:** status leada (Contacted → Replied → Meeting → Won/Lost), beleške, „Hide“, istorija | ⏭ sledeće |
+| 4 | Overview + Analytics: grafikoni po danima i izvorima, konverzija leadova, trošak AI-a | |
+| 5 | Team & Settings: nalozi i uloge umesto timske lozinke, pozivnice, link za pregled | |
+| 6 | Produkcija: domen, Cloudflare Tunnel, backup baze, monitoring, plaćeni modeli za klijente | |
+
+**Sledeći korak:** Deploy u Coolify-ju → provera AI ocenjivanja na serveru → Faza 3.
 
 ## Urađeno
 
@@ -60,6 +70,7 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 - [ ] Domaći izvori: Infostud zabranjuje automatsko čitanje (robots.txt: /search, /rss_feed) → ručno dodavanje leada iz linka; HelloWorld — proveriti uslove
 - [x] Ručno dodavanje leada: dugme "Add lead" (link ili tekst) → odmah ocenjen; zaštićeno timskom lozinkom (`API_TOKEN`); bezbedno preuzimanje linka (blokira localhost/kućnu mrežu)
 - [x] Ocenjivanje izdvojeno u paket `@radar/scoring` (worker i API koriste isto)
+- [x] Pravi brojevi u dashboard-u (ukupno leadova, trendovi, trošak AI-a) + stranica Sources
 - [x] Faza 2 (MVP): AI Router — javni endpoint `/llm/v1` (OpenAI + Anthropic format), model `auto` bira `fast`/`smart`, klijenti sa sopstvenim ključem i mesečnim budžetom, potrošnja i ušteda po klijentu, opoziv ključa; stranica "AI Router" u dashboard-u
 - [ ] AI Router: plaćeni modeli u grupe `fast`/`smart` kad krenu pravi klijenti; pravila rutiranja po klijentu; izveštaj za klijenta (PDF/link)
 

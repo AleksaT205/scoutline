@@ -9,6 +9,7 @@ import { LeadsTable } from "./components/LeadsTable";
 import { LeadDetail } from "./components/LeadDetail";
 import { AddLeadDialog } from "./components/AddLeadDialog";
 import { RouterPage } from "./components/RouterPage";
+import { SourcesPage } from "./components/SourcesPage";
 
 type Theme = "light" | "dark";
 const systemTheme = (): Theme => (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
@@ -31,9 +32,10 @@ function useTheme(): [Theme, () => void] {
   return [theme, () => setTheme((t) => (t === "dark" ? "light" : "dark"))];
 }
 
-export type Page = "leads" | "router";
+export type Page = "leads" | "router" | "sources";
 function useHashPage(): Page {
-  const read = (): Page => (window.location.hash.startsWith("#/router") ? "router" : "leads");
+  const read = (): Page =>
+    window.location.hash.startsWith("#/router") ? "router" : window.location.hash.startsWith("#/sources") ? "sources" : "leads";
   const [page, setPage] = useState<Page>(read);
   useEffect(() => {
     const on = () => {
@@ -63,7 +65,7 @@ export function App() {
 
   return (
     <div className="lg:grid lg:min-h-screen lg:grid-cols-[232px_1fr]">
-      <Sidebar status={status} open={menuOpen} onClose={() => setMenuOpen(false)} leadCount={allLeads.length} page={page} />
+      <Sidebar status={status} open={menuOpen} onClose={() => setMenuOpen(false)} leadCount={api.live ? (api.total ?? allLeads.length) : allLeads.length} aiCostUsd={api.aiCostUsd} page={page} />
 
       <main className="min-w-0">
         <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-line bg-bg/80 px-4 backdrop-blur-md sm:px-6">
@@ -72,7 +74,7 @@ export function App() {
           </button>
           <div className="text-[13px] text-muted">
             <span className="hidden sm:inline">{page === "router" ? "AI Ops / " : "Prospecting / "}</span>
-            <b className="font-medium text-fg">{page === "router" ? "AI Router" : "Leads"}</b>
+            <b className="font-medium text-fg">{page === "router" ? "AI Router" : page === "sources" ? "Sources" : "Leads"}</b>
           </div>
           <label className={`ml-auto h-[34px] w-80 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-faint focus-within:border-accent/55 ${page === "leads" ? "hidden md:flex" : "hidden"}`}>
             <Search size={14} />
@@ -102,6 +104,8 @@ export function App() {
         <div className="mx-auto max-w-[1480px] px-4 pt-7 pb-10 sm:px-6">
           {page === "router" ? (
             <RouterPage />
+          ) : page === "sources" ? (
+            <SourcesPage />
           ) : (
           <>
           <div className="mb-5 flex flex-wrap items-end gap-4">
@@ -129,7 +133,7 @@ export function App() {
             </div>
           )}
 
-          <Kpis leads={allLeads} newToday={api.live ? api.newToday : undefined} />
+          <Kpis leads={allLeads} />
           <Filters value={filters} onChange={setFilters} all={allLeads} shown={leads.length} />
 
           <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">

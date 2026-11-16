@@ -44,6 +44,8 @@ export interface LeadsState {
   leads: UiLead[] | null; // null = još se učitava
   live: boolean; // true = pravi podaci iz API-ja
   newToday?: number;
+  total?: number;
+  aiCostUsd?: number;
   /** Doda lead odmah u listu (npr. posle ručnog dodavanja). */
   add: (lead: UiLead) => void;
 }
@@ -58,12 +60,12 @@ export function useLeads(): LeadsState {
     const load = async () => {
       try {
         const [l, s] = await Promise.all([
-          fetch(`${API_URL}/leads?limit=200`).then((r) => (r.ok ? r.json() : { items: [] })) as Promise<{ items?: UiLead[] }>,
-          fetch(`${API_URL}/stats`).then((r) => (r.ok ? r.json() : {})) as Promise<{ newToday?: number }>,
+          fetch(`${API_URL}/leads?limit=1000`).then((r) => (r.ok ? r.json() : { items: [] })) as Promise<{ items?: UiLead[] }>,
+          fetch(`${API_URL}/stats`).then((r) => (r.ok ? r.json() : {})) as Promise<{ newToday?: number; total?: number; aiCostUsd?: number }>,
         ]);
         if (!alive) return;
         const items = (l.items ?? []) as UiLead[];
-        setState({ leads: items, live: items.length > 0, newToday: s.newToday });
+        setState({ leads: items, live: items.length > 0, newToday: s.newToday, total: s.total, aiCostUsd: s.aiCostUsd });
       } catch {
         if (alive) setState({ leads: [], live: false });
       }

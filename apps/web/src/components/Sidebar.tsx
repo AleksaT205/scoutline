@@ -5,10 +5,12 @@ const prospecting = (leadCount: number) => [
   { label: "Overview", icon: LayoutGrid, soon: true },
   { label: "Leads", icon: Search, count: leadCount, href: "#/" },
   { label: "Pipeline", icon: Kanban, soon: true },
-  { label: "Sources", icon: Rss, count: 7, soon: true },
+  { label: "Sources", icon: Rss, href: "#/sources" },
   { label: "Analytics", icon: BarChart3, soon: true },
 ];
 const aiOps = [{ label: "AI Router", icon: Route, href: "#/router" }];
+const formatCost = (v?: number) => (v === undefined ? "—" : v > 0 && v < 0.01 ? `$${v.toFixed(4)}` : `$${v.toFixed(2)}`);
+
 const workspace = [
   { label: "Team", icon: Users, soon: true },
   { label: "Settings", icon: Settings, soon: true },
@@ -38,7 +40,7 @@ function NavItem({ label, icon: Icon, count, active, href, soon }: { label: stri
   );
 }
 
-function StatusCard({ status }: { status: ApiStatus }) {
+function StatusCard({ status, aiCostUsd }: { status: ApiStatus; aiCostUsd?: number }) {
   const online = status.state === "online";
   const dot = online ? "bg-success" : status.state === "offline" ? "bg-danger" : "bg-faint";
   const title = online ? "All systems normal" : status.state === "offline" ? "Service unavailable" : "Checking status…";
@@ -55,13 +57,13 @@ function StatusCard({ status }: { status: ApiStatus }) {
       </div>
       <div>{detail}</div>
       <div className="mt-0.5">
-        AI cost this month: <b className="num font-medium text-fg">€0.00</b>
+        AI cost this month: <b className="num font-medium text-fg">{formatCost(aiCostUsd)}</b>
       </div>
     </div>
   );
 }
 
-export function Sidebar({ status, open, onClose, leadCount, page }: { status: ApiStatus; open: boolean; onClose: () => void; leadCount: number; page: "leads" | "router" }) {
+export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: { status: ApiStatus; open: boolean; onClose: () => void; leadCount: number; aiCostUsd?: number; page: "leads" | "router" | "sources" }) {
   return (
     <>
       {open && <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={onClose} />}
@@ -86,7 +88,7 @@ export function Sidebar({ status, open, onClose, leadCount, page }: { status: Ap
         <nav className="flex flex-col gap-0.5">
           <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wider text-faint">Prospecting</div>
           {prospecting(leadCount).map((i) => (
-            <NavItem key={i.label} {...i} active={i.label === "Leads" && page === "leads"} />
+            <NavItem key={i.label} {...i} active={(i.label === "Leads" && page === "leads") || (i.label === "Sources" && page === "sources")} />
           ))}
         </nav>
         <nav className="flex flex-col gap-0.5">
@@ -102,7 +104,7 @@ export function Sidebar({ status, open, onClose, leadCount, page }: { status: Ap
           ))}
         </nav>
         <div className="mt-auto">
-          <StatusCard status={status} />
+          <StatusCard status={status} aiCostUsd={aiCostUsd} />
         </div>
       </aside>
     </>

@@ -14,6 +14,7 @@ export interface UiLead {
   source: string;
   postedMinutesAgo: number | null;
   url?: string;
+  createdAt?: string; // kad je lead dodat (samo pravi podaci)
   score: number;
   remote: string;
   remoteOk?: boolean | null;

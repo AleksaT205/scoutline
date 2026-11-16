@@ -8,10 +8,6 @@ model_list:
     litellm_params:
       model: openrouter/google/gemma-4-31b-it:free
       api_key: os.environ/OPENROUTER_API_KEY
-  - model_name: scorer
-    litellm_params:
-      model: openrouter/nvidia/nemotron-3.5-lightning:free
-      api_key: os.environ/OPENROUTER_API_KEY
   # Google Gemini — besplatan nivo (ako projekat nema uključen billing)
   - model_name: scorer
     litellm_params:
@@ -52,7 +48,7 @@ model_list:
       api_key: os.environ/OPENROUTER_API_KEY
 
 router_settings:
-  routing_strategy: simple-shuffle
+  routing_strategy: latency-based-routing   # bira najbrži model koji trenutno radi
   num_retries: 4          # pokušaj druge modele iz grupe ako jedan padne
   allowed_fails: 1        # model koji padne ide na pauzu…
   cooldown_time: 900      # …od 15 minuta
