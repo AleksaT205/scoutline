@@ -26,6 +26,9 @@ importers:
       '@radar/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@radar/scoring':
+        specifier: workspace:*
+        version: link:../../packages/scoring
       '@radar/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -82,6 +85,9 @@ importers:
       '@radar/db':
         specifier: workspace:*
         version: link:../../packages/db
+      '@radar/scoring':
+        specifier: workspace:*
+        version: link:../../packages/scoring
       '@radar/shared':
         specifier: workspace:*
         version: link:../../packages/shared
@@ -117,6 +123,16 @@ importers:
       drizzle-kit:
         specifier: ^0.31.11
         version: 0.31.11
+
+  packages/scoring:
+    dependencies:
+      '@radar/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      vitest:
+        specifier: ^5.1.0
+        version: 5.1.0(@types/node@20.19.43)(vite@8.3.8(@types/node@20.19.43)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
 
   packages/shared:
     devDependencies:

@@ -19,7 +19,7 @@ const CATEGORY_RULES: Array<[RegExp, ServiceCategory]> = [
   [/\b(n8n|zapier|make\.com|automation|workflow)\b/i, "automation"],
   [/\b(devops|sre|platform engineer|kubernetes|terraform|aws|infrastructure|ci\/cd)\b/i, "devops_deploy"],
   [/\b(ios|android|mobile|react native|flutter|swift|kotlin)\b/i, "mobile"],
-  [/\b(full[- ]?stack|mvp|web app)\b/i, "fullstack_app"],
+  [/\b(full[- ]?stack|mvp|web app|web aplikacij\w*|aplikacij\w* za)\b/i, "fullstack_app"],
   [/\b(front[- ]?end|react|vue|angular|next\.?js|ui engineer)\b/i, "web_frontend"],
   [/\b(back[- ]?end|api|node|python|golang|java|php|ruby|\.net)\b/i, "backend_api"],
   [/\b(bug|fix|maintenance|support engineer)\b/i, "bugfix_maintenance"],
@@ -43,8 +43,8 @@ const pick = <T>(rules: Array<[RegExp, T]>, text: string, fallback: T): T => rul
 export function scoreByRules(title: string, body: string) {
   const text = `${title}\n${body.slice(0, 4000)}`;
   let s = 35;
-  if (/\b(contract|contractor|freelance|freelancer|agency|project[- ]based|part[- ]time|consultant)\b/i.test(text)) s += 15;
-  if (/\b(mvp|build (an?|our) (app|platform|product)|from scratch)\b/i.test(text)) s += 10;
+  if (/\b(contract|contractor|freelance|freelancer|agency|project[- ]based|part[- ]time|consultant|honorarn\w*|fiksn\w* cen\w*|projek(at|tno)|agencij\w*)\b/i.test(text)) s += 15;
+  if (/\b(mvp|build (an?|our) (app|platform|product)|from scratch|izrad\w* (web )?(aplikacij|sajt|platform)\w*|nova aplikacija)\b/i.test(text)) s += 10;
   if (/\b(full[- ]?stack)\b/i.test(text)) s += 10;
   if (/\b(ai|llm|openai|gpt|chatbot|automation|n8n)\b/i.test(text)) s += 10;
   if (/\b(react|next\.?js|node|typescript)\b/i.test(text)) s += 6;

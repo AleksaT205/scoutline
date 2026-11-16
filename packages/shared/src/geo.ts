@@ -79,6 +79,6 @@ export function detectCountry(input: { location?: string | null; salaryText?: st
 /** Da li bi angažovali agenciju van njihove zemlje. null = nepoznato. */
 export function remoteFriendly(text: string): boolean | null {
   if (/\b(us citizens only|must be (located|based) in|on-?site only|security clearance|no agencies)\b/i.test(text)) return false;
-  if (/\b(worldwide|anywhere|contractors? welcome|freelancers? welcome|remote \(global\)|cet|eu time ?zone)\b/i.test(text)) return true;
+  if (/\b(worldwide|anywhere|contractors? welcome|freelancers? welcome|remote \(global\)|cet|eu time ?zone|rad na daljinu|remote rad|od kuće|remote ok|remote-friendly|fully remote|100% remote)\b/i.test(text)) return true;
   return null;
 }

@@ -1,11 +1,10 @@
 import { createHash } from "node:crypto";
 import { and, desc, eq, gte, isNull, ne } from "drizzle-orm";
 import { leads, rawItems, sources, type Db } from "@radar/db";
-import { detectCountry, finalScore, remoteFriendly, tierOf } from "@radar/shared";
+import { detectCountry, remoteFriendly, tierOf } from "@radar/shared";
+import { aiActive, passesPrefilter, scoreItem } from "@radar/scoring";
 import type { Connector } from "../connectors/types.js";
-import { aiActive, scoreWithAi } from "./ai.js";
 import { sendLeadToTelegram, telegramConfigured } from "./notify.js";
-import { budgetFromSalary, passesPrefilter, scoreByRules } from "./rules.js";
 
 const MAX_AGE_DAYS = Number(process.env.MAX_AGE_DAYS ?? 14);
 const NOTIFY_MIN_SCORE = Number(process.env.NOTIFY_MIN_SCORE ?? 75);
@@ -68,18 +67,6 @@ export async function ingest(db: Db, c: Connector) {
   }
 }
 
-const CATEGORY_TEXT: Record<string, string> = {
-  fullstack_app: "full-stack web apps",
-  web_frontend: "modern web frontends",
-  backend_api: "backends and APIs",
-  mobile: "mobile apps",
-  ai_integration: "AI features and integrations",
-  automation: "workflow automation",
-  devops_deploy: "deployment and DevOps",
-  bugfix_maintenance: "bug fixing and maintenance",
-  other_dev: "software projects",
-};
-
 /** Oceni leadove koji još nisu ocenjeni: AI ako je dostupan, inače pravila. */
 export async function scorePending(db: Db, aiBatch: number) {
   // Pravila su trenutna — bez AI-a ocenjujemo i veći broj odjednom.
@@ -102,46 +89,21 @@ export async function scorePending(db: Db, aiBatch: number) {
   }
 
   let byAi = 0;
+  const useAi = aiActive();
   for (const { lead, raw } of rows) {
-    const body = raw.body ?? "";
-    const ai = await scoreWithAi({ title: raw.title, company: raw.companyName, location: raw.location, salary: raw.salaryText, body });
-    if (!ai && lead.scoredBy === "rules") continue; // preocenjivanje nije uspelo — zadrži postojeću ocenu
-    const rules = ai ? null : scoreByRules(raw.title, body);
-    if (ai) byAi++;
-
-    const country = ai?.country ?? lead.country;
-    const tier = country ? tierOf(country) : null;
-    const remoteOk = ai?.remoteOk ?? lead.remoteOk;
-    const budgetEur = ai?.budgetEur ?? budgetFromSalary(raw.salaryText);
-    const category = ai?.category ?? rules!.category;
-    const aiScore = ai?.aiScore ?? rules!.aiScore;
-    const score = category === "not_relevant" ? 0 : finalScore({ aiScore, tier: tier ?? "T2", remoteOk, budgetEur });
-    const offer = CATEGORY_TEXT[category] ?? "software projects";
-
-    await db
-      .update(leads)
-      .set({
-        aiScore,
-        score,
-        category,
-        industry: ai?.industry ?? rules!.industry,
-        country,
-        tier,
-        remoteOk,
-        budgetEur,
-        urgency: ai?.urgency ?? null,
-        why: ai?.why.length ? ai.why : [`Matches our ${offer} offer.`, remoteOk ? "Open to remote work." : "Remote setup not confirmed."],
-        redFlags: ai?.redFlags ?? [],
-        emailSubject: ai?.emailSubject ?? `${raw.title.slice(0, 60)} — quick idea`,
-        emailBody:
-          ai?.emailBody ??
-          `Hi, saw you're looking for help with "${raw.title.slice(0, 80)}". We're a small remote team focused on ${offer} and could share a short plan with timeline and cost. Would a 15-minute call next week be useful?`,
-        scoredBy: ai ? `ai:${ai.model}` : "rules",
-        scoredAt: new Date(),
-        status: category === "not_relevant" || score < 20 ? "hidden" : "new",
-        updatedAt: new Date(),
-      })
-      .where(eq(leads.id, lead.id));
+    const r = await scoreItem({
+      title: raw.title,
+      company: raw.companyName,
+      location: raw.location,
+      salaryText: raw.salaryText,
+      body: raw.body ?? "",
+      prior: { country: lead.country, remoteOk: lead.remoteOk },
+      useAi,
+    });
+    if (r.scoredBy === "rules" && lead.scoredBy === "rules") continue; // preocenjivanje AI-jem nije uspelo — zadrži postojeću ocenu
+    if (r.scoredBy !== "rules") byAi++;
+    const { aiTitle: _t, aiCompany: _c, ...fields } = r;
+    await db.update(leads).set({ ...fields, scoredAt: new Date(), updatedAt: new Date() }).where(eq(leads.id, lead.id));
   }
   if (rows.length) console.log(`[score] ocenjeno ${rows.length} (AI: ${byAi}, pravila: ${rows.length - byAi})`);
 }

@@ -18,7 +18,8 @@ score (0-100 integer), category (one of: ${SERVICE_CATEGORIES.join(", ")}),
 industry (one of: ${INDUSTRIES.join(", ")}), country (ISO 3166-1 alpha-2 of the hiring company or null),
 remote_ok (true/false/null — would they work with a remote contractor abroad), budget_eur (integer estimate of the deal size or null),
 urgency (short phrase or null), why (array of 2-3 short reasons it fits or not, in English),
-red_flags (array of short strings), email_subject (short, specific), email_body (max 70 words, personal, no hype,
+red_flags (array of short strings), title (short job/project title), company (hiring company name or null),
+email_subject (short, specific), email_body (max 70 words, personal, no hype,
 in the post's language, ends with one simple question).`;
 
 export interface AiResult {
@@ -33,6 +34,8 @@ export interface AiResult {
   redFlags: string[];
   emailSubject: string | null;
   emailBody: string | null;
+  title: string | null;
+  company: string | null;
   model: string;
 }
 
@@ -96,6 +99,8 @@ export async function scoreWithAi(input: { title: string; company: string | null
       redFlags: arr(json.red_flags),
       emailSubject: str(json.email_subject),
       emailBody: str(json.email_body),
+      title: str(json.title)?.slice(0, 200) ?? null,
+      company: str(json.company)?.slice(0, 120) ?? null,
       model: data.model ?? MODEL,
     };
   } catch (e) {

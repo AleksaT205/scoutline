@@ -4,7 +4,7 @@
  */
 import { createDb } from "@radar/db";
 import { CONNECTORS } from "./connectors/sources.js";
-import { aiConfigured } from "./pipeline/ai.js";
+import { aiConfigured } from "@radar/scoring";
 import { telegramConfigured } from "./pipeline/notify.js";
 import { ingest, notifyNew, registerSources, scorePending } from "./pipeline/run.js";
 

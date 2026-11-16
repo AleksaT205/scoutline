@@ -8,10 +8,11 @@
     "build": "tsup",
     "start": "node dist/index.js",
     "typecheck": "tsc -p .",
-    "test": "vitest run"
+    "test": "echo no tests"
   },
   "dependencies": {
     "@radar/db": "workspace:*",
+    "@radar/scoring": "workspace:*",
     "@radar/shared": "workspace:*",
     "drizzle-orm": "^0.45.4",
     "fast-xml-parser": "^5.12.1"

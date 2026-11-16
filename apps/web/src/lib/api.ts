@@ -44,11 +44,15 @@ export interface LeadsState {
   leads: UiLead[] | null; // null = još se učitava
   live: boolean; // true = pravi podaci iz API-ja
   newToday?: number;
+  /** Doda lead odmah u listu (npr. posle ručnog dodavanja). */
+  add: (lead: UiLead) => void;
 }
 
 /** Učitava prave leadove; ako ih još nema (ili API nije dostupan), vraća live=false. */
 export function useLeads(): LeadsState {
-  const [state, setState] = useState<LeadsState>({ leads: null, live: false });
+  const [state, setState] = useState<Omit<LeadsState, "add">>({ leads: null, live: false });
+  const add = (lead: UiLead) =>
+    setState((s) => ({ ...s, live: true, leads: [lead, ...(s.live && s.leads ? s.leads.filter((l) => l.id !== lead.id) : [])] }));
   useEffect(() => {
     let alive = true;
     const load = async () => {
@@ -71,5 +75,5 @@ export function useLeads(): LeadsState {
       clearInterval(id);
     };
   }, []);
-  return state;
+  return { ...state, add };
 }

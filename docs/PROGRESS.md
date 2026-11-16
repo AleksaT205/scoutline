@@ -5,7 +5,7 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 ## Gde smo sada
 
 **Faza:** Faza 1 gotova u kodu — čeka ključeve (AI, Telegram) na serveru.
-**Sledeći korak:** Redeploy u Coolify-ju, pa uneti besplatne AI ključeve i Telegram bot (vidi checklist ispod).
+**Sledeći korak:** u Coolify dodati `API_TOKEN` (timska lozinka) → Deploy; zatim Faza 2 — router modela.
 
 ## Urađeno
 
@@ -58,7 +58,8 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 - [x] Novi izvori: Himalayas, Jobicy (oba traže navođenje izvora + link na original — ispunjeno dugmetom "Post")
 - [x] Tamna/svetla tema (prekidač gore), filteri tržišta sa brojevima, pretraga
 - [ ] Domaći izvori: Infostud zabranjuje automatsko čitanje (robots.txt: /search, /rss_feed) → ručno dodavanje leada iz linka; HelloWorld — proveriti uslove
-- [ ] Ručno dodavanje leada (nalepiš link/tekst oglasa → AI ga oceni)
+- [x] Ručno dodavanje leada: dugme "Add lead" (link ili tekst) → odmah ocenjen; zaštićeno timskom lozinkom (`API_TOKEN`); bezbedno preuzimanje linka (blokira localhost/kućnu mrežu)
+- [x] Ocenjivanje izdvojeno u paket `@radar/scoring` (worker i API koriste isto)
 - [ ] Faza 2: router modela (LiteLLM) sa troškovima po klijentu
 
 ## Otvoreno

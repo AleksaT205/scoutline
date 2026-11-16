@@ -7,6 +7,7 @@ import { Kpis } from "./components/Kpis";
 import { DEFAULT_FILTERS, Filters, applyFilters, type FilterState } from "./components/Filters";
 import { LeadsTable } from "./components/LeadsTable";
 import { LeadDetail } from "./components/LeadDetail";
+import { AddLeadDialog } from "./components/AddLeadDialog";
 
 type Theme = "light" | "dark";
 const systemTheme = (): Theme => (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
@@ -34,6 +35,7 @@ export function App() {
   const status = useApiStatus();
   const api = useLeads();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [addOpen, setAddOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [selectedId, setSelectedId] = useState<string>();
 
@@ -90,8 +92,11 @@ export function App() {
               <button className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2">
                 <Link2 size={14} /> Share view
               </button>
-              <button className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] bg-fg px-3 text-[13px] font-medium text-bg hover:opacity-90">
-                <Plus size={14} /> Add source
+              <button
+                onClick={() => setAddOpen(true)}
+                className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] bg-fg px-3 text-[13px] font-medium text-bg hover:opacity-90"
+              >
+                <Plus size={14} /> Add lead
               </button>
             </div>
           </div>
@@ -112,6 +117,15 @@ export function App() {
           </div>
         </div>
       </main>
+      <AddLeadDialog
+        open={addOpen}
+        onClose={() => setAddOpen(false)}
+        onAdded={(lead) => {
+          api.add(lead);
+          setFilters({ ...DEFAULT_FILTERS, markets: new Set(DEFAULT_FILTERS.markets), minScore: 0 });
+          setSelectedId(lead.id);
+        }}
+      />
     </div>
   );
 }

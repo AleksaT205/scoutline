@@ -32,16 +32,4 @@ export async function getText(url: string): Promise<string> {
   return res.text();
 }
 
-const ENTITIES: Record<string, string> = { "&amp;": "&", "&lt;": "<", "&gt;": ">", "&quot;": '"', "&#39;": "'", "&#x27;": "'", "&#x2F;": "/", "&nbsp;": " " };
-
-/** HTML → čitljiv tekst (dovoljno za ocenjivanje). */
-export function htmlToText(html: string | null | undefined): string {
-  if (!html) return "";
-  return html
-    .replace(/<(br|\/p|\/li|\/h\d)[^>]*>/gi, "\n")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&[#\w]+;/g, (e) => ENTITIES[e] ?? " ")
-    .replace(/[ \t]+/g, " ")
-    .replace(/\n\s*\n+/g, "\n")
-    .trim();
-}
+export { htmlToText } from "@radar/scoring";
