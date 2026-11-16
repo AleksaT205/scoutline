@@ -11,8 +11,8 @@ const aiOps = [{ label: "AI Router", icon: Route, href: "#/router" }];
 const formatCost = (v?: number) => (v === undefined ? "—" : v > 0 && v < 0.01 ? `$${v.toFixed(4)}` : `$${v.toFixed(2)}`);
 
 const workspace = [
-  { label: "Team", icon: Users, soon: true },
-  { label: "Settings", icon: Settings, soon: true },
+  { label: "Team", icon: Users, href: "#/team" },
+  { label: "Settings", icon: Settings, href: "#/settings" },
 ];
 
 function NavItem({ label, icon: Icon, count, active, href, soon }: { label: string; icon: typeof Search; count?: number; active?: boolean; href?: string; soon?: boolean }) {
@@ -65,7 +65,7 @@ function StatusCard({ status, aiCostUsd }: { status: ApiStatus; aiCostUsd?: numb
   );
 }
 
-export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: { status: ApiStatus; open: boolean; onClose: () => void; leadCount: number; aiCostUsd?: number; page: "leads" | "router" | "sources" | "pipeline" | "overview" }) {
+export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: { status: ApiStatus; open: boolean; onClose: () => void; leadCount: number; aiCostUsd?: number; page: string }) {
   return (
     <>
       {open && <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={onClose} />}
@@ -102,7 +102,7 @@ export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: {
         <nav className="flex flex-col gap-0.5">
           <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wider text-faint">Workspace</div>
           {workspace.map((i) => (
-            <NavItem key={i.label} {...i} />
+            <NavItem key={i.label} {...i} active={page === i.label.toLowerCase()} />
           ))}
         </nav>
         <div className="mt-auto">

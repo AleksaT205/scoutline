@@ -1,4 +1,4 @@
-import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { and, count, desc, eq, gte, inArray, lt, ne, sql, type SQL } from "drizzle-orm";
@@ -6,6 +6,7 @@ import { leadEvents, leads, rawItems, settings, sources, type Db } from "@radar/
 import { LEAD_STATUSES, detectCountry, normalizeAlerts, remoteFriendly, type LeadStatus } from "@radar/shared";
 import { htmlTitle, mainText, scoreItem, sendLeadToTelegram, telegramConfigured } from "@radar/scoring";
 import { safeFetchHtml } from "./safe-fetch.js";
+import { auth, type Actor } from "./auth.js";
 import { llmProxy, routerAdmin } from "./router.js";
 
 type Tier = "T1" | "T2" | "T3" | "DOMESTIC";
@@ -42,18 +43,10 @@ function toUiLead({ lead, raw, source }: LeadRow) {
   };
 }
 
-/** Timska lozinka za akcije koje menjaju podatke. Bez API_TOKEN-a te akcije su isključene. */
-function authorized(c: Context): boolean | "disabled" {
-  const expected = process.env.API_TOKEN;
-  if (!expected) return "disabled";
-  const got = c.req.header("authorization")?.replace(/^Bearer\s+/i, "") ?? "";
-  const a = createHash("sha256").update(got).digest();
-  const b = createHash("sha256").update(expected).digest();
-  return timingSafeEqual(a, b);
-}
-
 export function createApp(getDb: () => Db) {
   const app = new Hono();
+  const a = auth(getDb);
+  const actorName = (c: Context) => ((c.get("actor" as never) as Actor | undefined)?.name ?? "team");
   const origins = (process.env.CORS_ORIGINS ?? "http://localhost:5173").split(",");
   const isDev = process.env.NODE_ENV !== "production";
   app.use(
@@ -61,7 +54,7 @@ export function createApp(getDb: () => Db) {
     cors({
       // U razvoju dozvoli bilo koji localhost port; u produkciji samo CORS_ORIGINS.
       origin: (origin) => (origins.includes(origin) || (isDev && /^http:\/\/localhost:\d+$/.test(origin)) ? origin : null),
-      allowMethods: ["GET", "POST", "PATCH", "PUT", "OPTIONS"],
+      allowMethods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
       allowHeaders: ["Content-Type", "Authorization"],
     }),
   );
@@ -77,21 +70,11 @@ export function createApp(getDb: () => Db) {
 
   // AI Router: javni endpoint za aplikacije klijenata (ključ klijenta) + upravljanje (timska lozinka)
   app.route("/llm", llmProxy());
-  app.use("/router/*", async (c, next) => {
-    const ok = authorized(c);
-    if (ok === "disabled") return c.json({ error: "Router admin is disabled: set API_TOKEN on the server." }, 503);
-    if (!ok) return c.json({ error: "Wrong team password." }, 401);
-    await next();
-  });
+  app.use("/router/*", a.require("member"));
   app.route("/router", routerAdmin(getDb));
 
   // Podešavanja Telegram obaveštenja (koje leadove pratimo)
-  app.use("/settings/*", async (c, next) => {
-    const ok = authorized(c);
-    if (ok === "disabled") return c.json({ error: "Settings are disabled: set API_TOKEN on the server." }, 503);
-    if (!ok) return c.json({ error: "Wrong team password." }, 401);
-    await next();
-  });
+  app.use("/settings/*", a.require("member"));
   app.get("/settings/alerts", async (c) => {
     const [row] = await getDb().select().from(settings).where(eq(settings.key, "alerts")).limit(1);
     return c.json({ alerts: normalizeAlerts(row?.value), telegram: telegramConfigured() });
@@ -121,7 +104,7 @@ export function createApp(getDb: () => Db) {
   });
 
   // GET /leads?minScore=0&tiers=T1,T2&limit=100 — ocenjeni leadovi, spremni za dashboard
-  app.get("/leads", async (c) => {
+  app.get("/leads", a.readGuard, async (c) => {
     const minScore = Number(c.req.query("minScore") ?? 0);
     const tiers = c.req.query("tiers")?.split(",").filter(Boolean) as Tier[] | undefined;
     const limit = Math.min(Number(c.req.query("limit") ?? 100), 1000);
@@ -137,12 +120,7 @@ export function createApp(getDb: () => Db) {
   });
 
   // ── CRM: status, beleške, istorija (izmene traže timsku lozinku) ─────────────
-  const requireTeam = async (c: Context, next: () => Promise<void>) => {
-    const ok = authorized(c);
-    if (ok === "disabled") return c.json({ error: "Editing is disabled: set API_TOKEN on the server." }, 503);
-    if (!ok) return c.json({ error: "Wrong team password." }, 401);
-    await next();
-  };
+  const requireTeam = a.require("member");
 
   // PATCH /leads/:id { status } — pomeri lead kroz pipeline
   app.patch("/leads/:id", requireTeam, async (c) => {
@@ -154,7 +132,7 @@ export function createApp(getDb: () => Db) {
     if (!current) return c.json({ error: "Lead not found." }, 404);
     if (current.status !== status) {
       await db.update(leads).set({ status, updatedAt: new Date() }).where(eq(leads.id, c.req.param("id")!));
-      await db.insert(leadEvents).values({ leadId: c.req.param("id")!, type: "status_changed", data: { from: current.status, to: status }, actor: "team" });
+      await db.insert(leadEvents).values({ leadId: c.req.param("id")!, type: "status_changed", data: { from: current.status, to: status }, actor: actorName(c) });
     }
     const [row] = await selectLeads().where(eq(leads.id, c.req.param("id")!)).limit(1);
     return c.json({ lead: toUiLead(row!) });
@@ -168,18 +146,18 @@ export function createApp(getDb: () => Db) {
     const db = getDb();
     const [exists] = await db.select({ id: leads.id }).from(leads).where(eq(leads.id, c.req.param("id")!)).limit(1);
     if (!exists) return c.json({ error: "Lead not found." }, 404);
-    const [event] = await db.insert(leadEvents).values({ leadId: exists.id, type: "note", data: { text: text.slice(0, 4000) }, actor: "team" }).returning();
+    const [event] = await db.insert(leadEvents).values({ leadId: exists.id, type: "note", data: { text: text.slice(0, 4000) }, actor: actorName(c) }).returning();
     return c.json({ event }, 201);
   });
 
   // GET /leads/:id/events — istorija (statusi, beleške)
-  app.get("/leads/:id/events", requireTeam, async (c) => {
+  app.get("/leads/:id/events", a.require("viewer"), async (c) => {
     const events = await getDb().select().from(leadEvents).where(eq(leadEvents.leadId, c.req.param("id")!)).orderBy(desc(leadEvents.createdAt)).limit(100);
     return c.json({ events });
   });
 
   // GET /pipeline — broj leadova i zbir budžeta po statusu
-  app.get("/pipeline", async (c) => {
+  app.get("/pipeline", a.readGuard, async (c) => {
     const rows = await getDb()
       .select({ status: leads.status, n: count(), value: sql<number>`coalesce(sum(${leads.budgetEur}),0)::float` })
       .from(leads)
@@ -188,18 +166,30 @@ export function createApp(getDb: () => Db) {
   });
 
   // POST /auth/check — proverava timsku lozinku (za prozor "Add lead")
-  app.post("/auth/check", (c) => {
-    const ok = authorized(c);
-    if (ok === "disabled") return c.json({ ok: false, error: "Adding leads is disabled: set API_TOKEN on the server." }, 503);
-    return ok ? c.json({ ok: true }) : c.json({ ok: false, error: "Wrong team password." }, 401);
+  app.post("/auth/check", async (c) => {
+    const actor = await a.actorFrom(c);
+    if (!actor) return c.json({ ok: false, error: process.env.API_TOKEN || (await a.usersExist()) ? "Wrong password." : "Set API_TOKEN on the server." }, 401);
+    return c.json({ ok: true, role: actor.role });
+  });
+  app.route("/auth", a.routes);
+  app.route("/team", a.team);
+
+  // GET /share/:token — javni prikaz samo za čitanje (bez beleški, email nacrta i izmena)
+  app.get("/share/:token", async (c) => {
+    const share = await a.findShare(c.req.param("token")!);
+    if (!share) return c.json({ error: "This link is invalid, expired or was revoked." }, 404);
+    const rows = await selectLeads()
+      .where(and(gte(leads.score, share.minScore), ne(leads.status, "hidden")))
+      .orderBy(desc(leads.score), desc(rawItems.postedAt))
+      .limit(500);
+    return c.json({
+      label: share.label,
+      items: rows.map((r) => ({ ...toUiLead(r), email: { subject: "", body: "" }, status: undefined })),
+    });
   });
 
   // POST /leads/manual { url?, text?, company?, location? } — ručno dodat lead, odmah ocenjen
-  app.post("/leads/manual", async (c) => {
-    const ok = authorized(c);
-    if (ok === "disabled") return c.json({ error: "Adding leads is disabled: set API_TOKEN on the server." }, 503);
-    if (!ok) return c.json({ error: "Wrong team password." }, 401);
-
+  app.post("/leads/manual", a.require("member"), async (c) => {
     const input = await c.req.json<{ url?: string; text?: string; company?: string; location?: string }>().catch(() => null);
     const url = input?.url?.trim() || null;
     const pasted = input?.text?.trim() || "";
@@ -277,7 +267,7 @@ export function createApp(getDb: () => Db) {
   });
 
   // GET /sources — stanje svakog izvora + broj leadova
-  app.get("/sources", async (c) => {
+  app.get("/sources", a.readGuard, async (c) => {
     const db = getDb();
     const dayAgo = new Date(Date.now() - 86_400_000).toISOString();
     const rows = await db.execute<{
@@ -311,7 +301,7 @@ export function createApp(getDb: () => Db) {
   });
 
   // GET /analytics?days=30 — podaci za Overview grafikone
-  app.get("/analytics", async (c) => {
+  app.get("/analytics", a.readGuard, async (c) => {
     const db = getDb();
     const days = Math.min(Math.max(Number(c.req.query("days") ?? 30), 7), 90);
     const since = new Date(Date.now() - days * 86_400_000).toISOString();
@@ -341,7 +331,7 @@ export function createApp(getDb: () => Db) {
   });
 
   // GET /stats — brojevi za KPI kartice i stanje izvora
-  app.get("/stats", async (c) => {
+  app.get("/stats", a.readGuard, async (c) => {
     const db = getDb();
     const dayAgo = new Date(Date.now() - 86_400_000);
     const twoDaysAgo = new Date(Date.now() - 2 * 86_400_000);

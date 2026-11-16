@@ -12,11 +12,11 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 | 2 | AI Router (MVP): endpoint `/llm/v1`, auto rutiranje fast/smart, klijenti, budžeti, ušteda | ✅ |
 | 3 | Pipeline / CRM: status leada (New → Contacted → Replied → Meeting → Won/Lost), „Hide“, beleške, istorija, kanban sa prevlačenjem, filter po statusu | ✅ |
 | 4 | Overview: leadovi po danu, funnel (contacted → replied → won), izvori, tržišta, usluge, udeo AI ocena; period 7/30/90 dana | ✅ |
-| **5** | **Team & Settings:** nalozi i uloge umesto timske lozinke, pozivnice, link za pregled | ⏭ sledeće |
-| 6 | Produkcija: domen, Cloudflare Tunnel, backup baze, monitoring, plaćeni modeli za klijente | |
+| 5 | Team & Settings: nalozi (email + lozinka), uloge owner/member/viewer, pozivnice (link 7 dana), linkovi samo za pregled, profil i promena lozinke | ✅ |
+| **6** | **Produkcija:** domen, Cloudflare Tunnel, backup baze, monitoring, plaćeni modeli za klijente | ⏭ sledeće |
 | 7 | Dev workflow: zadaci i planiranje povezani sa GitHub-om (Issues), rad kroz Claude Code / Codex pretplatu | |
 
-**Sledeći korak:** Deploy u Coolify-ju → Faza 5 (Team & Settings).
+**Sledeći korak:** Deploy → na sajtu "Create account" (owner, potvrda timskom lozinkom) → pozvati kolege → Faza 6.
 
 ## Urađeno
 

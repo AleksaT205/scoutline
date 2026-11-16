@@ -3,6 +3,7 @@ import { ArrowRight, EyeOff, Loader2, Lock, MessageSquarePlus, Send } from "luci
 import type { LeadStatus } from "@radar/shared";
 import type { UiLead } from "../data/demo";
 import { getTeamToken, setTeamToken, teamFetch } from "../lib/team";
+import { canEdit, useSessionUser } from "../lib/session";
 import { STATUS_META } from "./ui";
 
 /** Redosled kroz pipeline (hidden je posebno — "Hide"). */
@@ -27,6 +28,7 @@ export async function changeStatus(lead: UiLead, status: LeadStatus): Promise<Ui
 }
 
 export function StatusBar({ lead, live, onUpdated }: { lead: UiLead; live: boolean; onUpdated: (l: UiLead) => void }) {
+  const user = useSessionUser();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const status = lead.status ?? "new";
@@ -63,6 +65,7 @@ export function StatusBar({ lead, live, onUpdated }: { lead: UiLead; live: boole
           </button>
         ))}
       </div>
+      {canEdit(user) && (
       <div className="mt-2 flex gap-2">
         {next && (
           <button
@@ -88,6 +91,7 @@ export function StatusBar({ lead, live, onUpdated }: { lead: UiLead; live: boole
           </button>
         )}
       </div>
+      )}
       {error && <div className="mt-2 text-[12px] text-danger">{error}</div>}
     </div>
   );

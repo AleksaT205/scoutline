@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { FileText, Link2, Loader2, Lock, Sparkles, X } from "lucide-react";
 import type { UiLead } from "../data/demo";
 import { API_URL } from "../lib/api";
+import { getSessionToken } from "../lib/session";
+import { getTeamToken } from "../lib/team";
 
 const TOKEN_KEY = "scoutline-team-token";
 const readToken = () => {
@@ -18,7 +20,8 @@ export function AddLeadDialog({ open, onClose, onAdded }: { open: boolean; onClo
   const [text, setText] = useState("");
   const [company, setCompany] = useState("");
   const [location, setLocation] = useState("");
-  const [token, setToken] = useState(readToken);
+  const [token, setToken] = useState(() => getTeamToken() || readToken());
+  const signedIn = !!getSessionToken();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const firstField = useRef<HTMLInputElement | HTMLTextAreaElement>(null);
@@ -47,7 +50,7 @@ export function AddLeadDialog({ open, onClose, onAdded }: { open: boolean; onClo
       const data = (await res.json().catch(() => ({}))) as { lead?: UiLead; error?: string; duplicate?: boolean };
       if (!res.ok || !data.lead) throw new Error(data.error ?? `Request failed (HTTP ${res.status})`);
       try {
-        localStorage.setItem(TOKEN_KEY, token);
+        if (!signedIn) localStorage.setItem(TOKEN_KEY, token);
       } catch {
         /* privatni režim */
       }
@@ -130,10 +133,12 @@ export function AddLeadDialog({ open, onClose, onAdded }: { open: boolean; onClo
             <input className={input} placeholder="Location (optional)" value={location} onChange={(e) => setLocation(e.target.value)} />
           </div>
           {mode === "link" && <p className="text-[12px] text-faint">If a page needs a login, switch to “Paste text”.</p>}
+          {!signedIn && (
           <label className="flex items-center gap-2 pt-1">
             <Lock size={13} className="text-faint" />
             <input className={input} type="password" placeholder="Team password" autoComplete="current-password" value={token} onChange={(e) => setToken(e.target.value)} />
           </label>
+          )}
         </div>
 
         {error && <div className="mt-3 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[12.5px] text-danger">{error}</div>}

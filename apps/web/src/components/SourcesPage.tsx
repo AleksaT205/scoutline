@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, CheckCircle2, ExternalLink, Plus, Rss } from "lucide-react";
 import { API_URL } from "../lib/api";
+import { authHeaders } from "../lib/team";
 
 interface Source {
   id: string;
@@ -49,7 +50,7 @@ export function SourcesPage() {
   useEffect(() => {
     let alive = true;
     const load = () =>
-      fetch(`${API_URL}/sources`)
+      fetch(`${API_URL}/sources`, { headers: authHeaders() })
         .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
         .then((d: { items: Source[] }) => alive && (setItems(d.items), setError(null)))
         .catch(() => alive && setError("Can't load sources — the backend may be offline."));

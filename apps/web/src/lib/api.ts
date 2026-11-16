@@ -1,3 +1,4 @@
+import { authHeaders } from "./team";
 import type { UiLead } from "../data/demo";
 import { useEffect, useState } from "react";
 
@@ -66,8 +67,8 @@ export function useLeads(): LeadsState {
     const load = async () => {
       try {
         const [l, s] = await Promise.all([
-          fetch(`${API_URL}/leads?limit=1000&includeHidden=1`).then((r) => (r.ok ? r.json() : { items: [] })) as Promise<{ items?: UiLead[] }>,
-          fetch(`${API_URL}/stats`).then((r) => (r.ok ? r.json() : {})) as Promise<{ newToday?: number; total?: number; aiCostUsd?: number }>,
+          fetch(`${API_URL}/leads?limit=1000&includeHidden=1`, { headers: authHeaders() }).then((r) => (r.ok ? r.json() : { items: [] })) as Promise<{ items?: UiLead[] }>,
+          fetch(`${API_URL}/stats`, { headers: authHeaders() }).then((r) => (r.ok ? r.json() : {})) as Promise<{ newToday?: number; total?: number; aiCostUsd?: number }>,
         ]);
         if (!alive) return;
         const items = (l.items ?? []) as UiLead[];

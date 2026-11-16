@@ -121,3 +121,42 @@ export const settings = pgTable("settings", {
   value: jsonb("value").notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+/** Tim: nalozi sa ulogama (Faza 5). */
+export const userRoleEnum = pgEnum("user_role", ["owner", "member", "viewer"]);
+
+export const users = pgTable("users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: text("email").notNull().unique(),
+  name: text("name").notNull(),
+  passwordHash: text("password_hash").notNull(),
+  role: userRoleEnum("role").default("member").notNull(),
+  tokenVersion: integer("token_version").default(0).notNull(), // povećanje = odjava sa svih uređaja
+  lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+  ...timestamps,
+});
+
+/** Pozivnica za kolegu — link važi 7 dana i koristi se jednom. */
+export const invites = pgTable("invites", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tokenHash: text("token_hash").notNull().unique(),
+  email: text("email"),
+  role: userRoleEnum("role").default("member").notNull(),
+  createdBy: uuid("created_by").references(() => users.id),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  usedAt: timestamp("used_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});
+
+/** Link samo za pregled leadova (bez beleški i izmena) — može da se opozove. */
+export const shareLinks = pgTable("share_links", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  tokenHash: text("token_hash").notNull().unique(),
+  label: text("label").notNull(),
+  minScore: integer("min_score").default(0).notNull(),
+  createdBy: uuid("created_by").references(() => users.id),
+  expiresAt: timestamp("expires_at", { withTimezone: true }),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});

@@ -51,6 +51,7 @@ services:
       PORT: "3000"
       # Timska lozinka za dodavanje leadova iz dashboard-a (bez nje je dodavanje isključeno)
       API_TOKEN: ${API_TOKEN:-}
+      SESSION_SECRET: ${SESSION_SECRET:-}
       # Ručno dodati leadovi se odmah ocenjuju preko LiteLLM-a
       LITELLM_URL: http://litellm:4000
       LITELLM_KEY: ${LITELLM_MASTER_KEY}

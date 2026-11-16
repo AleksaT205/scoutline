@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { LeadStatus, ServiceCategory } from "@radar/shared";
 import { API_URL } from "../lib/api";
+import { authHeaders } from "../lib/team";
 import { CATEGORY_LABEL, STATUS_META } from "./ui";
 
 interface Analytics {
@@ -101,7 +102,7 @@ export function OverviewPage() {
     let alive = true;
     setData(null);
     const load = () =>
-      fetch(`${API_URL}/analytics?days=${days}`)
+      fetch(`${API_URL}/analytics?days=${days}`, { headers: authHeaders() })
         .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
         .then((d: Analytics) => alive && (setData(d), setError(null)))
         .catch(() => alive && setError("Can't load analytics — the backend may be offline."));
