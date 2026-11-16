@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, desc, eq, gte, isNull } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, ne } from "drizzle-orm";
 import { leads, rawItems, sources, type Db } from "@radar/db";
 import { detectCountry, finalScore, remoteFriendly, tierOf } from "@radar/shared";
 import type { Connector } from "../connectors/types.js";
@@ -84,19 +84,28 @@ const CATEGORY_TEXT: Record<string, string> = {
 export async function scorePending(db: Db, aiBatch: number) {
   // Pravila su trenutna — bez AI-a ocenjujemo i veći broj odjednom.
   const limit = aiActive() ? aiBatch : 300;
-  const rows = await db
-    .select({ lead: leads, raw: rawItems, source: sources.name })
-    .from(leads)
-    .innerJoin(rawItems, eq(leads.rawItemId, rawItems.id))
-    .innerJoin(sources, eq(rawItems.sourceId, sources.id))
-    .where(isNull(leads.scoredAt))
-    .orderBy(desc(rawItems.postedAt))
-    .limit(limit);
+  const select = () =>
+    db
+      .select({ lead: leads, raw: rawItems, source: sources.name })
+      .from(leads)
+      .innerJoin(rawItems, eq(leads.rawItemId, rawItems.id))
+      .innerJoin(sources, eq(rawItems.sourceId, sources.id));
+  const rows = await select().where(isNull(leads.scoredAt)).orderBy(desc(rawItems.postedAt)).limit(limit);
+  // Kad je AI dostupan, postepeno preocenjujemo i one koje su ranije ocenila pravila (najsvežije prvo).
+  if (aiActive() && rows.length < limit) {
+    rows.push(
+      ...(await select()
+        .where(and(eq(leads.scoredBy, "rules"), ne(leads.status, "hidden")))
+        .orderBy(desc(rawItems.postedAt))
+        .limit(limit - rows.length)),
+    );
+  }
 
   let byAi = 0;
   for (const { lead, raw } of rows) {
     const body = raw.body ?? "";
     const ai = await scoreWithAi({ title: raw.title, company: raw.companyName, location: raw.location, salary: raw.salaryText, body });
+    if (!ai && lead.scoredBy === "rules") continue; // preocenjivanje nije uspelo — zadrži postojeću ocenu
     const rules = ai ? null : scoreByRules(raw.title, body);
     if (ai) byAi++;
 
