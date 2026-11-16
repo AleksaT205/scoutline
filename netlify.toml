@@ -1,6 +1,7 @@
 # Netlify: samo frontend (apps/web). Backend radi na mini PC-u.
 [build]
-  command = "corepack enable && pnpm install --frozen-lockfile && pnpm --filter @radar/web build"
+  # Netlify sam instalira zavisnosti (prepoznaje pnpm iz pnpm-lock.yaml i "packageManager")
+  command = "pnpm --filter @radar/web build"
   publish = "apps/web/dist"
 
 [build.environment]
