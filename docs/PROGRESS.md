@@ -15,8 +15,13 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 | 5 | Team & Settings: nalozi (email + lozinka), uloge owner/member/viewer, pozivnice (link 7 dana), linkovi samo za pregled, profil i promena lozinke | ✅ |
 | 6 | Produkcija: dnevni backup baze, monitoring (Telegram + `/health/deep`), zaštita prijave, sigurnosna zaglavlja, Cloudflare Tunnel spreman; ručni koraci u [PRODUCTION.md](PRODUCTION.md) | ✅ (kod) |
 | 7 | Dev workflow: AGENTS.md/CLAUDE.md, GitHub Issues kao taskovi (+ stranica Tasks u dashboard-u), @claude akcija preko pretplate, šabloni; vidi [WORKFLOW.md](WORKFLOW.md) | ✅ |
+| **8** | **Lead model 2.0 + tenderi** (TED, UK, Kanada) — leadovi = projekti za firmu, ne zaposlenje · [ROADMAP](ROADMAP.md) · GitHub #8 | ⏭ sledeće |
+| 9 | Email-in (Upwork, PeoplePerHour, Malt, Portal javnih nabavki) + Freelancer.com · #9 | |
+| 10 | Delivery MVP: Clients, Projects, Issues (Linear stil), Lead → Project · #10 | |
+| 11 | Cycles, Triage, GitHub PR sync, Assign to Claude/Codex, klijent portal · #11 | |
+| 12 | Izveštaji: profitabilnost po projektu, vreme, ušteda AI-a | |
 
-**Sledeći korak:** Deploy → podešavanja iz [WORKFLOW.md](WORKFLOW.md) (GITHUB_TOKEN, CLAUDE_CODE_OAUTH_TOKEN) → taskovi na GitHub-u (#1–#7).
+**Sledeći korak:** Faza 8 (Lead model 2.0 + tenderi) po [ROADMAP.md](ROADMAP.md).
 
 ## Urađeno
 

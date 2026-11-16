@@ -31,6 +31,7 @@ Server: `cp .env.example .env`, popuni, pa iz korena repoa `docker compose --env
 
 | Dokument | Sadržaj |
 |---|---|
+| [docs/ROADMAP.md](docs/ROADMAP.md) | Roadmap 2.0: leadovi za projekte (tenderi, marketplace-i, email-in) + Delivery modul (Linear stil) |
 | [docs/PLAN.md](docs/PLAN.md) | Cilj, arhitektura, moduli, filter zemalja, faze razvoja |
 | [docs/SOURCES.md](docs/SOURCES.md) | Izvori oglasa, kako se pristupa, pravni status |
 | [docs/COSTS.md](docs/COSTS.md) | Sve što se koristi, šta je besplatno, šta se plaća |
