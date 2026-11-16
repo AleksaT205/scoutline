@@ -1,12 +1,11 @@
-import { BarChart3, Kanban, LayoutGrid, Route, Rss, Search, Settings, Users, X } from "lucide-react";
+import { Kanban, LayoutGrid, Route, Rss, Search, Settings, Users, X } from "lucide-react";
 import type { ApiStatus } from "../lib/api";
 
 const prospecting = (leadCount: number) => [
-  { label: "Overview", icon: LayoutGrid, soon: true },
+  { label: "Overview", icon: LayoutGrid, href: "#/overview" },
   { label: "Leads", icon: Search, count: leadCount, href: "#/" },
   { label: "Pipeline", icon: Kanban, href: "#/pipeline" },
   { label: "Sources", icon: Rss, href: "#/sources" },
-  { label: "Analytics", icon: BarChart3, soon: true },
 ];
 const aiOps = [{ label: "AI Router", icon: Route, href: "#/router" }];
 const formatCost = (v?: number) => (v === undefined ? "—" : v > 0 && v < 0.01 ? `$${v.toFixed(4)}` : `$${v.toFixed(2)}`);
@@ -66,7 +65,7 @@ function StatusCard({ status, aiCostUsd }: { status: ApiStatus; aiCostUsd?: numb
   );
 }
 
-export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: { status: ApiStatus; open: boolean; onClose: () => void; leadCount: number; aiCostUsd?: number; page: "leads" | "router" | "sources" | "pipeline" }) {
+export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: { status: ApiStatus; open: boolean; onClose: () => void; leadCount: number; aiCostUsd?: number; page: "leads" | "router" | "sources" | "pipeline" | "overview" }) {
   return (
     <>
       {open && <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={onClose} />}
@@ -91,7 +90,7 @@ export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: {
         <nav className="flex flex-col gap-0.5">
           <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wider text-faint">Prospecting</div>
           {prospecting(leadCount).map((i) => (
-            <NavItem key={i.label} {...i} active={(i.label === "Leads" && page === "leads") || (i.label === "Sources" && page === "sources") || (i.label === "Pipeline" && page === "pipeline")} />
+            <NavItem key={i.label} {...i} active={(i.label === "Leads" && page === "leads") || (i.label === "Sources" && page === "sources") || (i.label === "Pipeline" && page === "pipeline") || (i.label === "Overview" && page === "overview")} />
           ))}
         </nav>
         <nav className="flex flex-col gap-0.5">

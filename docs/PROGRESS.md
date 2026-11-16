@@ -11,12 +11,12 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 | 1.5 | Dashboard: dizajn, filteri (i po vremenu objave), pretraga, tema, ručno dodavanje leada, stranica Sources, pravi brojevi, osvežavanje svakog minuta, podešavanja Telegram obaveštenja | ✅ |
 | 2 | AI Router (MVP): endpoint `/llm/v1`, auto rutiranje fast/smart, klijenti, budžeti, ušteda | ✅ |
 | 3 | Pipeline / CRM: status leada (New → Contacted → Replied → Meeting → Won/Lost), „Hide“, beleške, istorija, kanban sa prevlačenjem, filter po statusu | ✅ |
-| **4** | **Overview + Analytics:** grafikoni po danima i izvorima, konverzija leadova, trošak AI-a | ⏭ sledeće |
-| 5 | Team & Settings: nalozi i uloge umesto timske lozinke, pozivnice, link za pregled | |
+| 4 | Overview: leadovi po danu, funnel (contacted → replied → won), izvori, tržišta, usluge, udeo AI ocena; period 7/30/90 dana | ✅ |
+| **5** | **Team & Settings:** nalozi i uloge umesto timske lozinke, pozivnice, link za pregled | ⏭ sledeće |
 | 6 | Produkcija: domen, Cloudflare Tunnel, backup baze, monitoring, plaćeni modeli za klijente | |
 | 7 | Dev workflow: zadaci i planiranje povezani sa GitHub-om (Issues), rad kroz Claude Code / Codex pretplatu | |
 
-**Sledeći korak:** Deploy u Coolify-ju → Faza 4 (Overview + Analytics).
+**Sledeći korak:** Deploy u Coolify-ju → Faza 5 (Team & Settings).
 
 ## Urađeno
 

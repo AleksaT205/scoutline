@@ -310,6 +310,36 @@ export function createApp(getDb: () => Db) {
     });
   });
 
+  // GET /analytics?days=30 — podaci za Overview grafikone
+  app.get("/analytics", async (c) => {
+    const db = getDb();
+    const days = Math.min(Math.max(Number(c.req.query("days") ?? 30), 7), 90);
+    const since = new Date(Date.now() - days * 86_400_000).toISOString();
+    const q = <T extends Record<string, unknown>>(query: ReturnType<typeof sql>) => db.execute<T>(query).then((r) => [...r]);
+    const [daily, bySource, byTier, byCategory, funnel, scoring] = await Promise.all([
+      q<{ day: string; leads: number; good: number }>(sql`
+        select to_char(date_trunc('day', created_at), 'YYYY-MM-DD') as day, count(*)::int as leads,
+               count(*) filter (where score >= 70)::int as good
+        from leads where status <> 'hidden' and created_at >= ${since}::timestamptz group by 1 order by 1`),
+      q<{ name: string; leads: number; good: number; avg: number }>(sql`
+        select s.name, count(l.id)::int as leads, count(l.id) filter (where l.score >= 70)::int as good, coalesce(avg(l.score),0)::float as avg
+        from leads l join raw_items r on r.id = l.raw_item_id join sources s on s.id = r.source_id
+        where l.status <> 'hidden' and l.created_at >= ${since}::timestamptz group by s.name order by leads desc`),
+      q<{ key: string; leads: number }>(sql`select coalesce(tier::text,'UNKNOWN') as key, count(*)::int as leads from leads where status <> 'hidden' and created_at >= ${since}::timestamptz group by 1 order by 2 desc`),
+      q<{ key: string; leads: number }>(sql`select coalesce(category::text,'other_dev') as key, count(*)::int as leads from leads where status <> 'hidden' and created_at >= ${since}::timestamptz group by 1 order by 2 desc`),
+      q<{ key: string; leads: number }>(sql`select status::text as key, count(*)::int as leads from leads group by 1`),
+      q<{ key: string; leads: number }>(sql`select case when scored_by like 'ai%' then 'ai' when scored_by = 'rules' then 'rules' else 'pending' end as key, count(*)::int as leads from leads group by 1`),
+    ]);
+    let aiDaily: Array<{ day: string; requests: number; spend: number }> = [];
+    try {
+      aiDaily = await q(sql`select to_char(date_trunc('day', "startTime"), 'YYYY-MM-DD') as day, count(*)::int as requests, coalesce(sum(spend),0)::float as spend
+        from "LiteLLM_SpendLogs" where "startTime" >= ${since}::timestamptz group by 1 order by 1`);
+    } catch {
+      /* LiteLLM tabele ne postoje */
+    }
+    return c.json({ days, daily, bySource, byTier, byCategory, funnel, scoring, aiDaily });
+  });
+
   // GET /stats — brojevi za KPI kartice i stanje izvora
   app.get("/stats", async (c) => {
     const db = getDb();

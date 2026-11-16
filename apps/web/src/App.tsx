@@ -12,6 +12,7 @@ import { RouterPage } from "./components/RouterPage";
 import { SourcesPage } from "./components/SourcesPage";
 import { AlertsDialog } from "./components/AlertsDialog";
 import { PipelinePage } from "./components/PipelinePage";
+import { OverviewPage } from "./components/OverviewPage";
 
 type Theme = "light" | "dark";
 const systemTheme = (): Theme => (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
@@ -34,7 +35,7 @@ function useTheme(): [Theme, () => void] {
   return [theme, () => setTheme((t) => (t === "dark" ? "light" : "dark"))];
 }
 
-export type Page = "leads" | "router" | "sources" | "pipeline";
+export type Page = "leads" | "router" | "sources" | "pipeline" | "overview";
 function useHashPage(): Page {
   const read = (): Page =>
     window.location.hash.startsWith("#/router")
@@ -43,7 +44,9 @@ function useHashPage(): Page {
         ? "sources"
         : window.location.hash.startsWith("#/pipeline")
           ? "pipeline"
-          : "leads";
+          : window.location.hash.startsWith("#/overview")
+            ? "overview"
+            : "leads";
   const [page, setPage] = useState<Page>(read);
   useEffect(() => {
     const on = () => {
@@ -88,7 +91,7 @@ export function App() {
           </button>
           <div className="text-[13px] text-muted">
             <span className="hidden sm:inline">{page === "router" ? "AI Ops / " : "Prospecting / "}</span>
-            <b className="font-medium text-fg">{page === "router" ? "AI Router" : page === "sources" ? "Sources" : page === "pipeline" ? "Pipeline" : "Leads"}</b>
+            <b className="font-medium text-fg">{page === "router" ? "AI Router" : page === "sources" ? "Sources" : page === "pipeline" ? "Pipeline" : page === "overview" ? "Overview" : "Leads"}</b>
           </div>
           <label className={`ml-auto h-[34px] w-80 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-faint focus-within:border-accent/55 ${page === "leads" ? "hidden md:flex" : "hidden"}`}>
             <Search size={14} />
@@ -118,6 +121,8 @@ export function App() {
         <div className="mx-auto max-w-[1480px] px-4 pt-7 pb-10 sm:px-6">
           {page === "router" ? (
             <RouterPage />
+          ) : page === "overview" ? (
+            <OverviewPage />
           ) : page === "sources" ? (
             <SourcesPage />
           ) : page === "pipeline" ? (
