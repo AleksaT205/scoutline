@@ -1,6 +1,7 @@
 # AI router za ocenjivanje oglasa. Samo BESPLATNI modeli.
 # Više rezervnih modela u istoj grupi "scorer": ako jedan ne radi (nema ključa, limit, ugašen model),
-# LiteLLM automatski pokuša sledeći. Nazive proveriti povremeno — besplatni modeli se menjaju.
+# LiteLLM ga stavi na pauzu, a worker pokuša ponovo (dobije drugi model).
+# Ugašeni (nov. 2026): gemini-2.5-flash ("no longer available to new users"), groq llama-3.1-8b-instant. Nazive proveriti povremeno — besplatni modeli se menjaju.
 model_list:
   # OpenRouter — modeli sa ":free" sufiksom ne naplaćuju se (0 $)
   - model_name: scorer
@@ -14,11 +15,11 @@ model_list:
   # Google Gemini — besplatan nivo (ako projekat nema uključen billing)
   - model_name: scorer
     litellm_params:
-      model: gemini/gemini-flash-latest
+      model: gemini/gemini-3.8-flash   # Google ga sam preporučuje umesto ugašenog 2.5-flash
       api_key: os.environ/GEMINI_API_KEY
   - model_name: scorer
     litellm_params:
-      model: gemini/gemini-2.5-flash
+      model: gemini/gemini-flash-latest
       api_key: os.environ/GEMINI_API_KEY
   # Groq — besplatan nivo
   - model_name: scorer
@@ -27,14 +28,14 @@ model_list:
       api_key: os.environ/GROQ_API_KEY
   - model_name: scorer
     litellm_params:
-      model: groq/llama-3.1-8b-instant
+      model: groq/openai/gpt-oss-20b
       api_key: os.environ/GROQ_API_KEY
 
 router_settings:
   routing_strategy: simple-shuffle
   num_retries: 4          # pokušaj druge modele iz grupe ako jedan padne
   allowed_fails: 1        # model koji padne ide na pauzu…
-  cooldown_time: 300      # …od 5 minuta
+  cooldown_time: 900      # …od 15 minuta
 
 litellm_settings:
   drop_params: true       # izbaci parametre koje neki model ne podržava (npr. response_format)

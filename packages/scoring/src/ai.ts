@@ -49,15 +49,32 @@ const fail = () => {
   if (++failures >= 3) {
     pausedUntil = Date.now() + 15 * 60_000;
     failures = 0;
-    console.warn("[ai] 3 greške zaredom — AI pauziran 15 min, koriste se pravila");
+    console.warn("[ai] 3 oglasa zaredom bez AI odgovora — AI pauziran 15 min, koriste se pravila");
   }
   return null;
 };
 
-/** Poziva LiteLLM (OpenAI-kompatibilan endpoint) → besplatni modeli. Vraća null ako AI nije dostupan. */
+const ATTEMPTS = 4;
+
+/**
+ * Poziva LiteLLM (OpenAI-kompatibilan endpoint) → besplatni modeli. Vraća null ako AI nije dostupan.
+ * Svaki pokušaj LiteLLM može da pošalje drugom modelu; neispravan model ode na pauzu, pa sledeći pokušaj
+ * obično uspe. Tek kad svi pokušaji padnu, oglas se računa kao neuspeh.
+ */
 export async function scoreWithAi(input: { title: string; company: string | null; location: string | null; salary: string | null; body: string }): Promise<AiResult | null> {
   if (!aiConfigured() || Date.now() < pausedUntil) return null;
   const user = `Title: ${input.title}\nCompany: ${input.company ?? "unknown"}\nLocation: ${input.location ?? "unknown"}\nSalary: ${input.salary ?? "unknown"}\n\n${input.body.slice(0, 6000)}`;
+  for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
+    const result = await callOnce(user);
+    if (result) {
+      failures = 0;
+      return result;
+    }
+  }
+  return fail();
+}
+
+async function callOnce(user: string): Promise<AiResult | null> {
   try {
     const res = await fetch(`${LITELLM_URL}/v1/chat/completions`, {
       method: "POST",
@@ -69,26 +86,35 @@ export async function scoreWithAi(input: { title: string; company: string | null
           { role: "user", content: user },
         ],
         temperature: 0.2,
-        max_tokens: 700,
+        max_tokens: 900,
         response_format: { type: "json_object" },
       }),
       signal: AbortSignal.timeout(60_000),
     });
     if (!res.ok) {
-      console.warn(`[ai] HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
-      return fail();
+      console.warn(`[ai] HTTP ${res.status}: ${(await res.text()).replace(/\s+/g, " ").slice(0, 220)}`);
+      return null;
     }
-    const data = (await res.json()) as { model?: string; choices?: Array<{ message?: { content?: string } }> };
+    const data = (await res.json()) as { model?: string; choices?: Array<{ message?: { content?: string | null } }> };
     const raw = data.choices?.[0]?.message?.content ?? "";
-    const json = JSON.parse(raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1)) as Record<string, unknown>;
+    const from = raw.indexOf("{");
+    const to = raw.lastIndexOf("}");
+    if (from < 0 || to <= from) {
+      console.warn(`[ai] ${data.model ?? "model"}: odgovor bez JSON-a (${raw.length} znakova)`);
+      return null;
+    }
+    const json = JSON.parse(raw.slice(from, to + 1)) as Record<string, unknown>;
     const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : null);
     const arr = (v: unknown) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string").slice(0, 4) : []);
     const category = SERVICE_CATEGORIES.includes(json.category as ServiceCategory) ? (json.category as ServiceCategory) : "other_dev";
     const industry = INDUSTRIES.includes(json.industry as Industry) ? (json.industry as Industry) : "other";
     const country = str(json.country)?.toUpperCase().slice(0, 2) ?? null;
-    failures = 0;
+    if (!Number.isFinite(Number(json.score))) {
+      console.warn(`[ai] ${data.model ?? "model"}: JSON bez ocene`);
+      return null;
+    }
     return {
-      aiScore: Math.max(0, Math.min(100, Math.round(Number(json.score) || 0))),
+      aiScore: Math.max(0, Math.min(100, Math.round(Number(json.score)))),
       category,
       industry,
       country: country && /^[A-Z]{2}$/.test(country) ? country : null,
@@ -105,6 +131,6 @@ export async function scoreWithAi(input: { title: string; company: string | null
     };
   } catch (e) {
     console.warn(`[ai] ${(e as Error).message}`);
-    return fail();
+    return null;
   }
 }
