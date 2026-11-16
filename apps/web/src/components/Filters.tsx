@@ -1,11 +1,12 @@
-import { INDUSTRIES, SERVICE_CATEGORIES, type Tier } from "@radar/shared";
+import { INDUSTRIES, LEAD_TYPES, SERVICE_CATEGORIES, type LeadType, type Tier } from "@radar/shared";
 import { Info, RotateCcw } from "lucide-react";
 import type { UiLead } from "../data/demo";
-import { CATEGORY_LABEL } from "./ui";
+import { CATEGORY_LABEL, TYPE_META } from "./ui";
 
 export type Market = Tier | "UNKNOWN";
 
 export interface FilterState {
+  types: Set<LeadType>;
   markets: Set<Market>;
   minScore: number; // 0 | 50 | 70
   minBudget: number; // 0 | 3000
@@ -17,7 +18,11 @@ export interface FilterState {
   status: string; // "open" | "all" | LeadStatus
 }
 
+/** Podrazumevano: projekti za firmu, bez oglasa za posao. */
+export const DEFAULT_TYPES: LeadType[] = ["tender", "project", "intent"];
+
 export const DEFAULT_FILTERS: FilterState = {
+  types: new Set<LeadType>(DEFAULT_TYPES),
   markets: new Set<Market>(["T1", "T2", "T3", "UNKNOWN", "DOMESTIC"]),
   minScore: 50,
   minBudget: 0,
@@ -30,6 +35,14 @@ export const DEFAULT_FILTERS: FilterState = {
 };
 
 export const marketOf = (l: UiLead): Market => l.tier ?? "UNKNOWN";
+export const typeOf = (l: UiLead): LeadType => l.leadType ?? "hiring_signal";
+/** Nova kopija podrazumevanih filtera (Set-ovi se ne smeju deliti). */
+export const freshFilters = (over: Partial<FilterState> = {}): FilterState => ({
+  ...DEFAULT_FILTERS,
+  types: new Set(DEFAULT_TYPES),
+  markets: new Set(DEFAULT_FILTERS.markets),
+  ...over,
+});
 const OPEN = ["new", "contacted", "replied", "meeting"];
 const matchStatus = (s: string, f: string) => (f === "all" ? s !== "hidden" : f === "open" ? OPEN.includes(s) : s === f);
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
@@ -38,6 +51,7 @@ export function applyFilters(leads: UiLead[], f: FilterState): UiLead[] {
   const q = f.query.trim().toLowerCase();
   return leads.filter(
     (l) =>
+      f.types.has(typeOf(l)) &&
       f.markets.has(marketOf(l)) &&
       l.score >= f.minScore &&
       (!f.minBudget || !l.budgetEur || l.budgetEur >= f.minBudget) &&
@@ -87,6 +101,14 @@ function Select({ value, onChange, children, label }: { value: string; onChange:
 export function Filters({ value, onChange, all, shown }: { value: FilterState; onChange: (f: FilterState) => void; all: UiLead[]; shown: number }) {
   const counts = new Map<Market, number>();
   for (const l of all) counts.set(marketOf(l), (counts.get(marketOf(l)) ?? 0) + 1);
+  const typeCounts = new Map<LeadType, number>();
+  for (const l of all) if ((l.status ?? "new") !== "hidden") typeCounts.set(typeOf(l), (typeCounts.get(typeOf(l)) ?? 0) + 1);
+  const toggleType = (t: LeadType) => {
+    const types = new Set(value.types);
+    if (types.has(t)) types.delete(t);
+    else types.add(t);
+    onChange({ ...value, types });
+  };
 
   const toggleMarket = (m: Market) => {
     const markets = new Set(value.markets);
@@ -103,12 +125,25 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
     !value.query &&
     !value.maxAgeHours &&
     value.status === "open" &&
-    value.markets.size === DEFAULT_FILTERS.markets.size;
+    value.markets.size === DEFAULT_FILTERS.markets.size &&
+    value.types.size === DEFAULT_TYPES.length &&
+    DEFAULT_TYPES.every((t) => value.types.has(t));
 
   return (
     <div className="mb-3 space-y-2">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-1 text-[12px] text-faint" title="Tier = koliko je tržište platežno. Klik uključuje/isključuje grupu.">
+        <span className="inline-flex w-[52px] items-center gap-1 text-[12px] text-faint" title="Vrsta prilike. Oglasi za posao su podrazumevano isključeni — firmi trebaju projekti.">
+          Type <Info size={12} />
+        </span>
+        {LEAD_TYPES.map((t) => (
+          <Chip key={t} on={value.types.has(t)} onClick={() => toggleType(t)} title={TYPE_META[t].hint}>
+            {TYPE_META[t].label}
+            <span className="num text-[11px] text-faint">{typeCounts.get(t) ?? 0}</span>
+          </Chip>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="inline-flex w-[52px] items-center gap-1 text-[12px] text-faint" title="Tier = koliko je tržište platežno. Klik uključuje/isključuje grupu.">
           Market <Info size={12} />
         </span>
         {MARKETS.map((m) => (
@@ -171,7 +206,7 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
           Budget ≥ €3k
         </Chip>
         {!isDefault && (
-          <button onClick={() => onChange({ ...DEFAULT_FILTERS, markets: new Set(DEFAULT_FILTERS.markets) })} className="inline-flex h-[30px] items-center gap-1 px-1.5 text-[12.5px] text-muted hover:text-fg">
+          <button onClick={() => onChange(freshFilters())} className="inline-flex h-[30px] items-center gap-1 px-1.5 text-[12.5px] text-muted hover:text-fg">
             <RotateCcw size={12} /> Reset
           </button>
         )}

@@ -27,5 +27,9 @@ export const INDUSTRIES = [
 ] as const;
 export type Industry = (typeof INDUSTRIES)[number];
 
+/** Tip leada (Roadmap 2.0): projekti za firmu su važniji od oglasa za posao. */
+export const LEAD_TYPES = ["tender", "project", "intent", "hiring_signal"] as const;
+export type LeadType = (typeof LEAD_TYPES)[number];
+
 export const LEAD_STATUSES = ["new", "contacted", "replied", "meeting", "won", "lost", "hidden"] as const;
 export type LeadStatus = (typeof LEAD_STATUSES)[number];

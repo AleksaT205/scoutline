@@ -29,6 +29,8 @@ function toUiLead({ lead, raw, source }: LeadRow) {
     city: raw.location ?? "",
     tier: lead.tier,
     category: lead.category ?? "other_dev",
+    leadType: lead.leadType ?? "hiring_signal",
+    deadline: raw.deadline ? raw.deadline.toISOString() : null,
     budgetLabel: fmtBudget(lead.budgetEur),
     budgetEur: lead.budgetEur ?? 0,
     source,
@@ -259,6 +261,7 @@ export function createApp(getDb: () => Db) {
       salaryText: null,
       body,
       prior: { country, remoteOk: remoteFriendly(`${location ?? ""}\n${body.slice(0, 3000)}`) },
+      leadType: "project", // ručno dodat = najčešće projekat; AI može da ga prebaci u oglas za posao
     });
     const { aiTitle, aiCompany, ...fields } = r;
     // AI često bolje prepozna naziv pozicije i firmu nego naslov stranice
@@ -317,7 +320,7 @@ export function createApp(getDb: () => Db) {
     const days = Math.min(Math.max(Number(c.req.query("days") ?? 30), 7), 90);
     const since = new Date(Date.now() - days * 86_400_000).toISOString();
     const q = <T extends Record<string, unknown>>(query: ReturnType<typeof sql>) => db.execute<T>(query).then((r) => [...r]);
-    const [daily, bySource, byTier, byCategory, funnel, scoring] = await Promise.all([
+    const [daily, bySource, byTier, byCategory, funnel, scoring, byType] = await Promise.all([
       q<{ day: string; leads: number; good: number }>(sql`
         select to_char(date_trunc('day', created_at), 'YYYY-MM-DD') as day, count(*)::int as leads,
                count(*) filter (where score >= 70)::int as good
@@ -330,6 +333,7 @@ export function createApp(getDb: () => Db) {
       q<{ key: string; leads: number }>(sql`select coalesce(category::text,'other_dev') as key, count(*)::int as leads from leads where status <> 'hidden' and created_at >= ${since}::timestamptz group by 1 order by 2 desc`),
       q<{ key: string; leads: number }>(sql`select status::text as key, count(*)::int as leads from leads group by 1`),
       q<{ key: string; leads: number }>(sql`select case when scored_by like 'ai%' then 'ai' when scored_by = 'rules' then 'rules' else 'pending' end as key, count(*)::int as leads from leads group by 1`),
+      q<{ key: string; leads: number; good: number }>(sql`select coalesce(lead_type::text,'hiring_signal') as key, count(*)::int as leads, count(*) filter (where score >= 70)::int as good from leads where status <> 'hidden' and created_at >= ${since}::timestamptz group by 1 order by 2 desc`),
     ]);
     let aiDaily: Array<{ day: string; requests: number; spend: number }> = [];
     try {
@@ -338,7 +342,7 @@ export function createApp(getDb: () => Db) {
     } catch {
       /* LiteLLM tabele ne postoje */
     }
-    return c.json({ days, daily, bySource, byTier, byCategory, funnel, scoring, aiDaily });
+    return c.json({ days, daily, bySource, byTier, byCategory, byType, funnel, scoring, aiDaily });
   });
 
   // GET /stats — brojevi za KPI kartice i stanje izvora

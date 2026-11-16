@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
-import type { LeadStatus, ServiceCategory } from "@radar/shared";
+import type { LeadStatus, LeadType, ServiceCategory } from "@radar/shared";
 import { API_URL } from "../lib/api";
 import { authHeaders } from "../lib/team";
-import { CATEGORY_LABEL, STATUS_META } from "./ui";
+import { CATEGORY_LABEL, STATUS_META, TYPE_META } from "./ui";
 
 interface Analytics {
   days: number;
@@ -10,6 +10,7 @@ interface Analytics {
   bySource: Array<{ name: string; leads: number; good: number; avg: number }>;
   byTier: Array<{ key: string; leads: number }>;
   byCategory: Array<{ key: string; leads: number }>;
+  byType?: Array<{ key: string; leads: number; good: number }>;
   funnel: Array<{ key: string; leads: number }>;
   scoring: Array<{ key: string; leads: number }>;
   aiDaily: Array<{ day: string; requests: number; spend: number }>;
@@ -184,10 +185,15 @@ export function OverviewPage() {
           )}
         </Panel>
 
-        <Panel title="Sources" sub="Leads · share scoring 70+">
+        <Panel title="Sources" sub="Leads · share scoring 70+" className="xl:col-span-2">
           <HBars rows={(data?.bySource ?? []).map((s) => ({ label: s.name, value: s.leads, extra: `${pct(s.good, s.leads)} good` }))} />
         </Panel>
 
+        <Panel title="Lead types" sub="Leads · share scoring 70+">
+          <HBars rows={(data?.byType ?? []).map((t) => ({ label: TYPE_META[t.key as LeadType]?.label ?? t.key, value: t.leads, extra: `${pct(t.good, t.leads)} good` }))} color="bg-accent" />
+        </Panel>
+
+        <div className="grid gap-4 md:grid-cols-2 xl:col-span-3">
         <Panel title="Markets" sub="Where leads come from">
           <HBars rows={(data?.byTier ?? []).map((t) => ({ label: TIER_LABEL[t.key] ?? t.key, value: t.leads }))} color="bg-success" />
         </Panel>
@@ -195,6 +201,7 @@ export function OverviewPage() {
         <Panel title="Services" sub="What clients need">
           <HBars rows={(data?.byCategory ?? []).map((c) => ({ label: CATEGORY_LABEL[c.key as ServiceCategory] ?? c.key, value: c.leads }))} color="bg-warning" />
         </Panel>
+        </div>
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2 text-[12px] text-faint">

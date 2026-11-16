@@ -5,11 +5,13 @@ export interface FinalScoreInput {
   tier: Tier;
   remoteOk: boolean | null;
   budgetEur: number | null; // procenjena vrednost posla
+  leadType?: string | null; // tender | project | intent | hiring_signal
 }
 
 /** Konačna ocena = AI ocena × tier + bonusi. Uvek 0–100. */
-export function finalScore({ aiScore, tier, remoteOk, budgetEur }: FinalScoreInput): number {
+export function finalScore({ aiScore, tier, remoteOk, budgetEur, leadType }: FinalScoreInput): number {
   let s = aiScore * TIER_MULTIPLIER[tier];
+  if (leadType === "tender") s += 5; // postoji budžet, rok i obavezna procedura izbora dobavljača
   if (remoteOk === true) s += 5;
   if (remoteOk === false) s -= 25;
   if (budgetEur !== null) {

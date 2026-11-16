@@ -7,6 +7,7 @@ const remoteok: Connector = {
   name: "RemoteOK",
   kind: "api",
   intervalMinutes: 30,
+  defaultType: "hiring_signal",
   async fetch() {
     type Job = { id: string; company?: string; position?: string; description?: string; location?: string; salary_min?: number; salary_max?: number; date?: string; url?: string; tags?: string[] };
     const data = await getJson<Array<Job | { legal: string }>>("https://remoteok.com/api");
@@ -39,6 +40,7 @@ const wwr: Connector = {
   name: "We Work Remotely",
   kind: "rss",
   intervalMinutes: 30,
+  defaultType: "hiring_signal",
   async fetch() {
     const out: RawItem[] = [];
     for (const feed of WWR_FEEDS) {
@@ -72,6 +74,7 @@ const remotive: Connector = {
   name: "Remotive",
   kind: "api",
   intervalMinutes: 360,
+  defaultType: "hiring_signal",
   async fetch() {
     type Job = { id: number; url: string; title: string; company_name: string; candidate_required_location?: string; salary?: string; publication_date?: string; description?: string; job_type?: string };
     const data = await getJson<{ jobs: Job[] }>("https://remotive.com/api/remote-jobs?category=software-dev");
@@ -94,6 +97,7 @@ const arbeitnow: Connector = {
   name: "Arbeitnow",
   kind: "api",
   intervalMinutes: 60,
+  defaultType: "hiring_signal",
   async fetch() {
     type Job = { slug: string; company_name: string; title: string; description?: string; remote?: boolean; url: string; location?: string; created_at?: number; tags?: string[]; job_types?: string[] };
     const data = await getJson<{ data: Job[] }>("https://www.arbeitnow.com/api/job-board-api");
@@ -116,6 +120,7 @@ const hn: Connector = {
   name: "HN Who is hiring",
   kind: "api",
   intervalMinutes: 360,
+  defaultType: "hiring_signal",
   async fetch() {
     type Hit = { objectID: string; title: string };
     const search = await getJson<{ hits: Hit[] }>("https://hn.algolia.com/api/v1/search_by_date?tags=story,author_whoishiring&hitsPerPage=10");
@@ -151,6 +156,7 @@ const himalayas: Connector = {
   name: "Himalayas",
   kind: "api",
   intervalMinutes: 60,
+  defaultType: "hiring_signal",
   async fetch() {
     type Job = { title: string; companyName?: string; description?: string; excerpt?: string; employmentType?: string; minSalary?: number | null; maxSalary?: number | null; currency?: string | null; salaryPeriod?: string; locationRestrictions?: string[]; categories?: string[]; pubDate?: number; applicationLink?: string; guid: string };
     const out: RawItem[] = [];
@@ -180,6 +186,7 @@ const jobicy: Connector = {
   name: "Jobicy",
   kind: "api",
   intervalMinutes: 60,
+  defaultType: "hiring_signal",
   async fetch() {
     type Job = { id: number; url: string; jobTitle: string; companyName?: string; jobType?: string[]; jobGeo?: string; jobLevel?: string; jobDescription?: string; jobExcerpt?: string; pubDate?: string; salaryMin?: number; salaryMax?: number; salaryCurrency?: string };
     const data = await getJson<{ jobs?: Job[] }>("https://jobicy.com/api/v2/remote-jobs?count=50&industry=dev");
@@ -196,4 +203,7 @@ const jobicy: Connector = {
   },
 };
 
-export const CONNECTORS: Connector[] = [remoteok, wwr, remotive, arbeitnow, hn, himalayas, jobicy];
+import { TENDER_CONNECTORS } from "./tenders.js";
+
+/** Prvo projekti (tenderi, signali namere), pa oglasi za posao (hiring signal). */
+export const CONNECTORS: Connector[] = [...TENDER_CONNECTORS, remoteok, wwr, remotive, arbeitnow, hn, himalayas, jobicy];

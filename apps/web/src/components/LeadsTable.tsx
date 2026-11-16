@@ -1,12 +1,12 @@
 import type { UiLead } from "../data/demo";
-import { CATEGORY_LABEL, ScoreRing, StatusPill, Tag, TierBadge, flag, industryLabel, timeAgo } from "./ui";
+import { CATEGORY_LABEL, DeadlineChip, ScoreRing, StatusPill, Tag, TierBadge, TypeBadge, flag, industryLabel, timeAgo } from "./ui";
 
 export function LeadsTable({ leads, selectedId, onSelect }: { leads: UiLead[]; selectedId?: string; onSelect: (id: string) => void }) {
   if (leads.length === 0) {
     return (
       <div className="grid place-items-center rounded-xl border border-dashed border-line bg-surface px-6 py-16 text-center">
         <div className="text-sm font-medium">No leads match these filters</div>
-        <p className="mt-1 text-[13px] text-muted">Try lowering the minimum score or budget.</p>
+        <p className="mt-1 text-[13px] text-muted">Try another type (e.g. Hiring signals) or lower the minimum score.</p>
       </div>
     );
   }
@@ -40,11 +40,20 @@ export function LeadsTable({ leads, selectedId, onSelect }: { leads: UiLead[]; s
                   </td>
                   <td className="max-w-[300px] px-2.5 py-2.5">
                     <div className="flex items-center gap-2">
+                      <TypeBadge type={l.leadType} />
                       <span className="truncate font-medium">{l.title}</span>
                       {l.status && l.status !== "new" && <StatusPill status={l.status} />}
                     </div>
-                    <div className="truncate text-xs text-muted">
-                      {l.company} · {industryLabel(l.industry)}
+                    <div className="flex items-center gap-1.5 truncate text-xs text-muted">
+                      <span className="truncate">
+                        {l.company} · {industryLabel(l.industry)}
+                      </span>
+                      {l.deadline && (
+                        <>
+                          <span className="text-faint">·</span>
+                          <DeadlineChip deadline={l.deadline} />
+                        </>
+                      )}
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-2.5 py-2.5">

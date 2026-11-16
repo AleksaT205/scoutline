@@ -1,11 +1,12 @@
 import { boolean, doublePrecision, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
-import { INDUSTRIES, LEAD_STATUSES, SERVICE_CATEGORIES } from "@radar/shared";
+import { INDUSTRIES, LEAD_STATUSES, LEAD_TYPES, SERVICE_CATEGORIES } from "@radar/shared";
 
 export const tierEnum = pgEnum("tier", ["T1", "T2", "T3", "DOMESTIC"]);
 export const categoryEnum = pgEnum("service_category", SERVICE_CATEGORIES);
 export const industryEnum = pgEnum("industry", INDUSTRIES);
 export const statusEnum = pgEnum("lead_status", LEAD_STATUSES);
 export const sourceKindEnum = pgEnum("source_kind", ["api", "rss", "scrape", "manual"]);
+export const leadTypeEnum = pgEnum("lead_type", LEAD_TYPES);
 
 const timestamps = {
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
@@ -39,6 +40,11 @@ export const rawItems = pgTable(
     location: text("location"),
     salaryText: text("salary_text"),
     postedAt: timestamp("posted_at", { withTimezone: true }),
+    // Podaci koje izvor zna sigurno (tenderi): tip, rok, budžet, zemlja
+    kindHint: leadTypeEnum("kind_hint"),
+    deadline: timestamp("deadline", { withTimezone: true }),
+    budgetHintEur: integer("budget_hint_eur"),
+    countryHint: text("country_hint"),
     payload: jsonb("payload"),
     ...timestamps,
   },
@@ -66,6 +72,7 @@ export const leads = pgTable(
     aiScore: integer("ai_score"),
     score: integer("score"), // konačna ocena (tier + bonusi)
     category: categoryEnum("category"),
+    leadType: leadTypeEnum("lead_type"),
     industry: industryEnum("industry"),
     country: text("country"),
     tier: tierEnum("tier"),

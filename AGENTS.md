@@ -3,7 +3,7 @@
 Kratko i tačno, da svaki asistent odmah zna gde je i ne troši tokene na istraživanje.
 
 ## Projekat
-**Scoutline** — platforma za agenciju: (1) **Lead Radar** prati oglase (7 izvora), ocenjuje ih (AI ili pravila) i šalje dobre na Telegram; CRM/pipeline za praćenje; (2) **AI Router** — jedan endpoint za aplikacije klijenata sa rutiranjem `fast`/`smart`, budžetima i troškovima po klijentu.
+**Scoutline** — platforma za agenciju: (1) **Lead Radar** prati tendere, projekte, signale investicija i oglase (13 izvora), ocenjuje ih (AI ili pravila) i šalje dobre na Telegram; CRM/pipeline za praćenje; (2) **AI Router** — jedan endpoint za aplikacije klijenata sa rutiranjem `fast`/`smart`, budžetima i troškovima po klijentu.
 
 Stanje i faze: **`docs/PROGRESS.md`** (pročitaj prvo). Plan: `docs/PLAN.md`. Dizajn: `docs/DESIGN.md`. Produkcija: `docs/PRODUCTION.md`.
 

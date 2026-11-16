@@ -4,7 +4,8 @@ import { DEMO_LEADS } from "./data/demo";
 import { useApiStatus, useLeads } from "./lib/api";
 import { Sidebar } from "./components/Sidebar";
 import { Kpis } from "./components/Kpis";
-import { DEFAULT_FILTERS, Filters, applyFilters, type FilterState } from "./components/Filters";
+import { LEAD_TYPES } from "@radar/shared";
+import { Filters, applyFilters, freshFilters, type FilterState } from "./components/Filters";
 import { LeadsTable } from "./components/LeadsTable";
 import { LeadDetail } from "./components/LeadDetail";
 import { AddLeadDialog } from "./components/AddLeadDialog";
@@ -91,7 +92,7 @@ function Dashboard({ page, needsSetup }: { page: Page; needsSetup: boolean }) {
     const id = setInterval(() => forceTick((t) => t + 1), 30_000); // osveži "Updated X ago"
     return () => clearInterval(id);
   }, []);
-  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+  const [filters, setFilters] = useState<FilterState>(() => freshFilters());
   const [selectedId, setSelectedId] = useState<string>();
 
   // Pravi leadovi iz API-ja; dok ih nema, prikazuju se primeri.
@@ -190,7 +191,7 @@ function Dashboard({ page, needsSetup }: { page: Page; needsSetup: boolean }) {
               live={api.live}
               onUpdated={api.update}
               onOpenLead={(id) => {
-                setFilters({ ...DEFAULT_FILTERS, markets: new Set(DEFAULT_FILTERS.markets), minScore: 0, status: "all" });
+                setFilters(freshFilters({ types: new Set(LEAD_TYPES), minScore: 0, status: "all" }));
                 setSelectedId(id);
                 window.location.hash = "#/";
               }}
@@ -200,7 +201,7 @@ function Dashboard({ page, needsSetup }: { page: Page; needsSetup: boolean }) {
           <div className="mb-5 flex flex-wrap items-end gap-4">
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
-              <p className="mt-0.5 text-[13.5px] text-muted">New opportunities from 7 sources, scored and filtered for your services.</p>
+              <p className="mt-0.5 text-[13.5px] text-muted">Projects for the team — public tenders, contract work and growth signals from 13 sources, scored for your services.</p>
               {api.live && api.loadedAt && (
                 <p className="mt-1 inline-flex items-center gap-1.5 text-[12px] text-faint">
                   Updated {Math.max(0, Math.round((Date.now() - api.loadedAt) / 60_000)) || "<1"} min ago · refreshes every minute · sources sync every 30–60 min
@@ -250,7 +251,7 @@ function Dashboard({ page, needsSetup }: { page: Page; needsSetup: boolean }) {
         onClose={() => setAddOpen(false)}
         onAdded={(lead) => {
           api.add(lead);
-          setFilters({ ...DEFAULT_FILTERS, markets: new Set(DEFAULT_FILTERS.markets), minScore: 0 });
+          setFilters(freshFilters({ types: new Set(LEAD_TYPES), minScore: 0 }));
           setSelectedId(lead.id);
         }}
       />

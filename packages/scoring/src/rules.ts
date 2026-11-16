@@ -37,19 +37,32 @@ const INDUSTRY_RULES: Array<[RegExp, Industry]> = [
   [/\b(saas|b2b software|platform)\b/i, "saas"],
 ];
 
+/** Znakovi da je posao projekat/ugovor, a ne stalno zaposlenje. */
+export const CONTRACT = /\b(contract|contractor|freelance|freelancer|agency|agencies|outsourc\w*|project[- ]based|fixed[- ]price|part[- ]time|consultant|consultancy|honorarn\w*|fiksn\w* cen\w*|projek(at|tno)|agencij\w*)\b/i;
+
 const pick = <T>(rules: Array<[RegExp, T]>, text: string, fallback: T): T => rules.find(([re]) => re.test(text))?.[1] ?? fallback;
 
 /** Rezervno ocenjivanje kad AI nije dostupan (nema ključa ili je pao). */
-export function scoreByRules(title: string, body: string) {
+export function scoreByRules(title: string, body: string, leadType: string | null = null) {
   const text = `${title}\n${body.slice(0, 4000)}`;
-  let s = 35;
-  if (/\b(contract|contractor|freelance|freelancer|agency|project[- ]based|part[- ]time|consultant|honorarn\w*|fiksn\w* cen\w*|projek(at|tno)|agencij\w*)\b/i.test(text)) s += 15;
+  // Tender = naručilac sigurno traži spoljnog dobavljača; signal investicije = proaktivan kontakt.
+  let s = leadType === "tender" ? 45 : leadType === "intent" ? 40 : 35;
+  if (leadType === "tender") {
+    // Razvoj/izrada = naš posao; licence, pretplate i čisto održavanje tuđih sistema = slabije
+    if (/\b(development|develop|build|implementation|portal|website|web|application|platform|custom software|digital|integration|moderni[sz]\w*|izrad\w*|razvoj\w*)\b/i.test(`${title}\n${body.slice(0, 1500)}`)) s += 15;
+    if (/\b(licen[cs]\w*|subscriptions?|renewal|support and maintenance of|sap|oracle|microsoft|hardware|equipment)\b/i.test(title)) s -= 15;
+  }
+  const contract = CONTRACT.test(text);
+  if (contract) s += 15;
   if (/\b(mvp|build (an?|our) (app|platform|product)|from scratch|izrad\w* (web )?(aplikacij|sajt|platform)\w*|nova aplikacija)\b/i.test(text)) s += 10;
   if (/\b(full[- ]?stack)\b/i.test(text)) s += 10;
   if (/\b(ai|llm|openai|gpt|chatbot|automation|n8n)\b/i.test(text)) s += 10;
   if (/\b(react|next\.?js|node|typescript)\b/i.test(text)) s += 6;
   if (/\b(staff|principal|director|head of|vp|manager)\b/i.test(title)) s -= 15;
   if (/\b(on-?site|in office|relocation required)\b/i.test(text)) s -= 10;
+  // Oglas za stalno zaposlenje bez znakova projekta → slab signal
+  if (leadType === "hiring_signal" && !contract) s = Math.min(s, 40);
+  if (leadType === "tender") s = Math.min(s, 80); // bez AI provere ne dajemo vrhunsku ocenu
   return {
     aiScore: Math.max(0, Math.min(90, s)),
     // Kategorija prvo po nazivu pozicije (u tekstu se "AI" pominje skoro svuda), pa po tekstu.

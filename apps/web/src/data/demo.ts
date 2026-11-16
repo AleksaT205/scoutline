@@ -1,4 +1,4 @@
-import type { LeadStatus, ServiceCategory, Tier } from "@radar/shared";
+import type { LeadStatus, LeadType, ServiceCategory, Tier } from "@radar/shared";
 
 export interface UiLead {
   id: string;
@@ -9,6 +9,8 @@ export interface UiLead {
   city: string;
   tier: Tier | null;
   category: ServiceCategory;
+  leadType?: LeadType; // tender | project | intent | hiring_signal
+  deadline?: string | null; // rok za prijavu (tenderi), ISO
   budgetLabel: string;
   budgetEur: number;
   source: string;

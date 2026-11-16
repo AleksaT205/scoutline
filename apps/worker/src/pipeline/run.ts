@@ -2,7 +2,7 @@ import { createHash } from "node:crypto";
 import { and, desc, eq, gte, isNull, ne } from "drizzle-orm";
 import { leads, rawItems, settings, sources, type Db } from "@radar/db";
 import { detectCountry, normalizeAlerts, remoteFriendly, tierOf, type AlertSettings } from "@radar/shared";
-import { aiActive, passesPrefilter, scoreItem } from "@radar/scoring";
+import { CONTRACT, aiActive, passesPrefilter, scoreItem } from "@radar/scoring";
 import type { Connector } from "../connectors/types.js";
 import { sendLeadToTelegram, telegramConfigured } from "@radar/scoring";
 
@@ -43,15 +43,25 @@ export async function ingest(db: Db, c: Connector) {
           location: it.location,
           salaryText: it.salaryText,
           postedAt: it.postedAt && !Number.isNaN(it.postedAt.getTime()) ? it.postedAt : null,
+          kindHint: it.leadType ?? c.defaultType,
+          deadline: it.deadline && !Number.isNaN(it.deadline.getTime()) ? it.deadline : null,
+          budgetHintEur: it.budgetEur ?? null,
+          countryHint: it.country ?? null,
         })
         .onConflictDoNothing({ target: rawItems.urlHash })
         .returning({ id: rawItems.id });
       if (!row) continue; // već viđen
       fresh++;
-      if (!passesPrefilter(it.title, it.body, { allowBody: c.id === "hn" })) continue;
-      const country = detectCountry({ location: it.location, salaryText: it.salaryText });
+      const type = it.leadType ?? c.defaultType;
+      // Tenderi i signali su već filtrirani u konektoru (CPV / ključne reči); oglasi prolaze prefilter za developere.
+      if ((type === "hiring_signal" || type === "project") && !passesPrefilter(it.title, it.body, { allowBody: c.id === "hn" })) continue;
+      if (it.deadline && it.deadline.getTime() < Date.now()) continue; // rok prošao
+      const country = it.country ?? detectCountry({ location: it.location, salaryText: it.salaryText });
+      const leadType = type === "hiring_signal" && CONTRACT.test(`${it.title}\n${it.body.slice(0, 2000)}`) ? "project" : type;
       await db.insert(leads).values({
         rawItemId: row.id,
+        leadType,
+        budgetEur: it.budgetEur ?? null,
         country,
         tier: country ? tierOf(country) : null,
         remoteOk: remoteFriendly(`${it.location ?? ""}\n${it.body.slice(0, 3000)}`),
@@ -97,8 +107,11 @@ export async function scorePending(db: Db, aiBatch: number) {
       location: raw.location,
       salaryText: raw.salaryText,
       body: raw.body ?? "",
-      prior: { country: lead.country, remoteOk: lead.remoteOk },
+      prior: { country: raw.countryHint ?? lead.country, remoteOk: lead.remoteOk },
       useAi,
+      leadType: (raw.kindHint === "hiring_signal" ? lead.leadType : raw.kindHint) ?? lead.leadType,
+      budgetHintEur: raw.budgetHintEur,
+      deadline: raw.deadline,
     });
     if (r.scoredBy === "rules" && lead.scoredBy === "rules") continue; // preocenjivanje AI-jem nije uspelo — zadrži postojeću ocenu
     if (r.scoredBy !== "rules") byAi++;
@@ -134,7 +147,8 @@ export async function notifyNew(db: Db) {
   const rows = candidates
     .filter(({ lead }) => alerts.markets.includes(lead.tier ?? "UNKNOWN"))
     .filter(({ lead }) => !alerts.categories.length || (lead.category && alerts.categories.includes(lead.category)))
-    .filter(({ lead }) => !alerts.remoteOnly || lead.remoteOk === true)
+    .filter(({ lead }) => alerts.types.includes(lead.leadType ?? "hiring_signal"))
+    .filter(({ lead }) => !alerts.remoteOnly || lead.remoteOk === true || lead.leadType === "tender")
     .slice(0, 10);
   for (const { lead, raw, source } of rows) {
     const ok = await sendLeadToTelegram({
@@ -144,6 +158,8 @@ export async function notifyNew(db: Db) {
       country: lead.country,
       tier: lead.tier,
       budgetEur: lead.budgetEur,
+      leadType: lead.leadType,
+      deadline: raw.deadline,
       source,
       url: raw.url,
       why: lead.why,

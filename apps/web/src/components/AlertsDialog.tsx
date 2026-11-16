@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { BellRing, Check, Loader2, Lock, Send, X } from "lucide-react";
-import { SERVICE_CATEGORIES, type AlertSettings } from "@radar/shared";
+import { LEAD_TYPES, SERVICE_CATEGORIES, type AlertSettings } from "@radar/shared";
 import { getTeamToken, setTeamToken, teamFetch } from "../lib/team";
-import { CATEGORY_LABEL } from "./ui";
+import { CATEGORY_LABEL, TYPE_META } from "./ui";
 
 const MARKETS: Array<{ key: AlertSettings["markets"][number]; label: string }> = [
   { key: "T1", label: "Tier 1" },
@@ -128,6 +128,15 @@ export function AlertsDialog({ open, onClose }: { open: boolean; onClose: () => 
                 <span className="num text-[13px] text-fg">{alerts.minScore}+</span>
               </div>
               <input type="range" min={50} max={95} step={5} value={alerts.minScore} onChange={(e) => set({ minScore: Number(e.target.value) })} className="w-full accent-[var(--accent)]" />
+
+              <div className="mt-4 mb-1.5 text-[12px] uppercase tracking-wider text-faint">Lead types</div>
+              <div className="flex flex-wrap gap-1.5">
+                {LEAD_TYPES.map((t) => (
+                  <Chip key={t} on={(alerts.types ?? []).includes(t)} onClick={() => set({ types: toggleIn(alerts.types ?? [], t) })}>
+                    {TYPE_META[t].label}
+                  </Chip>
+                ))}
+              </div>
 
               <div className="mt-4 mb-1.5 text-[12px] uppercase tracking-wider text-faint">Markets</div>
               <div className="flex flex-wrap gap-1.5">

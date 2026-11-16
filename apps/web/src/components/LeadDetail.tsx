@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Check, Copy, ExternalLink, Mail, Sparkles } from "lucide-react";
 import type { UiLead } from "../data/demo";
-import { ScoreRing, flag, timeAgo } from "./ui";
+import { ScoreRing, TypeBadge, daysLeft, flag, timeAgo } from "./ui";
 import { NotesPanel, StatusBar } from "./LeadCrm";
 
 function Signal({ label, value, ok }: { label: string; value: string; ok?: boolean }) {
@@ -44,6 +44,11 @@ export function LeadDetail({ lead, live, onUpdated }: { lead: UiLead; live: bool
       <div className="flex items-start gap-3">
         <ScoreRing score={lead.score} size={64} stroke={5} />
         <div className="min-w-0">
+          {lead.leadType && (
+            <div className="mb-1">
+              <TypeBadge type={lead.leadType} />
+            </div>
+          )}
           <div className="text-base font-semibold leading-snug tracking-tight">{lead.title}</div>
           <div className="mt-1 flex flex-wrap gap-x-2.5 gap-y-1 text-[12.5px] text-muted">
             <span>{lead.company}</span>
@@ -65,7 +70,18 @@ export function LeadDetail({ lead, live, onUpdated }: { lead: UiLead; live: bool
           <Signal label="Budget" value={lead.budgetLabel} />
           <Signal label="Remote" value={lead.remoteOk === true || lead.remoteOk === undefined ? `${lead.remote} ✓` : lead.remote} ok={lead.remoteOk === true || lead.remoteOk === undefined} />
           <Signal label={lead.companySize ? "Company size" : "Market"} value={lead.companySize ?? (lead.tier === "DOMESTIC" ? "Domestic" : (lead.tier ?? "Unknown"))} />
-          <Signal label="Urgency" value={lead.urgency} />
+          {lead.deadline ? (
+            <Signal
+              label="Deadline"
+              value={`${new Date(lead.deadline).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} · ${(() => {
+                const d = daysLeft(lead.deadline) ?? 0;
+                return d < 0 ? "closed" : d === 0 ? "today" : `${d} days left`;
+              })()}`}
+              ok={(daysLeft(lead.deadline) ?? 0) > 14}
+            />
+          ) : (
+            <Signal label="Urgency" value={lead.urgency} />
+          )}
         </div>
       </div>
 
@@ -93,7 +109,7 @@ export function LeadDetail({ lead, live, onUpdated }: { lead: UiLead; live: bool
         </button>
         {lead.url && (
           <a href={lead.url} target="_blank" rel="noreferrer" className="inline-flex h-[34px] flex-1 items-center justify-center gap-1.5 rounded-[7px] border border-line bg-surface text-[13px] font-medium hover:bg-surface-2">
-            <ExternalLink size={14} /> Post
+            <ExternalLink size={14} /> {lead.leadType === "tender" ? "Notice" : lead.leadType === "intent" ? "Article" : "Post"}
           </a>
         )}
         <a

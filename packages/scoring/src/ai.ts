@@ -1,4 +1,4 @@
-import { INDUSTRIES, SERVICE_CATEGORIES, type Industry, type ServiceCategory } from "@radar/shared";
+import { INDUSTRIES, LEAD_TYPES, SERVICE_CATEGORIES, type Industry, type LeadType, type ServiceCategory } from "@radar/shared";
 
 const LITELLM_URL = process.env.LITELLM_URL ?? "http://localhost:4000";
 const LITELLM_KEY = process.env.LITELLM_KEY ?? "";
@@ -8,13 +8,20 @@ const SYSTEM = `You are a lead qualification analyst for a small software develo
 We sell: full-stack web apps (React/Next.js/Node), backend & APIs, mobile apps, AI integrations (LLM features, chatbots, RAG),
 workflow automation (n8n/Zapier/Make), deployment/DevOps, and bug fixing / maintenance. We work remotely in English and Serbian.
 
-Given a job post, freelance project or tender, estimate how likely this organization is to hire us (an external agency/contractor)
-in the next 3 months. Contract/freelance/project work, small and mid-size companies without a big in-house team, clear budgets,
-remote-friendly setups and urgent needs score higher. Full-time-only senior roles at large companies, on-site requirements,
-non-development roles and vague posts score lower.
+We want PROJECTS for our company, not employment for individuals. Given a public tender, freelance project, company news
+or job post, estimate how likely this organization is to hire us (an external agency/contractor) for a project in the next 3 months.
+- Tenders for software, web, apps, digital services or IT support are strong leads (budget and deadline exist). Score lower
+  when the tender is mostly hardware, licences, telecom, on-site staffing, or clearly needs a large local firm.
+- Contract/freelance/project work, small and mid-size companies without a big in-house team, clear budgets,
+  remote-friendly setups and urgent needs score higher.
+- Funding/growth news: score by how likely the company needs extra development capacity soon.
+- A full-time employee job post is only a weak signal (max ~45) unless it is contract/freelance or invites agencies.
+- Non-development work, on-site requirements and vague posts score lower.
 
 Return ONLY a JSON object with these keys:
-score (0-100 integer), category (one of: ${SERVICE_CATEGORIES.join(", ")}),
+score (0-100 integer), lead_type (one of: ${LEAD_TYPES.join(", ")} — tender = public procurement, project = a concrete project
+for a contractor, intent = company news suggesting a future need, hiring_signal = an employee job post),
+category (one of: ${SERVICE_CATEGORIES.join(", ")}),
 industry (one of: ${INDUSTRIES.join(", ")}), country (ISO 3166-1 alpha-2 of the hiring company or null),
 remote_ok (true/false/null — would they work with a remote contractor abroad), budget_eur (integer estimate of the deal size or null),
 urgency (short phrase or null), why (array of 2-3 short reasons it fits or not, in English),
@@ -24,6 +31,7 @@ in the post's language, ends with one simple question).`;
 
 export interface AiResult {
   aiScore: number;
+  leadType: LeadType | null;
   category: ServiceCategory;
   industry: Industry;
   country: string | null;
@@ -61,9 +69,9 @@ const ATTEMPTS = 4;
  * Svaki pokušaj LiteLLM može da pošalje drugom modelu; neispravan model ode na pauzu, pa sledeći pokušaj
  * obično uspe. Tek kad svi pokušaji padnu, oglas se računa kao neuspeh.
  */
-export async function scoreWithAi(input: { title: string; company: string | null; location: string | null; salary: string | null; body: string }): Promise<AiResult | null> {
+export async function scoreWithAi(input: { title: string; company: string | null; location: string | null; salary: string | null; body: string; leadType?: string | null }): Promise<AiResult | null> {
   if (!aiConfigured() || Date.now() < pausedUntil) return null;
-  const user = `Title: ${input.title}\nCompany: ${input.company ?? "unknown"}\nLocation: ${input.location ?? "unknown"}\nSalary: ${input.salary ?? "unknown"}\n\n${input.body.slice(0, 6000)}`;
+  const user = `${input.leadType ? `Source type: ${input.leadType}\n` : ""}Title: ${input.title}\nCompany: ${input.company ?? "unknown"}\nLocation: ${input.location ?? "unknown"}\nSalary: ${input.salary ?? "unknown"}\n\n${input.body.slice(0, 6000)}`;
   for (let attempt = 1; attempt <= ATTEMPTS; attempt++) {
     const result = await callOnce(user);
     if (result) {
@@ -116,6 +124,7 @@ async function callOnce(user: string): Promise<AiResult | null> {
     }
     return {
       aiScore: Math.max(0, Math.min(100, Math.round(Number(json.score)))),
+      leadType: LEAD_TYPES.includes(json.lead_type as LeadType) ? (json.lead_type as LeadType) : null,
       category,
       industry,
       country: country && /^[A-Z]{2}$/.test(country) ? country : null,

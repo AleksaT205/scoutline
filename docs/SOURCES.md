@@ -14,7 +14,10 @@ Legenda statusa: ✅ može odmah · 🟡 proveriti uslove pre upotrebe · 🔴 n
 | Hacker News "Who is hiring" | Zvanični HN API (Firebase) | ✅ | Mesečna tema, mnogo startapa iz SAD |
 | Remotive | Javni API | 🟡 | Proveriti limite |
 | Arbeitnow | Javni API | 🟡 | Dobar za Nemačku/EU |
-| EU TED (tenderi) | Zvanični API | 🟡 | Javni podaci EU |
+| EU TED (tenderi) | Search API v3, anonimno | ✅ radi | CPV 72*/48*, otvoreni pozivi, poslednja 3 dana (Faza 8) |
+| UK Contracts Finder | OCDS API, Open Government Licence | ✅ radi | Faza 8 |
+| UK Find a Tender | OCDS API | ✅ radi | Faza 8 |
+| CanadaBuys | Dnevni CSV otvorenih tendera | ✅ radi | Samo usluge (SRV) + IT ključne reči (Faza 8) |
 | Himalayas | Javni API | ✅ | Uslov: navesti Himalayas i koristiti njihov applicationLink — ispunjeno |
 | Jobicy | Javni API | ✅ | Uslov: navesti Jobicy i linkovati originalni oglas — ispunjeno |
 | SAM.gov (US tenderi) | Zvanični API (besplatan ključ) | 🟡 | T1 tržište, ali često traže US registraciju |
@@ -28,7 +31,7 @@ Legenda statusa: ✅ može odmah · 🟡 proveriti uslove pre upotrebe · 🔴 n
 | Reddit | Komercijalna upotreba traži odobrenje Reddit-a (od nov. 2025 svi novi klijenti) | 🟡 | Podneti zahtev; do tada ručno |
 | Indeed / Glassdoor | Ograničen pristup | 🔴 | Ne automatizovati |
 | Wellfound | Bez javnog API-ja | 🟡 | Proveriti uslove |
-| Vesti o investicijama (TechCrunch, EU-Startups i sl.) | RSS | ✅ | Signal "firma ima novac" |
+| Vesti o investicijama | RSS | ✅ radi | TechCrunch venture + Startit (Faza 8); EU-Startups vraća 403 — preskočeno |
 
 ## Domaći
 
