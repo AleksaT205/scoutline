@@ -5,7 +5,7 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 ## Gde smo sada
 
 **Faza:** Faza 1 gotova u kodu — čeka ključeve (AI, Telegram) na serveru.
-**Sledeći korak:** na serveru Korak 1–3 ispod (Coolify), zatim Faza 1 — prvi izvori (RemoteOK, WWR, HN) + AI ocena + Telegram.
+**Sledeći korak:** Redeploy u Coolify-ju, pa uneti besplatne AI ključeve i Telegram bot (vidi checklist ispod).
 
 ## Urađeno
 
@@ -50,7 +50,7 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 - [x] Repo na GitHub (privatni): github.com/AleksaT205/scoutline
 - [x] Netlify povezan sa `apps/web` → https://scoutline-app.netlify.app (auto-deploy na push u `main`)
 - [x] Coolify instaliran na mini PC (`http://192.168.100.60:8000`)
-- [ ] Prilagoditi dashboard za telefon (sidebar se ne skuplja)
+- [x] Dashboard: dizajn iz mockup-a + prikaz za telefon
 - [x] Radar (api + worker + baza + LiteLLM) deploy preko Coolify-ja → `http://192.168.100.60:3100/health` radi (port 3000 je na serveru zauzet)
 - [x] Javna HTTPS adresa za API: https://aleksaserver.tail32786c.ts.net (Tailscale Funnel → port 3100); `VITE_API_URL` u `netlify.toml`
 - [x] Faza 1 — 5 izvora (RemoteOK, WWR, Remotive, Arbeitnow, HN), prefilter po nazivu pozicije, zemlja/tier, ocena (AI preko LiteLLM ili pravila kao rezerva), Telegram, API `/leads` i `/stats`, dashboard sa pravim podacima
@@ -59,4 +59,3 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 
 ## Otvoreno
 - Konačan naziv (predlog: Scoutline)
-- Repo prebaciti u stalni folder i na GitHub (privatni repo)
