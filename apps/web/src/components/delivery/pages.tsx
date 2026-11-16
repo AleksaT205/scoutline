@@ -45,7 +45,8 @@ function useNewIssueShortcut(open: () => void, enabled: boolean) {
 function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onClose: () => void; project?: Project; onSaved: (p: Project) => void }) {
   const customers = useCustomers();
   const members = useMembers();
-  const [f, setF] = useState({ name: "", customerId: "", customerName: "", status: "planned" as ProjectStatus, budgetEur: "", dueDate: "", ownerId: "", repoUrl: "", description: "", githubImport: false });
+  const [f, setF] = useState({ name: "", customerId: "", customerName: "", status: "planned" as ProjectStatus, budgetEur: "", dueDate: "", ownerId: "", repoUrl: "", description: "", githubImport: false, billing: "fixed" as "fixed" | "hourly", hourlyRateEur: "", aiClientId: "" });
+  const [aiClients, setAiClients] = useState<Array<{ id: string; name: string; projectId: string | null }>>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
@@ -62,7 +63,18 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
       repoUrl: project?.repoUrl ?? "",
       description: project?.description ?? "",
       githubImport: project?.githubImport ?? false,
+      billing: project?.billing ?? "fixed",
+      hourlyRateEur: project?.hourlyRateEur ? String(project.hourlyRateEur) : "",
+      aiClientId: "",
     });
+    // Ključevi AI Router-a (AI trošak klijenta ide na projekat u izveštajima)
+    teamFetch<{ clients: Array<{ id: string; name: string; projectId: string | null }> }>("/delivery/ai-clients")
+      .then((d) => {
+        setAiClients(d.clients);
+        const linked = project ? d.clients.find((c) => c.projectId === project.id) : undefined;
+        setF((cur) => ({ ...cur, aiClientId: linked?.id ?? "" }));
+      })
+      .catch(() => setAiClients([]));
   }, [open, project]);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
   const label = "mb-1 block text-[12px] text-muted";
@@ -84,9 +96,13 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
               ownerId: f.ownerId || null,
               repoUrl: f.repoUrl,
               githubImport: f.githubImport,
+              billing: f.billing,
+              hourlyRateEur: f.hourlyRateEur ? Number(f.hourlyRateEur) : null,
               description: f.description,
             };
             const { project: saved } = await teamFetch<{ project: Project }>(project ? `/delivery/projects/${project.id}` : "/delivery/projects", { method: project ? "PATCH" : "POST", body: JSON.stringify(body) });
+            const linked = project ? aiClients.find((c) => c.projectId === project.id)?.id ?? "" : "";
+            if (f.aiClientId !== linked) await teamFetch(`/delivery/projects/${saved.id}/ai-client`, { method: "PUT", body: JSON.stringify({ clientId: f.aiClientId || null }) });
             onSaved(saved);
             onClose();
           } catch (err) {
@@ -131,9 +147,23 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
             </label>
           )}
           <label>
-            <span className={label}>Budget (€)</span>
-            <input className={`${field} h-[36px]`} inputMode="numeric" value={f.budgetEur} onChange={set("budgetEur")} placeholder="15000" />
+            <span className={label}>Billing</span>
+            <select className={`${field} h-[36px]`} value={f.billing} onChange={set("billing")}>
+              <option value="fixed">Fixed price (budget)</option>
+              <option value="hourly">Hourly (time × rate)</option>
+            </select>
           </label>
+          {f.billing === "hourly" ? (
+            <label>
+              <span className={label}>Client hourly rate (€)</span>
+              <input className={`${field} h-[36px]`} inputMode="numeric" value={f.hourlyRateEur} onChange={set("hourlyRateEur")} placeholder="45" />
+            </label>
+          ) : (
+            <label>
+              <span className={label}>Budget (€)</span>
+              <input className={`${field} h-[36px]`} inputMode="numeric" value={f.budgetEur} onChange={set("budgetEur")} placeholder="15000" />
+            </label>
+          )}
           <label>
             <span className={label}>Target date</span>
             <input type="date" className={`${field} h-[36px]`} value={f.dueDate} onChange={set("dueDate")} />
@@ -153,6 +183,20 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
             <span className={label}>GitHub repo (optional)</span>
             <input className={`${field} h-[36px]`} value={f.repoUrl} onChange={set("repoUrl")} placeholder="https://github.com/…" />
           </label>
+          {aiClients.length > 0 && (
+            <label className="sm:col-span-2">
+              <span className={label}>AI Router key (its AI cost and savings count toward this project)</span>
+              <select className={`${field} h-[36px]`} value={f.aiClientId} onChange={set("aiClientId")}>
+                <option value="">None</option>
+                {aiClients.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                    {c.projectId && c.projectId !== project?.id ? " (linked to another project)" : ""}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
           {f.repoUrl.trim() && (
             <label className="inline-flex items-center gap-2 text-[12.5px] text-muted sm:col-span-2">
               <input type="checkbox" checked={f.githubImport} onChange={(e) => setF({ ...f, githubImport: e.target.checked })} className="accent-[var(--accent)]" />

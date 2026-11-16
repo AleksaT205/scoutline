@@ -40,6 +40,8 @@ export interface Project {
   ownerName: string | null;
   repoUrl: string | null;
   githubImport: boolean;
+  billing: "fixed" | "hourly";
+  hourlyRateEur: number | null;
   issues: { total: number; done: number; inProgress: number; todo: number };
   progress: number;
   createdAt: string;
@@ -93,6 +95,18 @@ export interface IssueLink {
   url: string;
   title: string | null;
   state: string | null;
+}
+
+export interface TimeEntry {
+  id: string;
+  projectId: string;
+  issueId: string | null;
+  userId: string | null;
+  userName: string;
+  minutes: number;
+  spentOn: string;
+  note: string | null;
+  billable: boolean;
 }
 
 export interface IssueEvent {

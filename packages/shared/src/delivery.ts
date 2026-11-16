@@ -36,3 +36,38 @@ export function projectKey(name: string): string {
   const key = words.length === 1 ? words[0]!.slice(0, 4) : words.map((w) => w[0]).join("").slice(0, 5);
   return key.length >= 2 ? key : (words[0]! + "X").slice(0, 3);
 }
+
+/** „1h 30m“, „1.5h“, „90m“, „45“ (minuti), „2h“ → minuti; null ako nije ispravno. */
+export function parseDuration(input: string): number | null {
+  const s = input.trim().toLowerCase().replace(",", ".");
+  if (!s) return null;
+  if (/^\d+(\.\d+)?$/.test(s)) {
+    const n = Number(s);
+    return n > 0 ? Math.round(n <= 12 && s.includes(".") ? n * 60 : n <= 12 ? n * 60 : n) : null; // „2“ = 2 h, „90“ = 90 min
+  }
+  const m = s.match(/^(?:(\d+(?:\.\d+)?)\s*h(?:ours?)?)?\s*(?:(\d+)\s*m(?:in(?:utes?)?)?)?$/);
+  if (!m || (!m[1] && !m[2])) return null;
+  const total = Math.round(Number(m[1] ?? 0) * 60 + Number(m[2] ?? 0));
+  return total > 0 && total <= 24 * 60 ? total : null;
+}
+
+/** 90 → „1h 30m“ */
+export const fmtMinutes = (min: number) => {
+  const h = Math.floor(min / 60);
+  const m = Math.round(min % 60);
+  return h && m ? `${h}h ${m}m` : h ? `${h}h` : `${m}m`;
+};
+
+/** Cena rada: podrazumevana interna cena sata + izuzeci po osobi (EUR). */
+export interface Rates {
+  defaultHourlyCost: number;
+  members: Record<string, number>;
+}
+export const DEFAULT_RATES: Rates = { defaultHourlyCost: 20, members: {} };
+export function normalizeRates(v: unknown): Rates {
+  const r = (v ?? {}) as Partial<Rates>;
+  const num = (x: unknown, d: number) => (Number.isFinite(Number(x)) && Number(x) >= 0 ? Math.min(1000, Number(x)) : d);
+  const members: Record<string, number> = {};
+  for (const [k, x] of Object.entries(r.members ?? {})) if (Number.isFinite(Number(x))) members[k] = num(x, 0);
+  return { defaultHourlyCost: num(r.defaultHourlyCost, DEFAULT_RATES.defaultHourlyCost), members };
+}

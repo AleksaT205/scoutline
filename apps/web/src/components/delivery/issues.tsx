@@ -4,6 +4,7 @@ import { ISSUE_STATUSES, type IssueStatus } from "@radar/shared";
 import { teamFetch } from "../../lib/team";
 import { canEdit, useSessionUser } from "../../lib/session";
 import { cycleLabel, fmtDate, patchIssue, toDateInput, useCycles, useMembers, type Issue, type IssueEvent, type IssueLink, type Project } from "../../lib/delivery";
+import { TimeBox } from "./time";
 import { Avatar, BOARD_STATUSES, Dialog, ErrorNote, ISSUE_STATUS_META, Menu, PRIORITY_META, PriorityIcon, StatusIcon, btnPrimary, btnSecondary } from "./parts";
 
 const ESTIMATES = [null, 1, 2, 3, 5, 8];
@@ -661,6 +662,7 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
               </ul>
             )}
           </div>
+          <TimeBox issueId={issue.id} />
           {error && (
             <div className="mt-3">
               <ErrorNote>{error}</ErrorNote>

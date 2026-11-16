@@ -45,3 +45,10 @@ Tip: u opisu taska napiši odeljak `Done when:` sa stavkama. To ide u brief kao 
 - **Claude:** u Claude Code-u pokreni `/install-github-app` za taj repo. Kopiraj `.github/workflows/claude.yml` iz našeg repoa i dodaj secret `CLAUDE_CODE_OAUTH_TOKEN` (`claude setup-token`). Radi preko pretplate, kao u Fazi 7.
 - **Codex:** chatgpt.com/codex → poveži GitHub → dozvoli pristup repou. Ako `@codex` u issue-u ne pokrene zadatak na tvom nalogu, otvori GitHub issue iz Codex-a ručno; brief je već spreman.
 - `AGENTS.md` / `CLAUDE.md` u repou klijenta smanjuju potrošnju tokena (agent odmah zna strukturu).
+
+## Vreme i izveštaji (Faza 12)
+- **Unos vremena:** u detalju taska, odeljak **Time**. Upiši `1h 30m`, `45m` ili `2` (= 2 sata), izaberi datum, dodaj napomenu i klikni **Log**. Polje „Billable“ znači da se vreme naplaćuje klijentu (važno za projekte po satu).
+- **Naplata projekta** (Edit project): **Fixed price** (vrednost = budžet) ili **Hourly** (vrednost = naplativi sati × satnica klijenta).
+- **Interna cena sata** (Reports → dugme `€20/h`, menja samo vlasnik): koliko firmu košta sat rada, uz izuzetke po osobi. Iz toga se računa trošak.
+- **AI trošak po projektu:** u Edit project izaberi ključ AI Router-a klijenta. Njegov trošak i ušteda idu na taj projekat.
+- **Reports** prikazuje: vrednost, trošak, maržu, potrošen budžet (crveno preko 100%), stvarnu zaradu po satu, sate po nedelji i po osobi, AI uštedu i broj taskova koje su završili agenti. Dugme **CSV** izvozi tabelu za Excel.

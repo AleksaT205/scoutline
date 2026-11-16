@@ -19,11 +19,17 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 | 9 | Email-in (IMAP: Upwork, PeoplePerHour, Malt, Portal javnih nabavki, LinkedIn, prosleđeni upiti) + Freelancer.com API + e-Nabavke BiH + SAM.gov (uz ključ) · [EMAIL-IN.md](EMAIL-IN.md) · #9 | ✅ |
 | 10 | Delivery MVP: prekidač Sales/Delivery, Projects, Clients, My issues, tabla taskova (Linear stil, prevlačenje), detalj taska (status, prioritet, osoba, procena, oznake, rok, komentari, istorija), prečica C, Lead (Won) → Project · #10 | ✅ |
 | 11 | Cycles (sprintovi + burn-up), Inbox (triage), GitHub PR sync (PR → In Review / Done, issues → Inbox), Assign to Claude/Codex (brief u GitHub issue), portal za klijenta (+ zahtevi) · [DELIVERY.md](DELIVERY.md) · #11 | ✅ |
-| **12** | **Izveštaji**: profitabilnost po projektu, vreme, ušteda AI-a | ⏭ sledeće |
+| 12 | Izveštaji: evidencija vremena na tasku, cena rada (po osobi), naplata fiksno/po satu, profitabilnost po projektu (vrednost, trošak, marža, potrošen budžet, €/h), sati po nedelji i osobi, AI trošak i ušteda po projektu, taskovi agenata, CSV · [DELIVERY.md](DELIVERY.md) | ✅ |
 
-**Sledeći korak:** Redeploy u Coolify-ju → podesiti Email-in po [EMAIL-IN.md](EMAIL-IN.md) (Gmail + App password u Coolify) i, po želji, `SAM_API_KEY`. Za Delivery + GitHub: `GITHUB_TOKEN` sa pristupom repoima projekata ([DELIVERY.md](DELIVERY.md)). Zatim Faza 12 (izveštaji) po [ROADMAP.md](ROADMAP.md).
+**Sledeći korak:** Redeploy u Coolify-ju → podesiti Email-in po [EMAIL-IN.md](EMAIL-IN.md) (Gmail + App password u Coolify) i, po želji, `SAM_API_KEY`. Za Delivery + GitHub: `GITHUB_TOKEN` sa pristupom repoima projekata ([DELIVERY.md](DELIVERY.md)). Sve faze iz Roadmap-a 2.0 su gotove — sledeće: podešavanja na serveru i stvarni rad, pa nove ideje u GitHub Issues.
 
 ## Urađeno
+
+- **17. 11. 2026. — Faza 12 (izveštaji)**
+  - Baza: `time_entries` (ko, koliko, kad, naplativo), `projects.billing` (fixed/hourly) + `hourly_rate_eur`, `clients.project_id` (AI Router ključ → projekat). Migracija 0009.
+  - API: `/delivery/time` (unos, lista, brisanje svog), `/delivery/rates` (interna cena sata, po osobi; menja vlasnik), `/delivery/projects/:id/ai-client`, `/delivery/reports?days=` (profitabilnost po projektu do danas; vreme po osobi/nedelji, AI i agenti za period).
+  - Web: „Time“ u detalju taska („1h 30m“, datum, napomena, naplativo); u projektu naplata (fiksno / po satu) i veza sa AI Router ključem; stranica **Reports** (KPI, tabela profitabilnosti sa potrošnjom budžeta i €/h, sati po nedelji, vreme po osobi, AI ušteda, CSV, dijalog za cenu sata).
+  - Provereno lokalno: 13 unosa vremena, cene po osobi (22 €/h, 30 €/h), lažni LiteLLM trošak 400 zahteva → izveštaj se slaže sa ručnim računom.
 
 - **17. 11. 2026. — Faza 11**
   - **Cycles**: dvonedeljni sprintovi za ceo tim (prave se sami, tekući + 2 unapred), nedovršeno iz završenog sprinta prelazi u tekući; stranica sa burn-up grafikonom, obimom i listom; izbor sprinta u tasku i „Current cycle“ pri pravljenju.

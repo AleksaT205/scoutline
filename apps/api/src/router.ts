@@ -46,7 +46,7 @@ async function litellm<T>(path: string, body: unknown): Promise<T> {
 }
 
 const n = (v: unknown) => Number(v ?? 0) || 0;
-const baseline = (pin: number, pout: number) => (pin / 1e6) * BASE_IN + (pout / 1e6) * BASE_OUT;
+export const baseline = (pin: number, pout: number) => (pin / 1e6) * BASE_IN + (pout / 1e6) * BASE_OUT;
 
 /** Javni proxy: /llm/v1/chat/completions, /llm/v1/messages, /llm/v1/models … */
 export function llmProxy() {

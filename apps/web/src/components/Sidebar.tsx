@@ -1,4 +1,4 @@
-import { Building2, CircleDot, FolderKanban, Inbox, ListTodo, Kanban, LayoutGrid, RefreshCcw, Route, Rss, Search, Settings, Users, X } from "lucide-react";
+import { BarChart3, Building2, CircleDot, FolderKanban, Inbox, ListTodo, Kanban, LayoutGrid, RefreshCcw, Route, Rss, Search, Settings, Users, X } from "lucide-react";
 import { useInboxCount } from "../lib/delivery";
 import type { ApiStatus } from "../lib/api";
 
@@ -14,8 +14,9 @@ const delivery = [
   { label: "Projects", icon: FolderKanban, href: "#/delivery", page: "projects" },
   { label: "Cycles", icon: RefreshCcw, href: "#/delivery/cycles", page: "cycles" },
   { label: "Clients", icon: Building2, href: "#/delivery/clients", page: "clients" },
+  { label: "Reports", icon: BarChart3, href: "#/delivery/reports", page: "reports" },
 ];
-export const DELIVERY_PAGES = ["inbox", "issues", "projects", "project", "cycles", "clients"];
+export const DELIVERY_PAGES = ["inbox", "issues", "projects", "project", "cycles", "clients", "reports"];
 const aiOps = [{ label: "AI Router", icon: Route, href: "#/router" }];
 const formatCost = (v?: number) => (v === undefined ? "—" : v > 0 && v < 0.01 ? `$${v.toFixed(4)}` : `$${v.toFixed(2)}`);
 

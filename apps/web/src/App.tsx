@@ -18,6 +18,7 @@ import { SettingsPage } from "./components/SettingsPage";
 import { TasksPage } from "./components/TasksPage";
 import { ClientsPage, MyIssuesPage, ProjectPage, ProjectsPage } from "./components/delivery/pages";
 import { CyclesPage, InboxPage } from "./components/delivery/more";
+import { ReportsPage } from "./components/delivery/reports";
 import { PortalPage } from "./components/PortalPage";
 import { SharePage } from "./components/SharePage";
 import { AcceptInvitePage, LoginPage, SetupPage } from "./components/AuthPages";
@@ -45,7 +46,7 @@ function useTheme(): [Theme, () => void] {
   return [theme, () => setTheme((t) => (t === "dark" ? "light" : "dark"))];
 }
 
-export type Page = "leads" | "router" | "sources" | "pipeline" | "overview" | "settings" | "team" | "tasks" | "issues" | "projects" | "project" | "clients" | "inbox" | "cycles";
+export type Page = "leads" | "router" | "sources" | "pipeline" | "overview" | "settings" | "team" | "tasks" | "issues" | "projects" | "project" | "clients" | "inbox" | "cycles" | "reports";
 const PAGES: Page[] = ["router", "sources", "pipeline", "overview", "settings", "team", "tasks"];
 const readHash = () => window.location.hash;
 function useHash(): string {
@@ -67,6 +68,7 @@ const pageOf = (hash: string): Page => {
   if (hash.startsWith("#/delivery/issues")) return "issues";
   if (hash.startsWith("#/delivery/inbox")) return "inbox";
   if (hash.startsWith("#/delivery/cycles")) return "cycles";
+  if (hash.startsWith("#/delivery/reports")) return "reports";
   if (hash.startsWith("#/delivery")) return "projects";
   return PAGES.find((p) => hash.startsWith(`#/${p}`)) ?? "leads";
 };
@@ -125,10 +127,10 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
           </button>
           <div className="text-[13px] text-muted">
             <span className="hidden sm:inline">
-              {page === "router" ? "AI Ops / " : page === "settings" || page === "team" || page === "tasks" ? "Workspace / " : ["issues", "projects", "project", "clients", "inbox", "cycles"].includes(page) ? "Delivery / " : "Prospecting / "}
+              {page === "router" ? "AI Ops / " : page === "settings" || page === "team" || page === "tasks" ? "Workspace / " : ["issues", "projects", "project", "clients", "inbox", "cycles", "reports"].includes(page) ? "Delivery / " : "Prospecting / "}
             </span>
             <b className="font-medium text-fg">
-              {{ router: "AI Router", sources: "Sources", pipeline: "Pipeline", overview: "Overview", settings: "Settings", team: "Team", tasks: "Tasks", leads: "Leads", issues: "My issues", projects: "Projects", project: "Project", clients: "Clients", inbox: "Inbox", cycles: "Cycles" }[page]}
+              {{ router: "AI Router", sources: "Sources", pipeline: "Pipeline", overview: "Overview", settings: "Settings", team: "Team", tasks: "Tasks", leads: "Leads", issues: "My issues", projects: "Projects", project: "Project", clients: "Clients", inbox: "Inbox", cycles: "Cycles", reports: "Reports" }[page]}
             </b>
           </div>
           <label className={`ml-auto h-[34px] w-80 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-faint focus-within:border-accent/55 ${page === "leads" ? "hidden md:flex" : "hidden"}`}>
@@ -205,6 +207,8 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
             <InboxPage />
           ) : page === "cycles" ? (
             <CyclesPage />
+          ) : page === "reports" ? (
+            <ReportsPage />
           ) : page === "tasks" ? (
             <TasksPage />
           ) : page === "settings" || page === "team" ? (

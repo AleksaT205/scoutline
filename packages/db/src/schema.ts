@@ -119,6 +119,7 @@ export const clients = pgTable("clients", {
   monthlyBudgetUsd: doublePrecision("monthly_budget_usd").notNull(),
   defaultMode: routerModeEnum("default_mode").default("auto").notNull(),
   status: clientStatusEnum("status").default("active").notNull(),
+  projectId: uuid("project_id"), // Faza 12: AI trošak ovog ključa ide na projekat (veza bez FK — tabela projects je ispod)
   ...timestamps,
 });
 
@@ -201,6 +202,8 @@ export const projects = pgTable(
     ownerId: uuid("owner_id").references(() => users.id),
     repoUrl: text("repo_url"),
     githubImport: boolean("github_import").default(false).notNull(), // novi GitHub issues → Inbox
+    billing: text("billing").default("fixed").notNull(), // fixed = budžet je cena · hourly = sati × satnica
+    hourlyRateEur: integer("hourly_rate_eur"), // satnica za klijenta (hourly)
     githubSyncedAt: timestamp("github_synced_at", { withTimezone: true }),
     issueSeq: integer("issue_seq").default(0).notNull(), // poslednji broj taska
     ...timestamps,
@@ -289,3 +292,21 @@ export const projectPortals = pgTable("project_portals", {
   lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 });
+
+/** Evidencija vremena (Faza 12): koliko je ko radio na tasku/projektu. */
+export const timeEntries = pgTable(
+  "time_entries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id").references(() => projects.id, { onDelete: "cascade" }).notNull(),
+    issueId: uuid("issue_id").references(() => issues.id, { onDelete: "set null" }),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    userName: text("user_name").notNull(),
+    minutes: integer("minutes").notNull(),
+    spentOn: timestamp("spent_on", { withTimezone: true }).notNull(),
+    note: text("note"),
+    billable: boolean("billable").default(true).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("time_entries_project_idx").on(t.projectId), index("time_entries_issue_idx").on(t.issueId), index("time_entries_spent_idx").on(t.spentOn)],
+);

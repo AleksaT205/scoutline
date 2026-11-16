@@ -139,6 +139,8 @@ export function deliveryRoutes(getDb: () => Db, g: Guards) {
     if (b.ownerId !== undefined) f.ownerId = isUuid(b.ownerId) ? b.ownerId : null;
     if (b.repoUrl !== undefined) f.repoUrl = str(b.repoUrl, 300);
     if (b.githubImport !== undefined) f.githubImport = b.githubImport === true;
+    if (b.billing === "fixed" || b.billing === "hourly") f.billing = b.billing;
+    if (b.hourlyRateEur !== undefined) f.hourlyRateEur = int(b.hourlyRateEur, 0, 10_000);
     return f;
   };
 

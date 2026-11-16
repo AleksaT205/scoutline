@@ -20,3 +20,18 @@ describe("GitHub repo iz linka", () => {
     expect(parseRepo("https://gitlab.com/acme/app")).toBeNull();
   });
 });
+
+import { fmtMinutes, parseDuration } from "./delivery.js";
+describe("trajanje", () => {
+  it("razume uobičajene zapise", () => {
+    expect(parseDuration("1h 30m")).toBe(90);
+    expect(parseDuration("1.5h")).toBe(90);
+    expect(parseDuration("45m")).toBe(45);
+    expect(parseDuration("2")).toBe(120);
+    expect(parseDuration("90")).toBe(90);
+    expect(parseDuration("1,5")).toBe(90);
+    expect(parseDuration("abc")).toBeNull();
+    expect(fmtMinutes(90)).toBe("1h 30m");
+    expect(fmtMinutes(45)).toBe("45m");
+  });
+});
