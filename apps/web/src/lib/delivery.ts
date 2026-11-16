@@ -39,6 +39,7 @@ export interface Project {
   ownerId: string | null;
   ownerName: string | null;
   repoUrl: string | null;
+  githubImport: boolean;
   issues: { total: number; done: number; inProgress: number; todo: number };
   progress: number;
   createdAt: string;
@@ -62,10 +63,36 @@ export interface Issue {
   labels: string[];
   dueDate: string | null;
   sortOrder: number;
+  cycleId: string | null;
+  agent: "claude" | "codex" | null;
   createdBy: string | null;
   completedAt: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface Cycle {
+  id: string;
+  number: number;
+  name: string | null;
+  startsAt: string;
+  endsAt: string;
+  state: "past" | "current" | "upcoming";
+  scope: number;
+  done: number;
+  started: number;
+  points: number;
+  pointsDone: number;
+}
+
+export interface IssueLink {
+  id: string;
+  kind: "gh_issue" | "pr";
+  repo: string;
+  number: number;
+  url: string;
+  title: string | null;
+  state: string | null;
 }
 
 export interface IssueEvent {
@@ -100,6 +127,29 @@ function useResource<T>(path: string | null, pick: (d: unknown) => T) {
 export const useProjects = () => useResource<Project[]>("/delivery/projects", (d) => (d as { projects: Project[] }).projects);
 export const useProject = (id: string) => useResource<Project>(`/delivery/projects/${id}`, (d) => (d as { project: Project }).project);
 export const useCustomers = () => useResource<Customer[]>("/delivery/customers", (d) => (d as { customers: Customer[] }).customers);
+export const useCycles = () => useResource<{ cycles: Cycle[]; burn: Array<{ day: string; done: number }> }>("/delivery/cycles", (d) => d as { cycles: Cycle[]; burn: Array<{ day: string; done: number }> });
+export const cycleLabel = (c: Pick<Cycle, "number" | "name">) => c.name ?? `Cycle ${c.number}`;
+
+/** Broj zahteva u Inboxu (za meni); osvežava se na minut. */
+export function useInboxCount(enabled: boolean): number {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    if (!enabled) return;
+    let alive = true;
+    const load = () => teamFetch<{ count: number }>("/delivery/inbox/count").then((d) => alive && setN(d.count)).catch(() => undefined);
+    void load();
+    const id = setInterval(load, 60_000);
+    window.addEventListener("inbox-changed", load);
+    return () => {
+      alive = false;
+      clearInterval(id);
+      window.removeEventListener("inbox-changed", load);
+    };
+  }, [enabled]);
+  return n;
+}
+export const inboxChanged = () => window.dispatchEvent(new Event("inbox-changed"));
+
 export const useIssues = (query: string) => useResource<Issue[]>(`/delivery/issues?${query}`, (d) => (d as { issues: Issue[] }).issues);
 
 let membersCache: Member[] | null = null;

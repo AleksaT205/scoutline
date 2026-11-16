@@ -17,6 +17,8 @@ import { OverviewPage } from "./components/OverviewPage";
 import { SettingsPage } from "./components/SettingsPage";
 import { TasksPage } from "./components/TasksPage";
 import { ClientsPage, MyIssuesPage, ProjectPage, ProjectsPage } from "./components/delivery/pages";
+import { CyclesPage, InboxPage } from "./components/delivery/more";
+import { PortalPage } from "./components/PortalPage";
 import { SharePage } from "./components/SharePage";
 import { AcceptInvitePage, LoginPage, SetupPage } from "./components/AuthPages";
 import { clearSession, useSessionUser } from "./lib/session";
@@ -43,7 +45,7 @@ function useTheme(): [Theme, () => void] {
   return [theme, () => setTheme((t) => (t === "dark" ? "light" : "dark"))];
 }
 
-export type Page = "leads" | "router" | "sources" | "pipeline" | "overview" | "settings" | "team" | "tasks" | "issues" | "projects" | "project" | "clients";
+export type Page = "leads" | "router" | "sources" | "pipeline" | "overview" | "settings" | "team" | "tasks" | "issues" | "projects" | "project" | "clients" | "inbox" | "cycles";
 const PAGES: Page[] = ["router", "sources", "pipeline", "overview", "settings", "team", "tasks"];
 const readHash = () => window.location.hash;
 function useHash(): string {
@@ -63,6 +65,8 @@ const pageOf = (hash: string): Page => {
   if (hash.startsWith("#/delivery/projects/")) return "project";
   if (hash.startsWith("#/delivery/clients")) return "clients";
   if (hash.startsWith("#/delivery/issues")) return "issues";
+  if (hash.startsWith("#/delivery/inbox")) return "inbox";
+  if (hash.startsWith("#/delivery/cycles")) return "cycles";
   if (hash.startsWith("#/delivery")) return "projects";
   return PAGES.find((p) => hash.startsWith(`#/${p}`)) ?? "leads";
 };
@@ -80,6 +84,7 @@ export function App() {
   }, [user]);
 
   if (hash.startsWith("#/share/")) return <SharePage token={hash.slice("#/share/".length)} />;
+  if (hash.startsWith("#/portal/")) return <PortalPage token={hash.slice("#/portal/".length)} />;
   if (hash.startsWith("#/invite/")) return <AcceptInvitePage token={hash.slice("#/invite/".length)} onDone={() => (window.location.hash = "#/")} />;
   if (hash.startsWith("#/setup")) return <SetupPage onDone={() => (window.location.hash = "#/")} />;
   if (hasUsers && !user?.id) return <LoginPage />;
@@ -120,10 +125,10 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
           </button>
           <div className="text-[13px] text-muted">
             <span className="hidden sm:inline">
-              {page === "router" ? "AI Ops / " : page === "settings" || page === "team" || page === "tasks" ? "Workspace / " : ["issues", "projects", "project", "clients"].includes(page) ? "Delivery / " : "Prospecting / "}
+              {page === "router" ? "AI Ops / " : page === "settings" || page === "team" || page === "tasks" ? "Workspace / " : ["issues", "projects", "project", "clients", "inbox", "cycles"].includes(page) ? "Delivery / " : "Prospecting / "}
             </span>
             <b className="font-medium text-fg">
-              {{ router: "AI Router", sources: "Sources", pipeline: "Pipeline", overview: "Overview", settings: "Settings", team: "Team", tasks: "Tasks", leads: "Leads", issues: "My issues", projects: "Projects", project: "Project", clients: "Clients" }[page]}
+              {{ router: "AI Router", sources: "Sources", pipeline: "Pipeline", overview: "Overview", settings: "Settings", team: "Team", tasks: "Tasks", leads: "Leads", issues: "My issues", projects: "Projects", project: "Project", clients: "Clients", inbox: "Inbox", cycles: "Cycles" }[page]}
             </b>
           </div>
           <label className={`ml-auto h-[34px] w-80 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-faint focus-within:border-accent/55 ${page === "leads" ? "hidden md:flex" : "hidden"}`}>
@@ -196,6 +201,10 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
             <MyIssuesPage />
           ) : page === "clients" ? (
             <ClientsPage />
+          ) : page === "inbox" ? (
+            <InboxPage />
+          ) : page === "cycles" ? (
+            <CyclesPage />
           ) : page === "tasks" ? (
             <TasksPage />
           ) : page === "settings" || page === "team" ? (

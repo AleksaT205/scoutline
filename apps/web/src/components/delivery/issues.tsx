@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CalendarDays, Loader2, Plus, Send, Tag, Trash2, X } from "lucide-react";
+import { Bot, CalendarDays, ExternalLink, GitMerge, GitPullRequest, Loader2, Plus, RefreshCcw, Send, Tag, Trash2, X } from "lucide-react";
 import { ISSUE_STATUSES, type IssueStatus } from "@radar/shared";
 import { teamFetch } from "../../lib/team";
 import { canEdit, useSessionUser } from "../../lib/session";
-import { fmtDate, patchIssue, toDateInput, useMembers, type Issue, type IssueEvent, type Project } from "../../lib/delivery";
+import { cycleLabel, fmtDate, patchIssue, toDateInput, useCycles, useMembers, type Issue, type IssueEvent, type IssueLink, type Project } from "../../lib/delivery";
 import { Avatar, BOARD_STATUSES, Dialog, ErrorNote, ISSUE_STATUS_META, Menu, PRIORITY_META, PriorityIcon, StatusIcon, btnPrimary, btnSecondary } from "./parts";
 
 const ESTIMATES = [null, 1, 2, 3, 5, 8];
@@ -66,6 +66,7 @@ export function NewIssueDialog({
   const [st, setSt] = useState<IssueStatus>(status);
   const [priority, setPriority] = useState(0);
   const [assignee, setAssignee] = useState<string | null>(null);
+  const [inCycle, setInCycle] = useState(false);
   const [more, setMore] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -91,7 +92,7 @@ export function NewIssueDialog({
     setBusy(true);
     setError(null);
     try {
-      const { issue } = await teamFetch<{ issue: Issue }>("/delivery/issues", { method: "POST", body: JSON.stringify({ projectId: pid, title, description, status: st, priority, assigneeId: assignee }) });
+      const { issue } = await teamFetch<{ issue: Issue }>("/delivery/issues", { method: "POST", body: JSON.stringify({ projectId: pid, title, description, status: st, priority, assigneeId: assignee, cycleId: inCycle ? "current" : null }) });
       onCreated(issue);
       setTitle("");
       setDescription("");
@@ -139,6 +140,9 @@ export function NewIssueDialog({
         <div className="flex items-center gap-2 border-t border-line px-4 py-3">
           <label className="inline-flex items-center gap-1.5 text-[12.5px] text-muted">
             <input type="checkbox" checked={more} onChange={(e) => setMore(e.target.checked)} className="accent-[var(--accent)]" /> Create more
+          </label>
+          <label className="inline-flex items-center gap-1.5 text-[12.5px] text-muted">
+            <input type="checkbox" checked={inCycle} onChange={(e) => setInCycle(e.target.checked)} className="accent-[var(--accent)]" /> Current cycle
           </label>
           <span className="ml-auto hidden text-[11.5px] text-faint sm:inline">⌘ Enter to create</span>
           <button type="button" onClick={onClose} className={btnSecondary}>
@@ -349,7 +353,7 @@ export function IssueList({ issues, onOpen, showProject, empty = "No issues yet.
 
 // ── Detalj taska (bočni panel) ──
 function eventText(e: IssueEvent, names: Record<string, string>) {
-  const d = (e.data ?? {}) as { from?: unknown; to?: unknown };
+  const d = (e.data ?? {}) as { from?: unknown; to?: unknown; via?: string };
   switch (e.type) {
     case "created":
       return "created the issue";
@@ -357,6 +361,7 @@ function eventText(e: IssueEvent, names: Record<string, string>) {
       return (
         <>
           moved from <b className="font-medium text-fg">{ISSUE_STATUS_META[d.from as IssueStatus]?.label ?? String(d.from)}</b> to <b className="font-medium text-fg">{ISSUE_STATUS_META[d.to as IssueStatus]?.label ?? String(d.to)}</b>
+          {d.via && <span className="text-faint"> ({d.via})</span>}
         </>
       );
     case "priority":
@@ -373,6 +378,33 @@ function eventText(e: IssueEvent, names: Record<string, string>) {
       ) : (
         "removed the assignee"
       );
+    case "cycle":
+      return d.to ? (typeof d.to === "number" ? `moved to Cycle ${d.to} (unfinished work rolled over)` : `added to ${names[`cycle:${String(d.to)}`] ?? "a cycle"}`) : "removed from the cycle";
+    case "agent": {
+      const x = e.data as { agent?: string; url?: string } | null;
+      return (
+        <>
+          handed it to <b className="font-medium text-fg">{x?.agent === "codex" ? "Codex" : "Claude"}</b>
+          {x?.url && (
+            <a href={x.url} target="_blank" rel="noreferrer" className="ml-1 text-accent hover:underline">
+              GitHub issue
+            </a>
+          )}
+        </>
+      );
+    }
+    case "github": {
+      const x = e.data as { pr?: number; url?: string; state?: string } | null;
+      return (
+        <>
+          PR{" "}
+          <a href={x?.url} target="_blank" rel="noreferrer" className="text-accent hover:underline">
+            #{x?.pr}
+          </a>{" "}
+          is {x?.state}
+        </>
+      );
+    }
     case "estimate":
       return d.to ? `set estimate to ${d.to} pt` : "removed the estimate";
     case "title":
@@ -393,6 +425,41 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const cycles = useCycles();
+  const [links, setLinks] = useState<IssueLink[]>([]);
+  const [agentBusy, setAgentBusy] = useState<string | null>(null);
+  const [repoUrl, setRepoUrl] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    teamFetch<{ links: IssueLink[] }>(`/delivery/issues/${issue.id}/links`)
+      .then((d) => setLinks(d.links))
+      .catch(() => setLinks([]));
+  }, [issue.id, issue.updatedAt]);
+  useEffect(() => {
+    teamFetch<{ project: Project }>(`/delivery/projects/${issue.projectId}`)
+      .then((d) => setRepoUrl(d.project.repoUrl))
+      .catch(() => setRepoUrl(null));
+  }, [issue.projectId]);
+  const cycleNames = Object.fromEntries((cycles.data?.cycles ?? []).map((c) => [`cycle:${c.id}`, cycleLabel(c)]));
+  const cycleOptions = [
+    { value: null as string | null, label: "No cycle" },
+    ...(cycles.data?.cycles ?? [])
+      .filter((c) => c.state !== "past" || c.id === issue.cycleId)
+      .sort((a, b) => a.number - b.number)
+      .map((c) => ({ value: c.id as string | null, label: cycleLabel(c), hint: c.state === "current" ? "current" : `${fmtDate(c.startsAt)}` })),
+  ];
+  const currentCycleName = cycles.data?.cycles.find((c) => c.id === issue.cycleId);
+  const handToAgent = async (agent: "claude" | "codex") => {
+    setAgentBusy(agent);
+    setError(null);
+    try {
+      await teamFetch(`/delivery/issues/${issue.id}/agent`, { method: "POST", body: JSON.stringify({ agent }) });
+      onChanged({ ...issue, agent, status: issue.status === "done" || issue.status === "canceled" ? issue.status : "in_progress", updatedAt: new Date().toISOString() });
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setAgentBusy(null);
+    }
+  };
 
   useEffect(() => {
     setTitle(issue.title);
@@ -506,6 +573,13 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
               onChange={(e) => void save({ dueDate: e.target.value ? new Date(`${e.target.value}T12:00:00Z`).toISOString() : null })}
               className="h-[28px] w-fit rounded-md bg-transparent px-1.5 text-fg outline-none hover:bg-surface-2"
             />
+            <span className="text-faint">Cycle</span>
+            <div>
+              <Menu label="Cycle" value={issue.cycleId} disabled={!editable} onChange={(cycleId) => void save({ cycleId })} options={cycleOptions} className="h-[28px] px-1.5">
+                <RefreshCcw size={13} className={issue.cycleId ? "text-accent" : "text-faint"} />
+                <span className={issue.cycleId ? "text-fg" : "text-muted"}>{currentCycleName ? cycleLabel(currentCycleName) : issue.cycleId ? "Cycle" : "No cycle"}</span>
+              </Menu>
+            </div>
             <span className="text-faint">Labels</span>
             <div className="flex flex-wrap items-center gap-1">
               {issue.labels.map((l) => (
@@ -538,6 +612,55 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
               )}
             </div>
           </div>
+          {/* AI agent i GitHub */}
+          <div className="mt-3 rounded-xl border border-line bg-bg p-3">
+            <div className="flex flex-wrap items-center gap-2 text-[12.5px]">
+              <Bot size={14} className="text-accent" />
+              <span className="font-medium">AI agent</span>
+              {issue.agent && <span className="rounded-full bg-accent-soft px-2 py-px text-[11px] text-accent">Working: {issue.agent === "codex" ? "Codex" : "Claude"}</span>}
+              {editable && (
+                <div className="ml-auto flex gap-1.5">
+                  {(["claude", "codex"] as const).map((a) => (
+                    <button
+                      key={a}
+                      disabled={!!agentBusy || !repoUrl}
+                      title={repoUrl ? `Opens a GitHub issue in the project repo with a short brief and @${a}` : "Add the project's GitHub repo first (Edit project)"}
+                      onClick={() => void handToAgent(a)}
+                      className="inline-flex h-[28px] items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 text-[12px] font-medium hover:bg-surface-2 disabled:opacity-40"
+                    >
+                      {agentBusy === a ? <Loader2 size={12} className="animate-spin" /> : null}
+                      {issue.agent === a ? "Ask again" : `Assign to ${a === "claude" ? "Claude" : "Codex"}`}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {repoUrl === null && <p className="mt-1.5 text-[12px] text-faint">Connect a GitHub repo to the project to hand tasks to Claude or Codex and to link pull requests automatically.</p>}
+            {links.length > 0 && (
+              <ul className="mt-2 space-y-1">
+                {links.map((l) => (
+                  <li key={l.id} className="flex items-center gap-2 text-[12.5px]">
+                    {l.kind === "pr" ? (
+                      l.state === "merged" ? (
+                        <GitMerge size={13} className="text-accent" />
+                      ) : (
+                        <GitPullRequest size={13} className={l.state === "closed" ? "text-danger" : l.state === "draft" ? "text-faint" : "text-success"} />
+                      )
+                    ) : (
+                      <ExternalLink size={13} className="text-faint" />
+                    )}
+                    <a href={l.url} target="_blank" rel="noreferrer" className="min-w-0 flex-1 truncate hover:underline">
+                      <span className="num text-faint">
+                        {l.repo}#{l.number}
+                      </span>{" "}
+                      {l.title}
+                    </a>
+                    <span className="text-[11px] text-faint">{l.kind === "pr" ? l.state : "issue"}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           {error && (
             <div className="mt-3">
               <ErrorNote>{error}</ErrorNote>
@@ -561,7 +684,7 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
                 <li key={e.id} className="flex items-center gap-2 px-1 text-[12px] text-muted">
                   <span className="size-1.5 shrink-0 rounded-full bg-line-2" />
                   <span>
-                    <span className="text-fg">{e.actor}</span> {eventText(e, names)}
+                    <span className="text-fg">{e.actor}</span> {eventText(e, { ...names, ...cycleNames })}
                   </span>
                   <span className="ml-auto shrink-0 text-faint">{ago(e.createdAt)}</span>
                 </li>

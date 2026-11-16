@@ -7,6 +7,10 @@ import { CONNECTORS } from "./connectors/sources.js";
 import { aiConfigured } from "@radar/scoring";
 import { telegramConfigured } from "@radar/scoring";
 import { ingest, lastSuccess, notifyNew, purgeExpired, registerSources, scorePending } from "./pipeline/run.js";
+import { githubConfigured, syncGithub } from "./pipeline/github.js";
+
+const GITHUB_EVERY_MS = 5 * 60_000;
+let githubAt = 0;
 
 const TICK_MS = Number(process.env.WORKER_INTERVAL_MS ?? 60_000);
 const SCORE_BATCH = Number(process.env.SCORE_BATCH ?? 10);
@@ -32,6 +36,11 @@ async function tick() {
     await scorePending(db, SCORE_BATCH);
     await notifyNew(db);
     await purgeExpired(db);
+    // Delivery: PR-ovi → status taskova (na 5 min)
+    if (githubConfigured() && Date.now() - githubAt >= GITHUB_EVERY_MS) {
+      githubAt = Date.now();
+      await syncGithub(db);
+    }
     // Otkucaj srca — API proverava da worker radi (monitoring)
     const beat = { at: new Date().toISOString(), ai: aiConfigured() };
     await db.insert(settings).values({ key: "worker_heartbeat", value: beat }).onConflictDoUpdate({ target: settings.key, set: { value: beat, updatedAt: new Date() } });
@@ -45,7 +54,7 @@ async function tick() {
 await registerSources(db, connectors);
 for (const [id, at] of await lastSuccess(db)) lastRun.set(id, at);
 console.log(
-  `[worker] start · izvori: ${connectors.map((c) => c.id).join(", ")}${skipped.length ? ` (nije podešeno: ${skipped.join(", ")})` : ""} · AI: ${aiConfigured() ? "da" : "ne (pravila)"} · Telegram: ${telegramConfigured() ? "da" : "ne"}`,
+  `[worker] start · izvori: ${connectors.map((c) => c.id).join(", ")}${skipped.length ? ` (nije podešeno: ${skipped.join(", ")})` : ""} · AI: ${aiConfigured() ? "da" : "ne (pravila)"} · Telegram: ${telegramConfigured() ? "da" : "ne"} · GitHub: ${githubConfigured() ? "da" : "ne"}`,
 );
 await tick();
 setInterval(() => void tick(), TICK_MS);

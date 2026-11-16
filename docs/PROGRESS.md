@@ -18,12 +18,20 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 | 8 | Lead model 2.0 + tenderi: tip leada (tender / project / intent / hiring signal), EU TED, UK Contracts Finder, UK Find a Tender, CanadaBuys, TechCrunch funding, Startit; rok i vrednost tendera; filter **Type**; Telegram po tipu · GitHub #8 | ✅ |
 | 9 | Email-in (IMAP: Upwork, PeoplePerHour, Malt, Portal javnih nabavki, LinkedIn, prosleđeni upiti) + Freelancer.com API + e-Nabavke BiH + SAM.gov (uz ključ) · [EMAIL-IN.md](EMAIL-IN.md) · #9 | ✅ |
 | 10 | Delivery MVP: prekidač Sales/Delivery, Projects, Clients, My issues, tabla taskova (Linear stil, prevlačenje), detalj taska (status, prioritet, osoba, procena, oznake, rok, komentari, istorija), prečica C, Lead (Won) → Project · #10 | ✅ |
-| **11** | **Cycles**, Triage, GitHub PR sync, Assign to Claude/Codex, klijent portal · #11 | ⏭ sledeće |
-| 12 | Izveštaji: profitabilnost po projektu, vreme, ušteda AI-a | |
+| 11 | Cycles (sprintovi + burn-up), Inbox (triage), GitHub PR sync (PR → In Review / Done, issues → Inbox), Assign to Claude/Codex (brief u GitHub issue), portal za klijenta (+ zahtevi) · [DELIVERY.md](DELIVERY.md) · #11 | ✅ |
+| **12** | **Izveštaji**: profitabilnost po projektu, vreme, ušteda AI-a | ⏭ sledeće |
 
-**Sledeći korak:** Redeploy u Coolify-ju → podesiti Email-in po [EMAIL-IN.md](EMAIL-IN.md) (Gmail + App password u Coolify) i, po želji, `SAM_API_KEY`. Zatim Faza 11 (Cycles, Triage, GitHub sync, Assign to Claude) po [ROADMAP.md](ROADMAP.md).
+**Sledeći korak:** Redeploy u Coolify-ju → podesiti Email-in po [EMAIL-IN.md](EMAIL-IN.md) (Gmail + App password u Coolify) i, po želji, `SAM_API_KEY`. Za Delivery + GitHub: `GITHUB_TOKEN` sa pristupom repoima projekata ([DELIVERY.md](DELIVERY.md)). Zatim Faza 12 (izveštaji) po [ROADMAP.md](ROADMAP.md).
 
 ## Urađeno
+
+- **17. 11. 2026. — Faza 11**
+  - **Cycles**: dvonedeljni sprintovi za ceo tim (prave se sami, tekući + 2 unapred), nedovršeno iz završenog sprinta prelazi u tekući; stranica sa burn-up grafikonom, obimom i listom; izbor sprinta u tasku i „Current cycle“ pri pravljenju.
+  - **Inbox** (status `triage`): zahtevi klijenata i GitHub issues; Accept / Backlog / Decline; broj u meniju.
+  - **GitHub sync** u workeru (na 5 min, bez webhook-a): PR sa ključem taska ili „Fixes #N“ → In Review / Done; opciono novi GitHub issues → Inbox. Veze (PR, issue) vidljive u tasku.
+  - **Assign to Claude / Codex**: GitHub issue sa „context pack“ briefom i @pominjanjem; PR se vraća automatski.
+  - **Portal za klijenta**: tajni link (heš u bazi, opoziv), napredak, završeno ove nedelje, u toku, sledeće; forma za zahtev (zamka za botove, limit 5/h) → Inbox + Telegram.
+  - Provereno lokalno sa lažnim GitHub serverom: brief i @claude u issue-u, PR otvoren → In Review, spojen → Done, draft „Fixes #101“ povezan, GitHub issue → Inbox bez duplikata; portal i zahtev u pregledaču.
 
 - **17. 11. 2026. — Faza 10 (Delivery MVP)**
   - Baza: `customers` (u UI-ju Clients; `clients` ostaje AI Router), `projects` (ključ npr. ACME, status, budžet, rok, vođa, repo), `issues` (ACME-12, status, prioritet 0–4 kao Linear, osoba, procena, oznake, rok, redosled), `issue_events` (komentari + istorija). Migracija 0007.

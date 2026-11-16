@@ -200,10 +200,26 @@ export const projects = pgTable(
     dueDate: timestamp("due_date", { withTimezone: true }),
     ownerId: uuid("owner_id").references(() => users.id),
     repoUrl: text("repo_url"),
+    githubImport: boolean("github_import").default(false).notNull(), // novi GitHub issues → Inbox
+    githubSyncedAt: timestamp("github_synced_at", { withTimezone: true }),
     issueSeq: integer("issue_seq").default(0).notNull(), // poslednji broj taska
     ...timestamps,
   },
   (t) => [uniqueIndex("projects_key_idx").on(t.key)],
+);
+
+/** Sprint (cycle) za ceo tim: 2 nedelje, nedovršeno prelazi u sledeći. */
+export const cycles = pgTable(
+  "cycles",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    number: integer("number").notNull(),
+    name: text("name"),
+    startsAt: timestamp("starts_at", { withTimezone: true }).notNull(),
+    endsAt: timestamp("ends_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("cycles_number_idx").on(t.number)],
 );
 
 export const issues = pgTable(
@@ -221,6 +237,8 @@ export const issues = pgTable(
     labels: text("labels").array().default([]).notNull(),
     dueDate: timestamp("due_date", { withTimezone: true }),
     sortOrder: doublePrecision("sort_order").default(0).notNull(), // redosled u koloni
+    cycleId: uuid("cycle_id").references(() => cycles.id, { onDelete: "set null" }),
+    agent: text("agent"), // claude | codex — predat AI agentu
     createdBy: text("created_by"),
     completedAt: timestamp("completed_at", { withTimezone: true }),
     ...timestamps,
@@ -241,3 +259,33 @@ export const issueEvents = pgTable(
   },
   (t) => [index("issue_events_issue_idx").on(t.issueId)],
 );
+
+/** Veze taska sa GitHub-om: issue koji je napravljen za agenta i pull request-ovi. */
+export const issueLinks = pgTable(
+  "issue_links",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    issueId: uuid("issue_id").references(() => issues.id, { onDelete: "cascade" }).notNull(),
+    kind: text("kind").notNull(), // gh_issue | pr
+    repo: text("repo").notNull(), // owner/repo
+    number: integer("number").notNull(),
+    url: text("url").notNull(),
+    title: text("title"),
+    state: text("state"), // open | closed | merged | draft
+    ...timestamps,
+  },
+  (t) => [uniqueIndex("issue_links_unique_idx").on(t.issueId, t.kind, t.repo, t.number), index("issue_links_repo_idx").on(t.repo, t.number)],
+);
+
+/** Portal za klijenta: link samo za pregled napretka projekta (+ slanje zahteva u Inbox). */
+export const projectPortals = pgTable("project_portals", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  projectId: uuid("project_id").references(() => projects.id, { onDelete: "cascade" }).notNull(),
+  tokenHash: text("token_hash").notNull().unique(),
+  label: text("label").notNull(),
+  allowRequests: boolean("allow_requests").default(true).notNull(),
+  createdBy: uuid("created_by").references(() => users.id),
+  revokedAt: timestamp("revoked_at", { withTimezone: true }),
+  lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+});

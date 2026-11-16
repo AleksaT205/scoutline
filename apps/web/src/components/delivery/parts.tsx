@@ -5,6 +5,7 @@ import { initials } from "../../lib/delivery";
 
 /** Zajednički delovi za Delivery: ikonice statusa i prioriteta (kao Linear), avatar, meni za izbor, prozor. */
 export const ISSUE_STATUS_META: Record<IssueStatus, { label: string; color: string }> = {
+  triage: { label: "Triage", color: "var(--accent)" },
   backlog: { label: "Backlog", color: "var(--faint)" },
   todo: { label: "Todo", color: "var(--muted)" },
   in_progress: { label: "In Progress", color: "var(--warning)" },
@@ -36,6 +37,12 @@ export function StatusIcon({ status, size = 14 }: { status: IssueStatus; size?: 
   const circ = 2 * Math.PI * 3;
   return (
     <svg width={size} height={size} viewBox="0 0 16 16" aria-label={ISSUE_STATUS_META[status].label} className="shrink-0">
+      {status === "triage" && (
+        <>
+          <circle cx="8" cy="8" r="7" fill="none" stroke={c} strokeWidth="1.6" />
+          <path d="M5 8h4.5M7.8 5.8L10 8l-2.2 2.2" fill="none" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </>
+      )}
       {status === "backlog" && <circle cx="8" cy="8" r={r} fill="none" stroke={c} strokeWidth="1.6" strokeDasharray="2 2.2" />}
       {status === "todo" && <circle cx="8" cy="8" r={r} fill="none" stroke={c} strokeWidth="1.6" />}
       {(status === "in_progress" || status === "in_review") && (

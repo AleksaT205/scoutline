@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Building2, CalendarDays, ExternalLink, FolderKanban, GitBranch, LayoutList, Loader2, Pencil, Plus, Search, SquareKanban, Users } from "lucide-react";
+import { ArrowLeft, Building2, Globe, CalendarDays, ExternalLink, FolderKanban, GitBranch, LayoutList, Loader2, Pencil, Plus, Search, SquareKanban, Users } from "lucide-react";
 import { PROJECT_STATUSES, type IssueStatus, type ProjectStatus } from "@radar/shared";
 import { teamFetch } from "../../lib/team";
 import { canEdit, useSessionUser } from "../../lib/session";
@@ -7,6 +7,7 @@ import { fmtDate, fmtEur, toDateInput, typing, useCustomers, useIssues, useMembe
 import { flag } from "../ui";
 import { Avatar, Dialog, ErrorNote, Menu, PROJECT_STATUS_META, ProgressRing, btnPrimary, btnSecondary, field } from "./parts";
 import { IssueBoard, IssueDetail, IssueList, NewIssueDialog } from "./issues";
+import { PortalDialog } from "./more";
 
 function PageHead({ title, sub, children }: { title: React.ReactNode; sub?: React.ReactNode; children?: React.ReactNode }) {
   return (
@@ -44,7 +45,7 @@ function useNewIssueShortcut(open: () => void, enabled: boolean) {
 function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onClose: () => void; project?: Project; onSaved: (p: Project) => void }) {
   const customers = useCustomers();
   const members = useMembers();
-  const [f, setF] = useState({ name: "", customerId: "", customerName: "", status: "planned" as ProjectStatus, budgetEur: "", dueDate: "", ownerId: "", repoUrl: "", description: "" });
+  const [f, setF] = useState({ name: "", customerId: "", customerName: "", status: "planned" as ProjectStatus, budgetEur: "", dueDate: "", ownerId: "", repoUrl: "", description: "", githubImport: false });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
@@ -60,6 +61,7 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
       ownerId: project?.ownerId ?? "",
       repoUrl: project?.repoUrl ?? "",
       description: project?.description ?? "",
+      githubImport: project?.githubImport ?? false,
     });
   }, [open, project]);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
@@ -81,6 +83,7 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
               dueDate: f.dueDate ? new Date(`${f.dueDate}T12:00:00Z`).toISOString() : null,
               ownerId: f.ownerId || null,
               repoUrl: f.repoUrl,
+              githubImport: f.githubImport,
               description: f.description,
             };
             const { project: saved } = await teamFetch<{ project: Project }>(project ? `/delivery/projects/${project.id}` : "/delivery/projects", { method: project ? "PATCH" : "POST", body: JSON.stringify(body) });
@@ -150,6 +153,12 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
             <span className={label}>GitHub repo (optional)</span>
             <input className={`${field} h-[36px]`} value={f.repoUrl} onChange={set("repoUrl")} placeholder="https://github.com/…" />
           </label>
+          {f.repoUrl.trim() && (
+            <label className="inline-flex items-center gap-2 text-[12.5px] text-muted sm:col-span-2">
+              <input type="checkbox" checked={f.githubImport} onChange={(e) => setF({ ...f, githubImport: e.target.checked })} className="accent-[var(--accent)]" />
+              Import new GitHub issues from this repo into the Inbox (pull requests are always linked by issue key)
+            </label>
+          )}
           <label className="sm:col-span-2">
             <span className={label}>Description</span>
             <textarea className={`${field} h-24 resize-none py-2 leading-relaxed`} value={f.description} onChange={set("description")} placeholder="Goal, scope, what “done” means…" />
@@ -300,6 +309,7 @@ export function ProjectPage({ id }: { id: string }) {
   const [newOpen, setNewOpen] = useState<IssueStatus | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [portalOpen, setPortalOpen] = useState(false);
   const [q, setQ] = useState("");
   useNewIssueShortcut(() => setNewOpen("todo"), editable && !!project.data);
   const setIssues = (f: (prev: Issue[]) => Issue[]) => issues.setData((d) => f(d ?? []));
@@ -315,7 +325,7 @@ export function ProjectPage({ id }: { id: string }) {
     }
   };
   // Napredak se računa iz učitanih taskova (odmah posle prevlačenja)
-  const live = issues.data ? { total: issues.data.filter((i) => i.status !== "canceled").length, done: issues.data.filter((i) => i.status === "done").length } : null;
+  const live = issues.data ? { total: issues.data.filter((i) => i.status !== "canceled" && i.status !== "triage").length, done: issues.data.filter((i) => i.status === "done").length } : null;
   const progress = live && live.total ? Math.round((live.done / live.total) * 100) : (p?.progress ?? 0);
 
   if (project.error) return <ErrorNote>{project.error}</ErrorNote>;
@@ -376,6 +386,11 @@ export function ProjectPage({ id }: { id: string }) {
           )}
         </div>
         <div className="flex gap-2 sm:ml-auto">
+          {editable && p && (
+            <button onClick={() => setPortalOpen(true)} className={btnSecondary} title="Read-only page for the client">
+              <Globe size={13} /> Client portal
+            </button>
+          )}
           {editable && p && (
             <button onClick={() => setEditOpen(true)} className={btnSecondary}>
               <Pencil size={13} /> Edit
@@ -446,6 +461,7 @@ export function ProjectPage({ id }: { id: string }) {
       <NewIssueDialog open={newOpen !== null} onClose={() => setNewOpen(null)} projects={p ? [p] : []} projectId={id} status={newOpen ?? "todo"} onCreated={(i) => setIssues((prev) => [i, ...prev])} />
       {sel && <IssueDetail issue={sel} onClose={() => setSelected(null)} onChanged={(i) => setIssues((prev) => prev.map((x) => (x.id === i.id ? i : x)))} onDeleted={(rid) => (setIssues((prev) => prev.filter((x) => x.id !== rid)), setSelected(null))} />}
       {p && <ProjectDialog open={editOpen} onClose={() => setEditOpen(false)} project={p} onSaved={(np) => project.setData(np)} />}
+      {p && <PortalDialog open={portalOpen} onClose={() => setPortalOpen(false)} projectId={p.id} projectName={p.name} />}
     </>
   );
 }

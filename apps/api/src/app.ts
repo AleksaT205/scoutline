@@ -12,6 +12,7 @@ import { checkHealth } from "./monitor.js";
 import { devTasks } from "./dev.js";
 import { llmProxy, routerAdmin } from "./router.js";
 import { deliveryRoutes } from "./delivery.js";
+import { deliveryPlusRoutes, portalRoutes } from "./delivery-plus.js";
 
 type Tier = "T1" | "T2" | "T3" | "DOMESTIC";
 type LeadRow = { lead: typeof leads.$inferSelect; raw: typeof rawItems.$inferSelect; source: string };
@@ -187,6 +188,9 @@ export function createApp(getDb: () => Db) {
   app.route("/team", a.team);
   // Delivery (Faza 10): klijenti, projekti, taskovi
   app.route("/delivery", deliveryRoutes(getDb, a));
+  // Faza 11: sprintovi, Inbox, AI agenti, portal za klijenta (javni deo bez prijave)
+  app.route("/delivery", deliveryPlusRoutes(getDb, a));
+  app.route("/portal", portalRoutes(getDb));
   app.use("/dev/*", a.require("member"));
   app.route("/dev/tasks", devTasks());
 

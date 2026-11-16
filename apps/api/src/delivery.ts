@@ -2,6 +2,7 @@ import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { and, asc, count, desc, eq, ilike, inArray, isNull, ne, sql } from "drizzle-orm";
 import { customers, issueEvents, issues, leadEvents, leads, projects, rawItems, users, type Db } from "@radar/db";
 import { ISSUE_STATUSES, PROJECT_STATUSES, projectKey, type IssueStatus, type ProjectStatus } from "@radar/shared";
+import { currentCycleId } from "./delivery-plus.js";
 
 /**
  * Delivery (Faza 10): klijenti, projekti i taskovi (issues) — kao Linear.
@@ -97,7 +98,7 @@ export function deliveryRoutes(getDb: () => Db, g: Guards) {
     return rows.map(({ p, customerName, ownerName }) => {
       const mine = counts.filter((x) => x.projectId === p.id);
       const n = (s: IssueStatus) => mine.find((x) => x.status === s)?.n ?? 0;
-      const total = mine.filter((x) => x.status !== "canceled").reduce((a, x) => a + x.n, 0);
+      const total = mine.filter((x) => x.status !== "canceled" && x.status !== "triage").reduce((a, x) => a + x.n, 0);
       return {
         ...p,
         issueSeq: undefined,
@@ -137,6 +138,7 @@ export function deliveryRoutes(getDb: () => Db, g: Guards) {
     if (b.dueDate !== undefined && date(b.dueDate) !== undefined) f.dueDate = date(b.dueDate)!;
     if (b.ownerId !== undefined) f.ownerId = isUuid(b.ownerId) ? b.ownerId : null;
     if (b.repoUrl !== undefined) f.repoUrl = str(b.repoUrl, 300);
+    if (b.githubImport !== undefined) f.githubImport = b.githubImport === true;
     return f;
   };
 
@@ -232,7 +234,13 @@ export function deliveryRoutes(getDb: () => Db, g: Guards) {
       conds.push(eq(issues.assigneeId, me));
     } else if (q.assignee === "none") conds.push(isNull(issues.assigneeId));
     else if (isUuid(q.assignee)) conds.push(eq(issues.assigneeId, q.assignee));
-    if (q.scope === "open") conds.push(and(ne(issues.status, "done"), ne(issues.status, "canceled"))!);
+    if (q.scope === "open") conds.push(and(ne(issues.status, "done"), ne(issues.status, "canceled"), ne(issues.status, "triage"))!);
+    if (ISSUE_STATUSES.includes(q.status as IssueStatus)) conds.push(eq(issues.status, q.status as IssueStatus));
+    if (q.cycle === "current") {
+      const cur = await currentCycleId(getDb());
+      if (!cur) return c.json({ issues: [] });
+      conds.push(eq(issues.cycleId, cur));
+    } else if (isUuid(q.cycle)) conds.push(eq(issues.cycleId, q.cycle));
     const rows = await issueSelect()
       .where(conds.length ? and(...conds) : undefined)
       .orderBy(asc(issues.sortOrder), desc(issues.createdAt))
@@ -266,6 +274,7 @@ export function deliveryRoutes(getDb: () => Db, g: Guards) {
         labels: labelsOf(b.labels) ?? [],
         dueDate: date(b.dueDate) ?? null,
         sortOrder: (top?.min ?? 0) - 1,
+        cycleId: b.cycleId === "current" ? await currentCycleId(db) : isUuid(b.cycleId) ? b.cycleId : null,
         createdBy: actor(c).name,
         completedAt: status === "done" ? new Date() : null,
       })
@@ -294,12 +303,13 @@ export function deliveryRoutes(getDb: () => Db, g: Guards) {
     if (b.labels !== undefined) f.labels = labelsOf(b.labels) ?? [];
     if (b.dueDate !== undefined && date(b.dueDate) !== undefined) f.dueDate = date(b.dueDate)!;
     if (b.sortOrder !== undefined && Number.isFinite(Number(b.sortOrder))) f.sortOrder = Number(b.sortOrder);
+    if (b.cycleId !== undefined) f.cycleId = b.cycleId === "current" ? await currentCycleId(db) : isUuid(b.cycleId) ? b.cycleId : null;
     await db.update(issues).set({ ...f, updatedAt: new Date() }).where(eq(issues.id, id));
     // Istorija: samo promene koje tim želi da vidi
     const who = actor(c).name;
     const log: Array<typeof issueEvents.$inferInsert> = [];
-    for (const k of ["status", "priority", "assigneeId", "title", "estimate"] as const) {
-      if (f[k] !== undefined && f[k] !== cur[k]) log.push({ issueId: id, type: k === "assigneeId" ? "assignee" : k, data: { from: cur[k], to: f[k] }, actor: who });
+    for (const k of ["status", "priority", "assigneeId", "title", "estimate", "cycleId"] as const) {
+      if (f[k] !== undefined && f[k] !== cur[k]) log.push({ issueId: id, type: k === "assigneeId" ? "assignee" : k === "cycleId" ? "cycle" : k, data: { from: cur[k], to: f[k] }, actor: who });
     }
     if (log.length) await db.insert(issueEvents).values(log);
     await db.update(projects).set({ updatedAt: new Date() }).where(eq(projects.id, cur.projectId));

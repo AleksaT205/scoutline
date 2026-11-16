@@ -1,4 +1,5 @@
-import { Building2, CircleDot, FolderKanban, ListTodo, Kanban, LayoutGrid, Route, Rss, Search, Settings, Users, X } from "lucide-react";
+import { Building2, CircleDot, FolderKanban, Inbox, ListTodo, Kanban, LayoutGrid, RefreshCcw, Route, Rss, Search, Settings, Users, X } from "lucide-react";
+import { useInboxCount } from "../lib/delivery";
 import type { ApiStatus } from "../lib/api";
 
 const prospecting = (leadCount: number) => [
@@ -8,11 +9,13 @@ const prospecting = (leadCount: number) => [
   { label: "Sources", icon: Rss, href: "#/sources" },
 ];
 const delivery = [
+  { label: "Inbox", icon: Inbox, href: "#/delivery/inbox", page: "inbox" },
   { label: "My issues", icon: CircleDot, href: "#/delivery/issues", page: "issues" },
   { label: "Projects", icon: FolderKanban, href: "#/delivery", page: "projects" },
+  { label: "Cycles", icon: RefreshCcw, href: "#/delivery/cycles", page: "cycles" },
   { label: "Clients", icon: Building2, href: "#/delivery/clients", page: "clients" },
 ];
-export const DELIVERY_PAGES = ["issues", "projects", "project", "clients"];
+export const DELIVERY_PAGES = ["inbox", "issues", "projects", "project", "cycles", "clients"];
 const aiOps = [{ label: "AI Router", icon: Route, href: "#/router" }];
 const formatCost = (v?: number) => (v === undefined ? "—" : v > 0 && v < 0.01 ? `$${v.toFixed(4)}` : `$${v.toFixed(2)}`);
 
@@ -73,6 +76,7 @@ function StatusCard({ status, aiCostUsd }: { status: ApiStatus; aiCostUsd?: numb
 }
 
 export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: { status: ApiStatus; open: boolean; onClose: () => void; leadCount: number; aiCostUsd?: number; page: string }) {
+  const inbox = useInboxCount(DELIVERY_PAGES.includes(page));
   return (
     <>
       {open && <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={onClose} />}
@@ -111,7 +115,7 @@ export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: {
           <nav className="flex flex-col gap-0.5">
             <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wider text-faint">Delivery</div>
             {delivery.map((i) => (
-              <NavItem key={i.label} label={i.label} icon={i.icon} href={i.href} active={page === i.page || (i.page === "projects" && page === "project")} />
+              <NavItem key={i.label} label={i.label} icon={i.icon} href={i.href} count={i.page === "inbox" && inbox ? inbox : undefined} active={page === i.page || (i.page === "projects" && page === "project")} />
             ))}
           </nav>
         ) : (

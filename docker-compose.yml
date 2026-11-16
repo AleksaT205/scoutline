@@ -91,6 +91,8 @@ services:
       IMAP_MAILBOX: ${IMAP_MAILBOX:-INBOX}
       # SAM.gov (US tenderi): besplatan javni API ključ sa sam.gov naloga
       SAM_API_KEY: ${SAM_API_KEY:-}
+      # Delivery (Faza 11): PR-ovi → status taskova; isti token kao za API (pristup repoima projekata)
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
     depends_on:
       api: { condition: service_healthy } # API primenjuje migracije baze
       litellm: { condition: service_started }
