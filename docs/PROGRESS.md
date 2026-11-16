@@ -14,9 +14,9 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 | 4 | Overview: leadovi po danu, funnel (contacted → replied → won), izvori, tržišta, usluge, udeo AI ocena; period 7/30/90 dana | ✅ |
 | 5 | Team & Settings: nalozi (email + lozinka), uloge owner/member/viewer, pozivnice (link 7 dana), linkovi samo za pregled, profil i promena lozinke | ✅ |
 | 6 | Produkcija: dnevni backup baze, monitoring (Telegram + `/health/deep`), zaštita prijave, sigurnosna zaglavlja, Cloudflare Tunnel spreman; ručni koraci u [PRODUCTION.md](PRODUCTION.md) | ✅ (kod) |
-| **7** | **Dev workflow:** zadaci i planiranje povezani sa GitHub-om (Issues), rad kroz Claude Code / Codex pretplatu | ⏭ sledeće |
+| 7 | Dev workflow: AGENTS.md/CLAUDE.md, GitHub Issues kao taskovi (+ stranica Tasks u dashboard-u), @claude akcija preko pretplate, šabloni; vidi [WORKFLOW.md](WORKFLOW.md) | ✅ |
 
-**Sledeći korak:** Deploy → UptimeRobot na `/health/deep` → (kasnije) domen po [PRODUCTION.md](PRODUCTION.md) → Faza 7.
+**Sledeći korak:** Deploy → podešavanja iz [WORKFLOW.md](WORKFLOW.md) (GITHUB_TOKEN, CLAUDE_CODE_OAUTH_TOKEN) → taskovi na GitHub-u (#1–#7).
 
 ## Urađeno
 

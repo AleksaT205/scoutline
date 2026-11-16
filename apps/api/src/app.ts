@@ -9,6 +9,7 @@ import { htmlTitle, mainText, scoreItem, sendLeadToTelegram, telegramConfigured 
 import { safeFetchHtml } from "./safe-fetch.js";
 import { auth, type Actor } from "./auth.js";
 import { checkHealth } from "./monitor.js";
+import { devTasks } from "./dev.js";
 import { llmProxy, routerAdmin } from "./router.js";
 
 type Tier = "T1" | "T2" | "T3" | "DOMESTIC";
@@ -181,6 +182,8 @@ export function createApp(getDb: () => Db) {
   });
   app.route("/auth", a.routes);
   app.route("/team", a.team);
+  app.use("/dev/*", a.require("member"));
+  app.route("/dev/tasks", devTasks());
 
   // GET /share/:token — javni prikaz samo za čitanje (bez beleški, email nacrta i izmena)
   app.get("/share/:token", async (c) => {

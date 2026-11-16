@@ -1,0 +1,23 @@
+name: Bug
+description: Nešto ne radi kako treba
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: Šta se desilo
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Šta je trebalo da se desi
+  - type: textarea
+    id: steps
+    attributes:
+      label: Kako da se ponovi
+      placeholder: "1. Otvori Leads\n2. Klikni …"
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log / screenshot (bez lozinki i ključeva)

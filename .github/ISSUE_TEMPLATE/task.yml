@@ -1,0 +1,24 @@
+name: Task / feature
+description: Nova funkcija ili izmena
+labels: ["task"]
+body:
+  - type: textarea
+    id: goal
+    attributes:
+      label: Šta treba da radi
+      description: Jednom-dve rečenice, iz ugla korisnika.
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Kada je gotovo
+      description: Konkretni kriterijumi (npr. "filter po statusu radi i čuva se u URL-u").
+  - type: input
+    id: area
+    attributes:
+      label: Deo aplikacije
+      placeholder: web / api / worker / router / infra
+  - type: markdown
+    attributes:
+      value: "Napiši **@claude** u komentaru da Claude Code uradi task i otvori PR."

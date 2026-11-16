@@ -1,4 +1,4 @@
-import { Kanban, LayoutGrid, Route, Rss, Search, Settings, Users, X } from "lucide-react";
+import { ListTodo, Kanban, LayoutGrid, Route, Rss, Search, Settings, Users, X } from "lucide-react";
 import type { ApiStatus } from "../lib/api";
 
 const prospecting = (leadCount: number) => [
@@ -11,6 +11,7 @@ const aiOps = [{ label: "AI Router", icon: Route, href: "#/router" }];
 const formatCost = (v?: number) => (v === undefined ? "—" : v > 0 && v < 0.01 ? `$${v.toFixed(4)}` : `$${v.toFixed(2)}`);
 
 const workspace = [
+  { label: "Tasks", icon: ListTodo, href: "#/tasks" },
   { label: "Team", icon: Users, href: "#/team" },
   { label: "Settings", icon: Settings, href: "#/settings" },
 ];
