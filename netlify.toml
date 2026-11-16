@@ -6,7 +6,8 @@
 
 [build.environment]
   NODE_VERSION = "20.19.4"
-  # VITE_API_URL podesiti u Netlify UI → Site settings → Environment variables
+  # Javna adresa API-ja (mini PC preko Tailscale Funnel-a). Kad uzmemo domen → api.<domen>.
+  VITE_API_URL = "https://aleksaserver.tail32786c.ts.net"
 
 [[redirects]]
   from = "/*"

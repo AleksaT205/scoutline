@@ -52,7 +52,7 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 - [x] Coolify instaliran na mini PC (`http://192.168.100.60:8000`)
 - [ ] Prilagoditi dashboard za telefon (sidebar se ne skuplja)
 - [x] Radar (api + worker + baza + LiteLLM) deploy preko Coolify-ja → `http://192.168.100.60:3100/health` radi (port 3000 je na serveru zauzet)
-- [ ] Javna HTTPS adresa za API (Tailscale Funnel) + `VITE_API_URL` u Netlify-ju → "API online"
+- [x] Javna HTTPS adresa za API: https://aleksaserver.tail32786c.ts.net (Tailscale Funnel → port 3100); `VITE_API_URL` u `netlify.toml`
 - [ ] Faza 1 — prvi izvori, AI ocena, Telegram
 
 ## Otvoreno
