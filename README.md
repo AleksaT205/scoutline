@@ -36,6 +36,7 @@ Server: `cp .env.example .env`, popuni, pa iz korena repoa `docker compose --env
 | [docs/COSTS.md](docs/COSTS.md) | Sve što se koristi, šta je besplatno, šta se plaća |
 | [docs/DEPLOY.md](docs/DEPLOY.md) | Mini PC kao server + Netlify za frontend, kasnije VPS |
 | [docs/DESIGN.md](docs/DESIGN.md) | Dizajn sistem: principi, boje, tipografija, komponente; mockup u [design/mockup.html](design/mockup.html) |
+| [docs/PRODUCTION.md](docs/PRODUCTION.md) | Backup, monitoring, domen, Cloudflare Tunnel, auto-deploy, plaćeni modeli |
 | [docs/SERVER.md](docs/SERVER.md) | Podešavanje mini PC-a: Tailscale, Coolify, Beszel, javni pristup bez domena |
 
 ## Naziv (predlozi)

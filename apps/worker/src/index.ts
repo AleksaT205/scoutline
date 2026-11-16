@@ -2,7 +2,7 @@
  * Worker: periodično preuzima oglase sa izvora, ocenjuje ih i šalje dobre na Telegram.
  * Tok: izvor → novi oglasi → prefilter → lead → ocena (AI ili pravila) → Telegram.
  */
-import { createDb } from "@radar/db";
+import { createDb, settings } from "@radar/db";
 import { CONNECTORS } from "./connectors/sources.js";
 import { aiConfigured } from "@radar/scoring";
 import { telegramConfigured } from "@radar/scoring";
@@ -29,6 +29,9 @@ async function tick() {
     }
     await scorePending(db, SCORE_BATCH);
     await notifyNew(db);
+    // Otkucaj srca — API proverava da worker radi (monitoring)
+    const beat = { at: new Date().toISOString(), ai: aiConfigured() };
+    await db.insert(settings).values({ key: "worker_heartbeat", value: beat }).onConflictDoUpdate({ target: settings.key, set: { value: beat, updatedAt: new Date() } });
   } catch (e) {
     console.error("[worker] greška", e);
   } finally {

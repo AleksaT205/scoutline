@@ -13,10 +13,10 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 | 3 | Pipeline / CRM: status leada (New → Contacted → Replied → Meeting → Won/Lost), „Hide“, beleške, istorija, kanban sa prevlačenjem, filter po statusu | ✅ |
 | 4 | Overview: leadovi po danu, funnel (contacted → replied → won), izvori, tržišta, usluge, udeo AI ocena; period 7/30/90 dana | ✅ |
 | 5 | Team & Settings: nalozi (email + lozinka), uloge owner/member/viewer, pozivnice (link 7 dana), linkovi samo za pregled, profil i promena lozinke | ✅ |
-| **6** | **Produkcija:** domen, Cloudflare Tunnel, backup baze, monitoring, plaćeni modeli za klijente | ⏭ sledeće |
-| 7 | Dev workflow: zadaci i planiranje povezani sa GitHub-om (Issues), rad kroz Claude Code / Codex pretplatu | |
+| 6 | Produkcija: dnevni backup baze, monitoring (Telegram + `/health/deep`), zaštita prijave, sigurnosna zaglavlja, Cloudflare Tunnel spreman; ručni koraci u [PRODUCTION.md](PRODUCTION.md) | ✅ (kod) |
+| **7** | **Dev workflow:** zadaci i planiranje povezani sa GitHub-om (Issues), rad kroz Claude Code / Codex pretplatu | ⏭ sledeće |
 
-**Sledeći korak:** Deploy → na sajtu "Create account" (owner, potvrda timskom lozinkom) → pozvati kolege → Faza 6.
+**Sledeći korak:** Deploy → UptimeRobot na `/health/deep` → (kasnije) domen po [PRODUCTION.md](PRODUCTION.md) → Faza 7.
 
 ## Urađeno
 

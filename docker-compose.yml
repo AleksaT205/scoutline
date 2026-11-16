@@ -84,6 +84,44 @@ services:
       api: { condition: service_healthy } # API primenjuje migracije baze
       litellm: { condition: service_started }
 
+  # Automatski backup baze: jednom dnevno pg_dump u volume "backups", čuva poslednjih N dana.
+  # ($$ = doslovan $ unutar docker compose fajla)
+  backup:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - backups:/backups
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        echo "[backup] start, cuva $${KEEP_DAYS} dana"
+        while true; do
+          f="/backups/radar-$$(date +%Y-%m-%d_%H%M).sql.gz"
+          if pg_dump -h postgres -U radar radar | gzip > /backups/.in-progress; then
+            mv /backups/.in-progress "$$f"
+            echo "[backup] ok: $$f ($$(du -h "$$f" | cut -f1))"
+          else
+            echo "[backup] GRESKA pri pravljenju backup-a"
+          fi
+          find /backups -name 'radar-*.sql.gz' -mtime +$${KEEP_DAYS} -delete
+          sleep 86400
+        done
+    depends_on:
+      postgres: { condition: service_healthy }
+
+  # Cloudflare Tunnel (kad uzmete domen): uključuje se sa --profile tunnel i CLOUDFLARE_TUNNEL_TOKEN
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    profiles: ["tunnel"]
+    restart: unless-stopped
+    command: ["tunnel", "--no-autoupdate", "run"]
+    environment:
+      TUNNEL_TOKEN: ${CLOUDFLARE_TUNNEL_TOKEN:-}
+
 volumes:
   pgdata:
   ollama:
+  backups:

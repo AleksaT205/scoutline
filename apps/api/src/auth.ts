@@ -122,12 +122,21 @@ export function auth(getDb: () => Db) {
     return c.json({ token: signSession(u!.id, u!.tokenVersion), user: publicUser(u!) }, 201);
   });
 
+  // Zaštita od pogađanja lozinke: najviše 10 pokušaja po emailu u 15 minuta
+  const attempts = new Map<string, { n: number; until: number }>();
   routes.post("/login", async (c) => {
     const input = await c.req.json<{ email?: string; password?: string }>().catch(() => null);
     const email = input?.email?.trim().toLowerCase() ?? "";
+    const a = attempts.get(email);
+    if (a && a.until > Date.now() && a.n >= 10) return c.json({ error: "Too many attempts. Try again in 15 minutes." }, 429);
     const [u] = await getDb().select().from(users).where(eq(users.email, email)).limit(1);
     // Ista poruka i za nepostojeći email i za pogrešnu lozinku
-    if (!u || !(await verifyPassword(input?.password ?? "", u.passwordHash))) return c.json({ error: "Wrong email or password." }, 401);
+    if (!u || !(await verifyPassword(input?.password ?? "", u.passwordHash))) {
+      const cur = attempts.get(email);
+      attempts.set(email, cur && cur.until > Date.now() ? { n: cur.n + 1, until: cur.until } : { n: 1, until: Date.now() + 15 * 60_000 });
+      return c.json({ error: "Wrong email or password." }, 401);
+    }
+    attempts.delete(email);
     await getDb().update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, u.id));
     return c.json({ token: signSession(u.id, u.tokenVersion), user: publicUser(u) });
   });

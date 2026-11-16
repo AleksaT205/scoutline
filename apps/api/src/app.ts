@@ -1,12 +1,14 @@
 import { createHash, randomUUID } from "node:crypto";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
+import { secureHeaders } from "hono/secure-headers";
 import { and, count, desc, eq, gte, inArray, lt, ne, sql, type SQL } from "drizzle-orm";
 import { leadEvents, leads, rawItems, settings, sources, type Db } from "@radar/db";
 import { LEAD_STATUSES, detectCountry, normalizeAlerts, remoteFriendly, type LeadStatus } from "@radar/shared";
 import { htmlTitle, mainText, scoreItem, sendLeadToTelegram, telegramConfigured } from "@radar/scoring";
 import { safeFetchHtml } from "./safe-fetch.js";
 import { auth, type Actor } from "./auth.js";
+import { checkHealth } from "./monitor.js";
 import { llmProxy, routerAdmin } from "./router.js";
 
 type Tier = "T1" | "T2" | "T3" | "DOMESTIC";
@@ -49,6 +51,7 @@ export function createApp(getDb: () => Db) {
   const actorName = (c: Context) => ((c.get("actor" as never) as Actor | undefined)?.name ?? "team");
   const origins = (process.env.CORS_ORIGINS ?? "http://localhost:5173").split(",");
   const isDev = process.env.NODE_ENV !== "production";
+  app.use("*", secureHeaders({ crossOriginResourcePolicy: false, crossOriginOpenerPolicy: false }));
   app.use(
     "*",
     cors({
@@ -67,6 +70,11 @@ export function createApp(getDb: () => Db) {
       .innerJoin(sources, eq(rawItems.sourceId, sources.id));
 
   app.get("/health", (c) => c.json({ ok: true, service: "radar-api", time: new Date().toISOString() }));
+  // Detaljna provera za spoljni monitoring (UptimeRobot i sl.): 200 kad sve radi, 503 kad ne
+  app.get("/health/deep", async (c) => {
+    const h = await checkHealth(getDb());
+    return c.json(h, h.ok ? 200 : 503);
+  });
 
   // AI Router: javni endpoint za aplikacije klijenata (ključ klijenta) + upravljanje (timska lozinka)
   app.route("/llm", llmProxy());

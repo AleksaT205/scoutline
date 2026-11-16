@@ -40,3 +40,15 @@ export async function sendLeadToTelegram(l: NotifyLead): Promise<boolean> {
   if (!res.ok) console.warn(`[telegram] HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
   return res.ok;
 }
+
+/** Običan tekst na Telegram (sistemska upozorenja: worker stao, izvor ne radi…). */
+export async function sendTelegramText(text: string): Promise<boolean> {
+  if (!telegramConfigured()) return false;
+  const res = await fetch(`https://api.telegram.org/bot${TOKEN}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ chat_id: CHAT_ID, text, parse_mode: "HTML", disable_web_page_preview: true }),
+    signal: AbortSignal.timeout(15_000),
+  }).catch(() => null);
+  return !!res?.ok;
+}
