@@ -51,7 +51,8 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 - [x] Netlify povezan sa `apps/web` → https://scoutline-app.netlify.app (auto-deploy na push u `main`)
 - [x] Coolify instaliran na mini PC (`http://192.168.100.60:8000`)
 - [ ] Prilagoditi dashboard za telefon (sidebar se ne skuplja)
-- [ ] Radar (api + worker + baza) deploy preko Coolify-ja
+- [x] Radar (api + worker + baza + LiteLLM) deploy preko Coolify-ja → `http://192.168.100.60:3100/health` radi (port 3000 je na serveru zauzet)
+- [ ] Javna HTTPS adresa za API (Tailscale Funnel) + `VITE_API_URL` u Netlify-ju → "API online"
 - [ ] Faza 1 — prvi izvori, AI ocena, Telegram
 
 ## Otvoreno
