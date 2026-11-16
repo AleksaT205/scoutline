@@ -22,9 +22,9 @@ pnpm typecheck && pnpm test && pnpm build
 | `apps/worker` | prikupljanje + ocenjivanje | mini PC (Docker / Coolify) |
 | `packages/shared` | tier-ovi, kategorije, ocena | — |
 | `packages/db` | Drizzle šema + migracije | — |
-| `infra/` | docker-compose, LiteLLM, Postgres | mini PC |
+| `docker-compose.yml` + `infra/` | Postgres, LiteLLM, Ollama, api, worker | mini PC (Coolify) |
 
-Server: `cp .env.example .env`, popuni, pa `docker compose -f infra/docker-compose.yml --env-file .env up -d`.
+Server: `cp .env.example .env`, popuni, pa iz korena repoa `docker compose --env-file .env up -d`.
 
 ## Dokumentacija
 

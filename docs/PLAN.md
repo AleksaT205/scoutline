@@ -56,7 +56,7 @@ radar/
 │  ├─ geo/          # detekcija zemlje + liste tier-ova
 │  └─ shared/       # tipovi, konfiguracija
 ├─ infra/
-│  ├─ docker-compose.yml
+│  ├─ (docker-compose.yml je u korenu repoa)
 │  ├─ litellm.config.yaml
 │  └─ cloudflared/
 ├─ prompts/         # verzionisani prompti (score.md, outreach.md)

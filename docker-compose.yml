@@ -1,5 +1,5 @@
-# Ručno: docker compose -f infra/docker-compose.yml --env-file .env up -d
-# Coolify: Docker Compose resurs, putanja do fajla /infra/docker-compose.yml;
+# Ručno (iz korena repoa): docker compose --env-file .env up -d
+# Coolify: Docker Compose resurs, Base directory "/", Compose file "/docker-compose.yml";
 #          promenljive (POSTGRES_PASSWORD, LITELLM_MASTER_KEY…) se unose u Coolify → Environment Variables.
 name: radar
 
@@ -13,7 +13,7 @@ services:
       POSTGRES_DB: radar
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./infra/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U radar"]
       interval: 10s
@@ -39,12 +39,12 @@ services:
       GROQ_API_KEY: ${GROQ_API_KEY:-}
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
     volumes:
-      - ./litellm.config.yaml:/app/config.yaml:ro
+      - ./infra/litellm.config.yaml:/app/config.yaml:ro
     depends_on:
       postgres: { condition: service_healthy }
 
   api:
-    build: { context: .., args: { APP: api } }
+    build: { context: ., args: { APP: api } }
     restart: unless-stopped
     environment:
       DATABASE_URL: postgres://radar:${POSTGRES_PASSWORD}@postgres:5432/radar
@@ -60,7 +60,7 @@ services:
       postgres: { condition: service_healthy }
 
   worker:
-    build: { context: .., args: { APP: worker } }
+    build: { context: ., args: { APP: worker } }
     restart: unless-stopped
     environment:
       DATABASE_URL: postgres://radar:${POSTGRES_PASSWORD}@postgres:5432/radar
