@@ -16,6 +16,11 @@ describe("geo", () => {
     expect(detectCountry({ location: "Remote", salaryText: "£60k" })).toBe("GB");
     expect(detectCountry({ location: "Beograd" })).toBe("RS");
     expect(detectCountry({ location: "Remote" })).toBeNull();
+    expect(detectCountry({ location: "REMOTE (US)" })).toBe("US");
+    expect(detectCountry({ location: "NYC or Remote" })).toBe("US");
+    expect(detectCountry({ location: "Zürich, Switzerland, Germany" })).toBe("CH");
+    expect(detectCountry({ location: "Remote — focus on us and our clients" })).toBeNull();
+    expect(detectCountry({ location: "London, UK" })).toBe("GB");
   });
   it("detects remote friendliness", () => {
     expect(remoteFriendly("Remote, worldwide. Contractors welcome")).toBe(true);

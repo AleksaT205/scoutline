@@ -4,7 +4,7 @@ import { DEMO_LEADS } from "./data/demo";
 import { useApiStatus, useLeads } from "./lib/api";
 import { Sidebar } from "./components/Sidebar";
 import { Kpis } from "./components/Kpis";
-import { DEFAULT_FILTERS, Filters, type FilterState } from "./components/Filters";
+import { DEFAULT_FILTERS, Filters, applyFilters, type FilterState } from "./components/Filters";
 import { LeadsTable } from "./components/LeadsTable";
 import { LeadDetail } from "./components/LeadDetail";
 
@@ -17,17 +17,7 @@ export function App() {
 
   // Pravi leadovi iz API-ja; dok ih nema, prikazuju se primeri.
   const allLeads = api.live && api.leads ? api.leads : DEMO_LEADS;
-  const leads = useMemo(
-    () =>
-      allLeads.filter(
-        (l) =>
-          (l.tier ? filters.tiers.has(l.tier) : filters.tiers.has("T1") || filters.tiers.has("T2")) &&
-          l.score >= filters.minScore &&
-          (!l.budgetEur || l.budgetEur >= filters.minBudget) &&
-          (!filters.remoteOnly || l.remoteOk === true || (l.remoteOk === undefined && /remote|worldwide|eu/i.test(l.remote))),
-      ),
-    [allLeads, filters],
-  );
+  const leads = useMemo(() => applyFilters(allLeads, filters), [allLeads, filters]);
   const selected = leads.find((l) => l.id === selectedId) ?? leads[0];
 
   return (
@@ -43,10 +33,15 @@ export function App() {
             <span className="hidden sm:inline">Prospecting / </span>
             <b className="font-medium text-fg">Leads</b>
           </div>
-          <div className="ml-auto hidden h-[34px] w-80 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-faint md:flex">
-            <Search size={14} /> Search leads, companies, sources…
-            <span className="ml-auto rounded border border-line-2 px-1.5 text-[11px] text-muted">⌘K</span>
-          </div>
+          <label className="ml-auto hidden h-[34px] w-80 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-faint focus-within:border-accent/55 md:flex">
+            <Search size={14} />
+            <input
+              value={filters.query}
+              onChange={(e) => setFilters({ ...filters, query: e.target.value })}
+              placeholder="Search leads, companies, locations…"
+              className="w-full bg-transparent text-fg placeholder:text-faint outline-none"
+            />
+          </label>
           <button className="ml-auto grid size-[34px] place-items-center rounded-[7px] border border-line bg-surface text-muted hover:bg-surface-2 md:ml-0" aria-label="Notifications">
             <Bell size={15} />
           </button>
@@ -79,7 +74,7 @@ export function App() {
           )}
 
           <Kpis leads={allLeads} newToday={api.live ? api.newToday : undefined} />
-          <Filters value={filters} onChange={setFilters} shown={leads.length} total={allLeads.length} />
+          <Filters value={filters} onChange={setFilters} all={allLeads} shown={leads.length} />
 
           <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
             <LeadsTable leads={leads} selectedId={selected?.id} onSelect={setSelectedId} />

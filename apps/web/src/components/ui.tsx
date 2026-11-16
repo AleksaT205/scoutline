@@ -13,6 +13,11 @@ export const CATEGORY_LABEL: Record<ServiceCategory, string> = {
   not_relevant: "Not relevant",
 };
 
+export function industryLabel(industry: string) {
+  const s = industry.replace(/_/g, " ");
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
 export function flag(country: string | null | undefined) {
   if (!country) return "🌍";
   return country
