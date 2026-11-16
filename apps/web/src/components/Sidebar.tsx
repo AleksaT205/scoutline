@@ -57,7 +57,10 @@ function StatusCard({ status, aiCostUsd }: { status: ApiStatus; aiCostUsd?: numb
       </div>
       <div>{detail}</div>
       <div className="mt-0.5">
-        AI cost this month: <b className="num font-medium text-fg">{formatCost(aiCostUsd)}</b>
+        <span title="Calculated at the providers' list prices. Free tiers (Groq, Gemini free, OpenRouter :free) are not billed — your real bill stays $0.">
+          AI usage (list price): <b className="num font-medium text-fg">{formatCost(aiCostUsd)}</b>
+        </span>
+        <div className="text-[11px] text-faint">Free tiers → billed $0</div>
       </div>
     </div>
   );

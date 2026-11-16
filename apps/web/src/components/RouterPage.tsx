@@ -553,7 +553,7 @@ export function RouterPage() {
       </div>
 
       <p className="mt-4 text-[12px] text-faint">
-        Spend is tracked by LiteLLM at list prices. “Saved” compares with a premium model at ${data?.baseline.inputPerM ?? 2.5} / ${data?.baseline.outputPerM ?? 10} per 1M input / output tokens.
+        Spend is calculated by LiteLLM at the providers' list prices — on free tiers (Groq, Gemini free, OpenRouter :free) nothing is actually billed. “Saved” compares with a premium model at ${data?.baseline.inputPerM ?? 2.5} / ${data?.baseline.outputPerM ?? 10} per 1M input / output tokens.
       </p>
 
       <NewClientDialog open={newOpen} onClose={() => setNewOpen(false)} onCreated={load} />
