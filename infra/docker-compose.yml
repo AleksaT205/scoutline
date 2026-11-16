@@ -1,4 +1,6 @@
-# Pokretanje: docker compose -f infra/docker-compose.yml --env-file .env up -d
+# Ručno: docker compose -f infra/docker-compose.yml --env-file .env up -d
+# Coolify: Docker Compose resurs, putanja do fajla /infra/docker-compose.yml;
+#          promenljive (POSTGRES_PASSWORD, LITELLM_MASTER_KEY…) se unose u Coolify → Environment Variables.
 name: radar
 
 services:
@@ -17,8 +19,11 @@ services:
       interval: 10s
       retries: 5
 
+  # Lokalni AI (rezerva). Velika slika — ne pokreće se podrazumevano:
+  # docker compose --profile local-ai up -d
   ollama:
     image: ollama/ollama:latest
+    profiles: ["local-ai"]
     restart: unless-stopped
     volumes:
       - ollama:/root/.ollama
@@ -47,6 +52,10 @@ services:
       PORT: "3000"
     ports:
       - "3000:3000"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/health || exit 1"]
+      interval: 15s
+      retries: 5
     depends_on:
       postgres: { condition: service_healthy }
 
