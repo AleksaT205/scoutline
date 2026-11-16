@@ -11,6 +11,7 @@ import { AddLeadDialog } from "./components/AddLeadDialog";
 import { RouterPage } from "./components/RouterPage";
 import { SourcesPage } from "./components/SourcesPage";
 import { AlertsDialog } from "./components/AlertsDialog";
+import { PipelinePage } from "./components/PipelinePage";
 
 type Theme = "light" | "dark";
 const systemTheme = (): Theme => (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
@@ -33,10 +34,16 @@ function useTheme(): [Theme, () => void] {
   return [theme, () => setTheme((t) => (t === "dark" ? "light" : "dark"))];
 }
 
-export type Page = "leads" | "router" | "sources";
+export type Page = "leads" | "router" | "sources" | "pipeline";
 function useHashPage(): Page {
   const read = (): Page =>
-    window.location.hash.startsWith("#/router") ? "router" : window.location.hash.startsWith("#/sources") ? "sources" : "leads";
+    window.location.hash.startsWith("#/router")
+      ? "router"
+      : window.location.hash.startsWith("#/sources")
+        ? "sources"
+        : window.location.hash.startsWith("#/pipeline")
+          ? "pipeline"
+          : "leads";
   const [page, setPage] = useState<Page>(read);
   useEffect(() => {
     const on = () => {
@@ -81,7 +88,7 @@ export function App() {
           </button>
           <div className="text-[13px] text-muted">
             <span className="hidden sm:inline">{page === "router" ? "AI Ops / " : "Prospecting / "}</span>
-            <b className="font-medium text-fg">{page === "router" ? "AI Router" : page === "sources" ? "Sources" : "Leads"}</b>
+            <b className="font-medium text-fg">{page === "router" ? "AI Router" : page === "sources" ? "Sources" : page === "pipeline" ? "Pipeline" : "Leads"}</b>
           </div>
           <label className={`ml-auto h-[34px] w-80 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-faint focus-within:border-accent/55 ${page === "leads" ? "hidden md:flex" : "hidden"}`}>
             <Search size={14} />
@@ -113,6 +120,17 @@ export function App() {
             <RouterPage />
           ) : page === "sources" ? (
             <SourcesPage />
+          ) : page === "pipeline" ? (
+            <PipelinePage
+              leads={allLeads}
+              live={api.live}
+              onUpdated={api.update}
+              onOpenLead={(id) => {
+                setFilters({ ...DEFAULT_FILTERS, markets: new Set(DEFAULT_FILTERS.markets), minScore: 0, status: "all" });
+                setSelectedId(id);
+                window.location.hash = "#/";
+              }}
+            />
           ) : (
           <>
           <div className="mb-5 flex flex-wrap items-end gap-4">
@@ -156,7 +174,7 @@ export function App() {
 
           <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
             <LeadsTable leads={leads} selectedId={selected?.id} onSelect={setSelectedId} />
-            {selected && <LeadDetail lead={selected} />}
+            {selected && <LeadDetail lead={selected} live={api.live} onUpdated={api.update} />}
           </div>
           </>
           )}

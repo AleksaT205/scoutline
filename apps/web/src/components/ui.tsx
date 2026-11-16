@@ -1,4 +1,4 @@
-import type { ServiceCategory, Tier } from "@radar/shared";
+import type { LeadStatus, ServiceCategory, Tier } from "@radar/shared";
 
 export const CATEGORY_LABEL: Record<ServiceCategory, string> = {
   fullstack_app: "Full-stack app",
@@ -12,6 +12,21 @@ export const CATEGORY_LABEL: Record<ServiceCategory, string> = {
   other_dev: "Other dev",
   not_relevant: "Not relevant",
 };
+
+export const STATUS_META: Record<LeadStatus, { label: string; cls: string }> = {
+  new: { label: "New", cls: "bg-surface-2 text-muted ring-line" },
+  contacted: { label: "Contacted", cls: "bg-accent-soft text-accent ring-accent/30" },
+  replied: { label: "Replied", cls: "bg-warning/10 text-warning ring-warning/30" },
+  meeting: { label: "Meeting", cls: "bg-[#0ea5e9]/10 text-[#0ea5e9] ring-[#0ea5e9]/30" },
+  won: { label: "Won", cls: "bg-success-soft text-success ring-success/30" },
+  lost: { label: "Lost", cls: "bg-danger/10 text-danger ring-danger/30" },
+  hidden: { label: "Hidden", cls: "bg-surface-2 text-faint ring-line" },
+};
+
+export function StatusPill({ status }: { status: LeadStatus }) {
+  const m = STATUS_META[status];
+  return <span className={`whitespace-nowrap rounded-full px-2 py-0.5 text-[11px] font-medium ring-1 ring-inset ${m.cls}`}>{m.label}</span>;
+}
 
 export function industryLabel(industry: string) {
   const s = industry.replace(/_/g, " ");

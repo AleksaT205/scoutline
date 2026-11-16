@@ -51,11 +51,13 @@ export interface LeadsState {
   reload: () => void;
   /** Doda lead odmah u listu (npr. posle ručnog dodavanja). */
   add: (lead: UiLead) => void;
+  /** Zameni lead u listi (npr. posle promene statusa). */
+  update: (lead: UiLead) => void;
 }
 
 /** Učitava prave leadove; ako ih još nema (ili API nije dostupan), vraća live=false. */
 export function useLeads(): LeadsState {
-  const [state, setState] = useState<Omit<LeadsState, "add" | "reload">>({ leads: null, live: false });
+  const [state, setState] = useState<Omit<LeadsState, "add" | "reload" | "update">>({ leads: null, live: false });
   const [tick, setTick] = useState(0);
   const add = (lead: UiLead) =>
     setState((s) => ({ ...s, live: true, leads: [lead, ...(s.live && s.leads ? s.leads.filter((l) => l.id !== lead.id) : [])] }));
@@ -64,7 +66,7 @@ export function useLeads(): LeadsState {
     const load = async () => {
       try {
         const [l, s] = await Promise.all([
-          fetch(`${API_URL}/leads?limit=1000`).then((r) => (r.ok ? r.json() : { items: [] })) as Promise<{ items?: UiLead[] }>,
+          fetch(`${API_URL}/leads?limit=1000&includeHidden=1`).then((r) => (r.ok ? r.json() : { items: [] })) as Promise<{ items?: UiLead[] }>,
           fetch(`${API_URL}/stats`).then((r) => (r.ok ? r.json() : {})) as Promise<{ newToday?: number; total?: number; aiCostUsd?: number }>,
         ]);
         if (!alive) return;
@@ -81,5 +83,6 @@ export function useLeads(): LeadsState {
       clearInterval(id);
     };
   }, [tick]);
-  return { ...state, add, reload: () => setTick((t) => t + 1) };
+  const update = (lead: UiLead) => setState((s) => ({ ...s, leads: s.leads?.map((l) => (l.id === lead.id ? lead : l)) ?? null }));
+  return { ...state, add, update, reload: () => setTick((t) => t + 1) };
 }

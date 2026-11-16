@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Check, Copy, ExternalLink, Mail, Sparkles } from "lucide-react";
 import type { UiLead } from "../data/demo";
 import { ScoreRing, flag, timeAgo } from "./ui";
+import { NotesPanel, StatusBar } from "./LeadCrm";
 
 function Signal({ label, value, ok }: { label: string; value: string; ok?: boolean }) {
   return (
@@ -30,7 +31,7 @@ function Label({ children, ai, rules }: { children: React.ReactNode; ai?: boolea
   );
 }
 
-export function LeadDetail({ lead }: { lead: UiLead }) {
+export function LeadDetail({ lead, live, onUpdated }: { lead: UiLead; live: boolean; onUpdated: (l: UiLead) => void }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
     await navigator.clipboard.writeText(`${lead.email.subject}\n\n${lead.email.body}`);
@@ -55,6 +56,8 @@ export function LeadDetail({ lead }: { lead: UiLead }) {
           </div>
         </div>
       </div>
+
+      <StatusBar lead={lead} live={live} onUpdated={onUpdated} />
 
       <div className="mt-[18px]">
         <Label>Signals</Label>
@@ -100,6 +103,7 @@ export function LeadDetail({ lead }: { lead: UiLead }) {
           <Mail size={14} /> Open in mail
         </a>
       </div>
+      <NotesPanel lead={lead} live={live} />
     </aside>
   );
 }

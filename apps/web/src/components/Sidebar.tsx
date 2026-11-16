@@ -4,7 +4,7 @@ import type { ApiStatus } from "../lib/api";
 const prospecting = (leadCount: number) => [
   { label: "Overview", icon: LayoutGrid, soon: true },
   { label: "Leads", icon: Search, count: leadCount, href: "#/" },
-  { label: "Pipeline", icon: Kanban, soon: true },
+  { label: "Pipeline", icon: Kanban, href: "#/pipeline" },
   { label: "Sources", icon: Rss, href: "#/sources" },
   { label: "Analytics", icon: BarChart3, soon: true },
 ];
@@ -63,7 +63,7 @@ function StatusCard({ status, aiCostUsd }: { status: ApiStatus; aiCostUsd?: numb
   );
 }
 
-export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: { status: ApiStatus; open: boolean; onClose: () => void; leadCount: number; aiCostUsd?: number; page: "leads" | "router" | "sources" }) {
+export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: { status: ApiStatus; open: boolean; onClose: () => void; leadCount: number; aiCostUsd?: number; page: "leads" | "router" | "sources" | "pipeline" }) {
   return (
     <>
       {open && <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={onClose} />}
@@ -88,7 +88,7 @@ export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: {
         <nav className="flex flex-col gap-0.5">
           <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wider text-faint">Prospecting</div>
           {prospecting(leadCount).map((i) => (
-            <NavItem key={i.label} {...i} active={(i.label === "Leads" && page === "leads") || (i.label === "Sources" && page === "sources")} />
+            <NavItem key={i.label} {...i} active={(i.label === "Leads" && page === "leads") || (i.label === "Sources" && page === "sources") || (i.label === "Pipeline" && page === "pipeline")} />
           ))}
         </nav>
         <nav className="flex flex-col gap-0.5">

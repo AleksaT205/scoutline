@@ -2,8 +2,8 @@ import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { and, count, desc, eq, gte, inArray, lt, ne, sql, type SQL } from "drizzle-orm";
-import { leads, rawItems, settings, sources, type Db } from "@radar/db";
-import { detectCountry, normalizeAlerts, remoteFriendly } from "@radar/shared";
+import { leadEvents, leads, rawItems, settings, sources, type Db } from "@radar/db";
+import { LEAD_STATUSES, detectCountry, normalizeAlerts, remoteFriendly, type LeadStatus } from "@radar/shared";
 import { htmlTitle, mainText, scoreItem, sendLeadToTelegram, telegramConfigured } from "@radar/scoring";
 import { safeFetchHtml } from "./safe-fetch.js";
 import { llmProxy, routerAdmin } from "./router.js";
@@ -125,13 +125,66 @@ export function createApp(getDb: () => Db) {
     const minScore = Number(c.req.query("minScore") ?? 0);
     const tiers = c.req.query("tiers")?.split(",").filter(Boolean) as Tier[] | undefined;
     const limit = Math.min(Number(c.req.query("limit") ?? 100), 1000);
-    const where: SQL[] = [gte(leads.score, minScore), ne(leads.status, "hidden")];
+    const includeHidden = c.req.query("includeHidden") === "1";
+    const where: SQL[] = [gte(leads.score, minScore)];
+    if (!includeHidden) where.push(ne(leads.status, "hidden"));
     if (tiers?.length) where.push(inArray(leads.tier, tiers));
     const rows = await selectLeads()
       .where(and(...where))
       .orderBy(desc(leads.score), desc(rawItems.postedAt))
       .limit(limit);
     return c.json({ items: rows.map(toUiLead) });
+  });
+
+  // ── CRM: status, beleške, istorija (izmene traže timsku lozinku) ─────────────
+  const requireTeam = async (c: Context, next: () => Promise<void>) => {
+    const ok = authorized(c);
+    if (ok === "disabled") return c.json({ error: "Editing is disabled: set API_TOKEN on the server." }, 503);
+    if (!ok) return c.json({ error: "Wrong team password." }, 401);
+    await next();
+  };
+
+  // PATCH /leads/:id { status } — pomeri lead kroz pipeline
+  app.patch("/leads/:id", requireTeam, async (c) => {
+    const input = await c.req.json<{ status?: string }>().catch(() => null);
+    const status = input?.status as LeadStatus | undefined;
+    if (!status || !LEAD_STATUSES.includes(status)) return c.json({ error: `Status must be one of: ${LEAD_STATUSES.join(", ")}.` }, 400);
+    const db = getDb();
+    const [current] = await db.select({ status: leads.status }).from(leads).where(eq(leads.id, c.req.param("id")!)).limit(1);
+    if (!current) return c.json({ error: "Lead not found." }, 404);
+    if (current.status !== status) {
+      await db.update(leads).set({ status, updatedAt: new Date() }).where(eq(leads.id, c.req.param("id")!));
+      await db.insert(leadEvents).values({ leadId: c.req.param("id")!, type: "status_changed", data: { from: current.status, to: status }, actor: "team" });
+    }
+    const [row] = await selectLeads().where(eq(leads.id, c.req.param("id")!)).limit(1);
+    return c.json({ lead: toUiLead(row!) });
+  });
+
+  // POST /leads/:id/notes { text } — beleška uz lead
+  app.post("/leads/:id/notes", requireTeam, async (c) => {
+    const input = await c.req.json<{ text?: string }>().catch(() => null);
+    const text = input?.text?.trim();
+    if (!text) return c.json({ error: "Note can't be empty." }, 400);
+    const db = getDb();
+    const [exists] = await db.select({ id: leads.id }).from(leads).where(eq(leads.id, c.req.param("id")!)).limit(1);
+    if (!exists) return c.json({ error: "Lead not found." }, 404);
+    const [event] = await db.insert(leadEvents).values({ leadId: exists.id, type: "note", data: { text: text.slice(0, 4000) }, actor: "team" }).returning();
+    return c.json({ event }, 201);
+  });
+
+  // GET /leads/:id/events — istorija (statusi, beleške)
+  app.get("/leads/:id/events", requireTeam, async (c) => {
+    const events = await getDb().select().from(leadEvents).where(eq(leadEvents.leadId, c.req.param("id")!)).orderBy(desc(leadEvents.createdAt)).limit(100);
+    return c.json({ events });
+  });
+
+  // GET /pipeline — broj leadova i zbir budžeta po statusu
+  app.get("/pipeline", async (c) => {
+    const rows = await getDb()
+      .select({ status: leads.status, n: count(), value: sql<number>`coalesce(sum(${leads.budgetEur}),0)::float` })
+      .from(leads)
+      .groupBy(leads.status);
+    return c.json({ stages: rows });
   });
 
   // POST /auth/check — proverava timsku lozinku (za prozor "Add lead")

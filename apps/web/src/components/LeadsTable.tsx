@@ -1,5 +1,5 @@
 import type { UiLead } from "../data/demo";
-import { CATEGORY_LABEL, ScoreRing, Tag, TierBadge, flag, industryLabel, timeAgo } from "./ui";
+import { CATEGORY_LABEL, ScoreRing, StatusPill, Tag, TierBadge, flag, industryLabel, timeAgo } from "./ui";
 
 export function LeadsTable({ leads, selectedId, onSelect }: { leads: UiLead[]; selectedId?: string; onSelect: (id: string) => void }) {
   if (leads.length === 0) {
@@ -39,7 +39,10 @@ export function LeadsTable({ leads, selectedId, onSelect }: { leads: UiLead[]; s
                     <ScoreRing score={l.score} />
                   </td>
                   <td className="max-w-[300px] px-2.5 py-2.5">
-                    <div className="truncate font-medium">{l.title}</div>
+                    <div className="flex items-center gap-2">
+                      <span className="truncate font-medium">{l.title}</span>
+                      {l.status && l.status !== "new" && <StatusPill status={l.status} />}
+                    </div>
                     <div className="truncate text-xs text-muted">
                       {l.company} · {industryLabel(l.industry)}
                     </div>

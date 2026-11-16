@@ -14,6 +14,7 @@ export interface FilterState {
   industry: string; // "all" | Industry
   query: string;
   maxAgeHours: number; // 0 = bilo kada (po vremenu objave oglasa)
+  status: string; // "open" | "all" | LeadStatus
 }
 
 export const DEFAULT_FILTERS: FilterState = {
@@ -25,9 +26,12 @@ export const DEFAULT_FILTERS: FilterState = {
   industry: "all",
   query: "",
   maxAgeHours: 0,
+  status: "open",
 };
 
 export const marketOf = (l: UiLead): Market => l.tier ?? "UNKNOWN";
+const OPEN = ["new", "contacted", "replied", "meeting"];
+const matchStatus = (s: string, f: string) => (f === "all" ? s !== "hidden" : f === "open" ? OPEN.includes(s) : s === f);
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
 
 export function applyFilters(leads: UiLead[], f: FilterState): UiLead[] {
@@ -41,7 +45,8 @@ export function applyFilters(leads: UiLead[], f: FilterState): UiLead[] {
       (f.category === "all" || l.category === f.category) &&
       (f.industry === "all" || norm(l.industry) === norm(f.industry)) &&
       (!q || `${l.title} ${l.company} ${l.city}`.toLowerCase().includes(q)) &&
-      (!f.maxAgeHours || (l.postedMinutesAgo !== null && l.postedMinutesAgo <= f.maxAgeHours * 60)),
+      (!f.maxAgeHours || (l.postedMinutesAgo !== null && l.postedMinutesAgo <= f.maxAgeHours * 60)) &&
+      matchStatus(l.status ?? "new", f.status),
   );
 }
 
@@ -97,6 +102,7 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
     value.industry === "all" &&
     !value.query &&
     !value.maxAgeHours &&
+    value.status === "open" &&
     value.markets.size === DEFAULT_FILTERS.markets.size;
 
   return (
@@ -124,6 +130,17 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
             </button>
           ))}
         </div>
+        <Select label="Status" value={value.status} onChange={(status) => onChange({ ...value, status })}>
+          <option value="open">Open</option>
+          <option value="new">New</option>
+          <option value="contacted">Contacted</option>
+          <option value="replied">Replied</option>
+          <option value="meeting">Meeting</option>
+          <option value="won">Won</option>
+          <option value="lost">Lost</option>
+          <option value="hidden">Hidden</option>
+          <option value="all">All (not hidden)</option>
+        </Select>
         <Select label="Posted" value={String(value.maxAgeHours)} onChange={(v) => onChange({ ...value, maxAgeHours: Number(v) })}>
           <option value="0">Any time</option>
           <option value="24">Last 24 h</option>

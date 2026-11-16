@@ -1,4 +1,4 @@
-import type { ServiceCategory, Tier } from "@radar/shared";
+import type { LeadStatus, ServiceCategory, Tier } from "@radar/shared";
 
 export interface UiLead {
   id: string;
@@ -18,7 +18,8 @@ export interface UiLead {
   score: number;
   remote: string;
   remoteOk?: boolean | null;
-  scoredBy?: string | null; // "rules" | "ai:<model>"
+  scoredBy?: string | null;
+  status?: LeadStatus; // "rules" | "ai:<model>"
   companySize?: string;
   urgency: string;
   why: string[];
