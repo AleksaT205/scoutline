@@ -60,3 +60,23 @@ Tip: u opisu taska napiši odeljak `Done when:` sa stavkama. To ide u brief kao 
 - **Modeli:**
   - **Auto** (preporučeno) bira besplatni model po pitanju.
   - **Claude** modeli rade uz Anthropic API ključ (Settings → Integrations, lični ili firme). Pretplata (Pro/Max) važi za agente na GitHub-u, ne za API.
+
+## GitHub tok rada (Faza 14)
+- **Two-way GitHub sync** (Edit project): GitHub issue-i automatski postaju taskovi, a promene u Scoutline-u (status, naslov, osoba, oznake) se upisuju nazad na GitHub. Tim može da radi samo na GitHub-u, a ovde se vidi stanje.
+  - Osoba se prepoznaje po povezanom GitHub nalogu (Settings → Integrations → Your GitHub).
+- **Više repoa:** tab **Code** → „Add repo“ (npr. `acme/web` · frontend).
+- **Code → Activity:** commit-ovi i PR-ovi po nedelji, vreme do spajanja, koliko CI prolazi, ko radi, PR-ovi koji čekaju, milestone-i.
+- **Code → Pull requests:**
+  - **AI review** ostavlja `@claude` komentar na PR-u;
+  - **Approve** (GitHub ne dozvoljava da odobriš sopstveni PR);
+  - **Merge** (squash).
+- **Code → Branches:**
+  - nova grana;
+  - u detalju taska **Create branch** pravi granu po tasku (`acme-12-naslov`);
+  - brisanje grana čiji je PR spojen.
+- **Code → Actions:** poslednja pokretanja; **Run** radi za workflow-e koji imaju `workflow_dispatch`.
+- **Code → Deploy** (vlasnik dodaje dugme):
+  - **Coolify:** URL deploy webhook-a + API token (Keys & Tokens).
+  - **Netlify:** Build hook URL.
+  - Čuva se šifrovano, a istorija deploy-a se pamti.
+- **Dozvole tokena** (GitHub → Fine-grained token): Issues R/W, Pull requests R/W, Contents R/W, Actions R/W, Metadata R — za svaki repo projekta.

@@ -648,6 +648,29 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
               )}
             </div>
             {repoUrl === null && <p className="mt-1.5 text-[12px] text-faint">Connect a GitHub repo to the project to hand tasks to Claude or Codex and to link pull requests automatically.</p>}
+            {repoUrl && editable && (
+              <div className="mt-2">
+                <button
+                  disabled={!!agentBusy}
+                  onClick={async () => {
+                    setAgentBusy("branch");
+                    setError(null);
+                    try {
+                      const r = await teamFetch<{ name: string; url: string }>(`/delivery/projects/${issue.projectId}/branches`, { method: "POST", body: JSON.stringify({ issueId: issue.id }) });
+                      window.open(r.url, "_blank", "noopener");
+                    } catch (e) {
+                      setError((e as Error).message);
+                    } finally {
+                      setAgentBusy(null);
+                    }
+                  }}
+                  className="inline-flex h-[28px] items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 text-[12px] font-medium hover:bg-surface-2 disabled:opacity-40"
+                  title="Creates a branch named after this task (e.g. acme-12-login-page) from the main branch"
+                >
+                  {agentBusy === "branch" ? <Loader2 size={12} className="animate-spin" /> : null} Create branch
+                </button>
+              </div>
+            )}
             {repoUrl && <p className="mt-1.5 text-[12px] text-faint">Opens a GitHub issue in the project repo with a short brief, using your GitHub (Settings → Integrations) or the workspace token. The repo needs the Claude app / Codex connected once.</p>}
             {links.length > 0 && (
               <ul className="mt-2 space-y-1">

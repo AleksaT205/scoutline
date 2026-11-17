@@ -19,7 +19,11 @@ export interface FilterState {
   query: string;
   maxAgeHours: number; // 0 = bilo kada (po vremenu objave oglasa)
   status: string; // "open" | "all" | LeadStatus
+  sortBy: SortKey;
+  sortDir: "asc" | "desc";
 }
+
+export type SortKey = "score" | "budget" | "posted" | "source" | "deadline";
 
 /** Podrazumevano: projekti za firmu, bez oglasa za posao. */
 export const DEFAULT_TYPES: LeadType[] = ["tender", "project", "intent"];
@@ -38,6 +42,8 @@ export const DEFAULT_FILTERS: FilterState = {
   query: "",
   maxAgeHours: 0,
   status: "open",
+  sortBy: "score",
+  sortDir: "desc",
 };
 
 export const marketOf = (l: UiLead): Market => l.tier ?? "UNKNOWN";
@@ -54,7 +60,27 @@ const OPEN = ["new", "contacted", "replied", "meeting"];
 const matchStatus = (s: string, f: string) => (f === "all" ? s !== "hidden" : f === "open" ? OPEN.includes(s) : s === f);
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z]/g, "");
 
+/** Sortiranje: bez vrednosti (npr. budžet nije naveden) uvek ide na kraj. */
+export function sortLeads(list: UiLead[], by: SortKey, dir: "asc" | "desc"): UiLead[] {
+  const val = (l: UiLead): number | string | null =>
+    by === "score" ? l.score : by === "budget" ? (l.budgetEur || null) : by === "posted" ? (l.postedMinutesAgo === null ? null : -l.postedMinutesAgo) : by === "deadline" ? (l.deadline ? -Date.parse(l.deadline) : null) : l.source.toLowerCase();
+  const m = dir === "desc" ? -1 : 1;
+  return [...list].sort((a, b) => {
+    const x = val(a);
+    const y = val(b);
+    if (x === null && y === null) return b.score - a.score;
+    if (x === null) return 1;
+    if (y === null) return -1;
+    if (x === y) return b.score - a.score;
+    return (x < y ? -1 : 1) * m;
+  });
+}
+
 export function applyFilters(leads: UiLead[], f: FilterState): UiLead[] {
+  return sortLeads(filterLeads(leads, f), f.sortBy, f.sortDir);
+}
+
+function filterLeads(leads: UiLead[], f: FilterState): UiLead[] {
   const q = f.query.trim().toLowerCase();
   return leads.filter(
     (l) =>
@@ -100,6 +126,13 @@ const BUDGETS = [
   [20000, "€20k+"],
   [100000, "€100k+"],
 ] as const;
+const SORTS: Array<[SortKey, string, "asc" | "desc"]> = [
+  ["score", "Score", "desc"],
+  ["posted", "Newest", "desc"],
+  ["budget", "Budget", "desc"],
+  ["deadline", "Deadline (soonest)", "desc"],
+  ["source", "Source (A–Z)", "asc"],
+];
 const STATUSES = [
   ["open", "Open (not won/lost)"],
   ["new", "New"],
@@ -362,6 +395,19 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
         <Chip on={value.remoteOnly} onClick={() => set({ remoteOnly: !value.remoteOnly })}>
           Remote-friendly
         </Chip>
+        <FilterMenu label="Sort" value={`${SORTS.find(([k]) => k === value.sortBy)?.[1] ?? "Score"} ${value.sortDir === "desc" ? "↓" : "↑"}`} active={value.sortBy !== "score" || value.sortDir !== "desc"}>
+          {(close) => (
+            <>
+              {SORTS.map(([k, l, dir]) => (
+                <Option key={k} selected={value.sortBy === k} onClick={() => (set({ sortBy: k, sortDir: value.sortBy === k ? (value.sortDir === "desc" ? "asc" : "desc") : dir }), close())}>
+                  {l}
+                  {value.sortBy === k ? (value.sortDir === "desc" ? " ↓" : " ↑") : ""}
+                </Option>
+              ))}
+              <div className="px-2 pt-1 text-[11px] text-faint">Click again to reverse the order</div>
+            </>
+          )}
+        </FilterMenu>
         {!isDefault && (
           <button onClick={() => onChange(freshFilters())} className="hidden h-[30px] items-center gap-1 px-1.5 text-[12.5px] text-muted hover:text-fg sm:inline-flex">
             <RotateCcw size={12} /> Reset

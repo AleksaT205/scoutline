@@ -1,5 +1,5 @@
 import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
-import { issueEvents, issueLinks, issues, projects, type Db } from "@radar/db";
+import { issueEvents, issueLinks, issues, projectRepoNames, projects, pullIssues, type Db } from "@radar/db";
 import { parseRepo, type IssueStatus } from "@radar/shared";
 import { rt } from "../runtime.js";
 
@@ -52,12 +52,17 @@ export async function syncGithub(db: Db) {
   if (!githubConfigured()) return;
   const list = await db.select().from(projects).where(and(isNotNull(projects.repoUrl), inArray(projects.status, ["planned", "active", "paused"])));
   for (const p of list) {
-    const repo = parseRepo(p.repoUrl);
-    if (!repo) continue;
-    const full = `${repo.owner}/${repo.repo}`;
     const since = p.githubSyncedAt ?? new Date(Date.now() - 30 * 86_400_000);
     const started = new Date();
+    let ok = true;
+    // Svi repoi projekta (glavni + dodatni: frontend, backend…)
+    for (const full of await projectRepoNames(db, p)) {
     try {
+      // 0) GitHub kao izvor istine: dvosmerni sync issue-a (čitanje; upis radi API pri izmeni)
+      if (p.githubSync) {
+        const r = await pullIssues(db, TOKEN(), p, full, p.githubSyncedAt ? new Date(since.getTime() - 60_000) : null);
+        if (r.created || r.updated) console.log(`[github] ${full}: issues → ${r.created} novih, ${r.updated} izmenjenih taskova`);
+      }
       // 1) Pull request-ovi izmenjeni od poslednje provere
       const pulls = (await gh<GhPull[]>(`/repos/${full}/pulls?state=all&sort=updated&direction=desc&per_page=50`)).filter((pr) => new Date(pr.updated_at) > since);
       if (pulls.length) {
@@ -92,8 +97,8 @@ export async function syncGithub(db: Db) {
         if (moved) console.log(`[github] ${full}: ${moved} taskova pomereno po PR-ovima`);
       }
 
-      // 2) Novi GitHub issues → Inbox (samo ako je uključeno za projekat)
-      if (p.githubImport) {
+      // 2) Novi GitHub issues → Inbox (samo ako je uključeno za projekat, a pun sync nije)
+      if (p.githubImport && !p.githubSync) {
         const fresh = (await gh<GhIssue[]>(`/repos/${full}/issues?state=open&sort=created&direction=desc&per_page=30&since=${since.toISOString()}`)).filter(
           (i) => !i.pull_request && new Date(i.created_at) > since && !/^\[[A-Z0-9]+-\d+\]/.test(i.title) && i.user?.type !== "Bot",
         );
@@ -110,9 +115,11 @@ export async function syncGithub(db: Db) {
         }
         if (toImport.length) console.log(`[github] ${full}: ${toImport.length} novih issues → Inbox`);
       }
-      await db.update(projects).set({ githubSyncedAt: started }).where(eq(projects.id, p.id));
     } catch (e) {
+      ok = false;
       console.warn(`[github] ${full}: ${(e as Error).message}`);
     }
+    }
+    if (ok) await db.update(projects).set({ githubSyncedAt: started }).where(eq(projects.id, p.id));
   }
 }

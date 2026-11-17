@@ -206,6 +206,8 @@ export const projects = pgTable(
     ownerId: uuid("owner_id").references(() => users.id),
     repoUrl: text("repo_url"),
     githubImport: boolean("github_import").default(false).notNull(), // novi GitHub issues → Inbox
+    githubSync: boolean("github_sync").default(false).notNull(), // Faza 14: dvosmerna sinhronizacija issue-a (GitHub = izvor istine)
+    deployHooks: jsonb("deploy_hooks"), // [{ id, name, url: Secret }] — Coolify / Netlify build hook
     billing: text("billing").default("fixed").notNull(), // fixed = budžet je cena · hourly = sati × satnica
     hourlyRateEur: integer("hourly_rate_eur"), // satnica za klijenta (hourly)
     githubSyncedAt: timestamp("github_synced_at", { withTimezone: true }),
@@ -279,6 +281,7 @@ export const issueLinks = pgTable(
     url: text("url").notNull(),
     title: text("title"),
     state: text("state"), // open | closed | merged | draft
+    remoteUpdatedAt: timestamp("remote_updated_at", { withTimezone: true }), // poslednja izmena na GitHub-u koju smo videli (sprečava petlju)
     ...timestamps,
   },
   (t) => [uniqueIndex("issue_links_unique_idx").on(t.issueId, t.kind, t.repo, t.number), index("issue_links_repo_idx").on(t.repo, t.number)],
@@ -334,4 +337,33 @@ export const aiMessages = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [index("ai_messages_user_idx").on(t.userId), index("ai_messages_project_idx").on(t.projectId)],
+);
+
+/** Dodatni repoi projekta (Faza 14): npr. frontend, backend, mobile. Glavni je projects.repoUrl. */
+export const projectRepos = pgTable(
+  "project_repos",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id").references(() => projects.id, { onDelete: "cascade" }).notNull(),
+    repoUrl: text("repo_url").notNull(),
+    label: text("label"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("project_repos_unique_idx").on(t.projectId, t.repoUrl)],
+);
+
+/** Istorija deploy-a pokrenutih iz aplikacije. */
+export const deploys = pgTable(
+  "deploys",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id").references(() => projects.id, { onDelete: "cascade" }).notNull(),
+    hookName: text("hook_name").notNull(),
+    actor: text("actor").notNull(),
+    ok: boolean("ok").notNull(),
+    status: integer("status"),
+    message: text("message"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("deploys_project_idx").on(t.projectId)],
 );

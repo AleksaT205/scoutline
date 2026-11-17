@@ -40,6 +40,7 @@ export interface Project {
   ownerName: string | null;
   repoUrl: string | null;
   githubImport: boolean;
+  githubSync: boolean;
   billing: "fixed" | "hourly";
   hourlyRateEur: number | null;
   issues: { total: number; done: number; inProgress: number; todo: number };

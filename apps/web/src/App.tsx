@@ -303,6 +303,8 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
           <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
             <LeadsTable
               leads={leads}
+              sort={{ by: filters.sortBy, dir: filters.sortDir }}
+              onSort={(k) => setFilters({ ...filters, sortBy: k, sortDir: filters.sortBy === k ? (filters.sortDir === "desc" ? "asc" : "desc") : k === "source" ? "asc" : "desc" })}
               selectedId={selected?.id}
               onSelect={(id) => {
                 setSelectedId(id);

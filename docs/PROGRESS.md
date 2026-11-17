@@ -21,9 +21,17 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 | 11 | Cycles (sprintovi + burn-up), Inbox (triage), GitHub PR sync (PR → In Review / Done, issues → Inbox), Assign to Claude/Codex (brief u GitHub issue), portal za klijenta (+ zahtevi) · [DELIVERY.md](DELIVERY.md) · #11 | ✅ |
 | 12 | Izveštaji: evidencija vremena na tasku, cena rada (po osobi), naplata fiksno/po satu, profitabilnost po projektu (vrednost, trošak, marža, potrošen budžet, €/h), sati po nedelji i osobi, AI trošak i ušteda po projektu, taskovi agenata, CSV · [DELIVERY.md](DELIVERY.md) | ✅ |
 
-**Sledeći korak:** Redeploy u Coolify-ju → podesiti Email-in po [EMAIL-IN.md](EMAIL-IN.md) (Gmail + App password u Coolify) i, po želji, `SAM_API_KEY`. Za Delivery + GitHub: `GITHUB_TOKEN` sa pristupom repoima projekata ([DELIVERY.md](DELIVERY.md)). Sledeće: Faza 14 (GitHub tok rada + dvosmerna sinhronizacija i analitika iz GitHub-a) po [ROADMAP-3.md](ROADMAP-3.md).
+**Sledeći korak:** Redeploy u Coolify-ju → podesiti Email-in po [EMAIL-IN.md](EMAIL-IN.md) (Gmail + App password u Coolify) i, po želji, `SAM_API_KEY`. Za Delivery + GitHub: `GITHUB_TOKEN` sa pristupom repoima projekata ([DELIVERY.md](DELIVERY.md)). Sledeće: Faza 15 (organizacije, skills po projektu, Figma, preview okruženja) po [ROADMAP-3.md](ROADMAP-3.md).
 
 ## Urađeno
+
+- **17. 11. 2026. — Faza 14 (GitHub tok rada) + sortiranje leadova**
+  - **GitHub kao izvor istine** (Edit project → Two-way GitHub sync): GitHub issues → taskovi (naslov, opis, oznake, osoba po GitHub nalogu, zatvoren → Done / „not planned“ → Canceled); izmene u aplikaciji → nazad na GitHub; novi task → novi GitHub issue; bez petlje (pamti se GitHub vreme izmene). Brisanje u sync projektu = Canceled.
+  - **Više repoa po projektu** (frontend, backend…): sync PR-ova i issue-a za sve repoe.
+  - Tab **Code** na projektu: **Activity** (commit-ovi i PR-ovi po nedelji, vreme do spajanja, CI %, ko radi, PR-ovi koji čekaju, milestone-i), **Pull requests** (provere, Approve, Merge, AI review @claude), **Branches** (nova grana, grana za task iz detalja taska, brisanje spojenih), **Actions** (workflow-i, Run za workflow_dispatch, poslednja pokretanja), **Deploy** (Coolify / Netlify hook dugmad, šifrovano, istorija).
+  - Leadovi: **sortiranje** po oceni, budžetu, izvoru, vremenu objave i roku (klik na kolonu ili meni Sort).
+  - Migracija 0014. Token treba: Issues R/W, Pull requests R/W, Contents R/W, Actions R/W.
+  - Provereno sa lažnim GitHub serverom (sync u oba smera, bez petlje, PR/branch/actions/deploy) i u pregledaču.
 
 - **17. 11. 2026. — Faza 13 (AI asistent u projektu)**
   - **Ask AI** (tab na projektu) i **Delivery → Assistant**: pitanja „gde je i kako radi“ — odgovor iz repoa projekta (stablo + najrelevantniji fajlovi, linkovi na GitHub) i taskova; istorija razgovora.

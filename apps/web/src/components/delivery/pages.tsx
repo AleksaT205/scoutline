@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Building2, Globe, MessagesSquare, Sparkles, CalendarDays, ExternalLink, FolderKanban, GitBranch, LayoutList, Loader2, Pencil, Plus, Search, SquareKanban, Users } from "lucide-react";
+import { ArrowLeft, Building2, Code2, Globe, MessagesSquare, Sparkles, CalendarDays, ExternalLink, FolderKanban, GitBranch, LayoutList, Loader2, Pencil, Plus, Search, SquareKanban, Users } from "lucide-react";
 import { PROJECT_STATUSES, type IssueStatus, type ProjectStatus } from "@radar/shared";
 import { teamFetch } from "../../lib/team";
 import { canEdit, useSessionUser } from "../../lib/session";
@@ -9,6 +9,7 @@ import { Avatar, Dialog, ErrorNote, Menu, PROJECT_STATUS_META, ProgressRing, btn
 import { IssueBoard, IssueDetail, IssueList, NewIssueDialog } from "./issues";
 import { PortalDialog } from "./more";
 import { AskPanel, StatusDialog } from "./assistant";
+import { CodeTab } from "./code";
 
 function PageHead({ title, sub, children }: { title: React.ReactNode; sub?: React.ReactNode; children?: React.ReactNode }) {
   return (
@@ -46,7 +47,7 @@ function useNewIssueShortcut(open: () => void, enabled: boolean) {
 function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onClose: () => void; project?: Project; onSaved: (p: Project) => void }) {
   const customers = useCustomers();
   const members = useMembers();
-  const [f, setF] = useState({ name: "", customerId: "", customerName: "", status: "planned" as ProjectStatus, budgetEur: "", dueDate: "", ownerId: "", repoUrl: "", description: "", githubImport: false, billing: "fixed" as "fixed" | "hourly", hourlyRateEur: "", aiClientId: "" });
+  const [f, setF] = useState({ name: "", customerId: "", customerName: "", status: "planned" as ProjectStatus, budgetEur: "", dueDate: "", ownerId: "", repoUrl: "", description: "", githubImport: false, githubSync: false, billing: "fixed" as "fixed" | "hourly", hourlyRateEur: "", aiClientId: "" });
   const [aiClients, setAiClients] = useState<Array<{ id: string; name: string; projectId: string | null }>>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,6 +65,7 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
       repoUrl: project?.repoUrl ?? "",
       description: project?.description ?? "",
       githubImport: project?.githubImport ?? false,
+      githubSync: project?.githubSync ?? false,
       billing: project?.billing ?? "fixed",
       hourlyRateEur: project?.hourlyRateEur ? String(project.hourlyRateEur) : "",
       aiClientId: "",
@@ -97,6 +99,7 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
               ownerId: f.ownerId || null,
               repoUrl: f.repoUrl,
               githubImport: f.githubImport,
+              githubSync: f.githubSync,
               billing: f.billing,
               hourlyRateEur: f.hourlyRateEur ? Number(f.hourlyRateEur) : null,
               description: f.description,
@@ -199,6 +202,14 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
             </label>
           )}
           {f.repoUrl.trim() && (
+            <label className="flex items-start gap-2 rounded-lg border border-line bg-bg p-2.5 text-[12.5px] text-muted sm:col-span-2">
+              <input type="checkbox" checked={f.githubSync} onChange={(e) => setF({ ...f, githubSync: e.target.checked })} className="mt-0.5 accent-[var(--accent)]" />
+              <span>
+                <b className="font-medium text-fg">Two-way GitHub sync</b> — GitHub issues become tasks automatically, and changes here (status, title, assignee, labels) are written back to GitHub. Use it when the team works on GitHub.
+              </span>
+            </label>
+          )}
+          {f.repoUrl.trim() && !f.githubSync && (
             <label className="inline-flex items-center gap-2 text-[12.5px] text-muted sm:col-span-2">
               <input type="checkbox" checked={f.githubImport} onChange={(e) => setF({ ...f, githubImport: e.target.checked })} className="accent-[var(--accent)]" />
               Import new GitHub issues from this repo into the Inbox (pull requests are always linked by issue key)
@@ -374,7 +385,7 @@ export function ProjectPage({ id }: { id: string }) {
   const editable = canEdit(user);
   const project = useProject(id);
   const issues = useIssues(`projectId=${id}`);
-  const [view, setView] = useState<"board" | "list" | "overview" | "ask">(() => {
+  const [view, setView] = useState<"board" | "list" | "overview" | "ask" | "code">(() => {
     try {
       return (localStorage.getItem("delivery-view") as "board" | "list" | null) ?? "board";
     } catch {
@@ -492,6 +503,7 @@ export function ProjectPage({ id }: { id: string }) {
               ["board", "Board", SquareKanban],
               ["list", "List", LayoutList],
               ["overview", "Overview", FolderKanban],
+              ["code", "Code", Code2],
               ["ask", "Ask AI", MessagesSquare],
             ] as const
           ).map(([v, l, Icon]) => (
@@ -509,7 +521,9 @@ export function ProjectPage({ id }: { id: string }) {
       </div>
 
       {issues.error && <ErrorNote>{issues.error}</ErrorNote>}
-      {view === "ask" ? (
+      {view === "code" ? (
+        <CodeTab projectId={id} />
+      ) : view === "ask" ? (
         <AskPanel projectId={id} hasRepo={!!p?.repoUrl} />
       ) : !issues.data ? (
         <div className="h-64 animate-pulse rounded-xl bg-surface-2" />

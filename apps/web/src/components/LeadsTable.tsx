@@ -1,7 +1,31 @@
 import type { UiLead } from "../data/demo";
 import { CATEGORY_LABEL, DeadlineChip, ScoreRing, StatusPill, Tag, TierBadge, TypeBadge, flag, industryLabel, timeAgo } from "./ui";
 
-export function LeadsTable({ leads, selectedId, onSelect }: { leads: UiLead[]; selectedId?: string; onSelect: (id: string) => void }) {
+import type { SortKey } from "./Filters";
+
+function SortTh({ k, label, sort, onSort, className = "" }: { k: SortKey; label: string; sort?: { by: SortKey; dir: "asc" | "desc" }; onSort?: (k: SortKey) => void; className?: string }) {
+  const on = sort?.by === k;
+  return (
+    <th className={`px-2.5 py-2.5 font-medium ${className}`} aria-sort={on ? (sort!.dir === "asc" ? "ascending" : "descending") : "none"}>
+      <button onClick={() => onSort?.(k)} className={`inline-flex items-center gap-1 hover:text-fg ${on ? "text-fg" : ""}`} title={`Sort by ${label.toLowerCase()}`}>
+        {label}
+        <span className="text-[10px]">{on ? (sort!.dir === "desc" ? "▼" : "▲") : "↕"}</span>
+      </button>
+    </th>
+  );
+}
+
+function SortButton({ k, label, sort, onSort }: { k: SortKey; label: string; sort?: { by: SortKey; dir: "asc" | "desc" }; onSort?: (k: SortKey) => void }) {
+  const on = sort?.by === k;
+  return (
+    <button onClick={() => onSort?.(k)} className={`inline-flex items-center gap-1 font-medium hover:text-fg ${on ? "text-fg" : ""}`} title={`Sort by ${label.toLowerCase()}`}>
+      {label}
+      <span className="text-[10px]">{on ? (sort!.dir === "desc" ? "▼" : "▲") : "↕"}</span>
+    </button>
+  );
+}
+
+export function LeadsTable({ leads, selectedId, onSelect, sort, onSort }: { leads: UiLead[]; selectedId?: string; onSelect: (id: string) => void; sort?: { by: SortKey; dir: "asc" | "desc" }; onSort?: (k: SortKey) => void }) {
   if (leads.length === 0) {
     return (
       <div className="grid place-items-center rounded-xl border border-dashed border-line bg-surface px-6 py-16 text-center">
@@ -51,12 +75,18 @@ export function LeadsTable({ leads, selectedId, onSelect }: { leads: UiLead[]; s
         <table className="w-full border-collapse text-[13px]">
           <thead>
             <tr className="border-b border-line text-left text-xs text-faint">
-              <th className="px-2.5 py-2.5 font-medium">Score</th>
+              <SortTh k="score" label="Score" sort={sort} onSort={onSort} />
               <th className="px-2.5 py-2.5 font-medium">Opportunity</th>
               <th className="px-2.5 py-2.5 font-medium">Market</th>
               <th className="hidden px-2.5 py-2.5 font-medium md:table-cell">Category</th>
-              <th className="px-2.5 py-2.5 font-medium">Budget</th>
-              <th className="hidden px-2.5 py-2.5 font-medium sm:table-cell">Source</th>
+              <SortTh k="budget" label="Budget" sort={sort} onSort={onSort} />
+              <th className="hidden px-2.5 py-2.5 font-medium sm:table-cell">
+                <span className="inline-flex gap-2">
+                  <SortButton k="source" label="Source" sort={sort} onSort={onSort} />
+                  <span className="text-faint">·</span>
+                  <SortButton k="posted" label="Posted" sort={sort} onSort={onSort} />
+                </span>
+              </th>
             </tr>
           </thead>
           <tbody>

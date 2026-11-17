@@ -12,3 +12,4 @@ export function createDb(url = process.env.DATABASE_URL) {
   return drizzle(client, { schema });
 }
 export type Db = ReturnType<typeof createDb>;
+export * from "./github.js";

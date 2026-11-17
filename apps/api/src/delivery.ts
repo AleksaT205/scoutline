@@ -3,6 +3,8 @@ import { and, asc, count, desc, eq, ilike, inArray, isNull, ne, sql } from "driz
 import { customers, issueEvents, issues, leadEvents, leads, projects, rawItems, users, type Db } from "@radar/db";
 import { ISSUE_STATUSES, PROJECT_STATUSES, projectKey, type IssueStatus, type ProjectStatus } from "@radar/shared";
 import { currentCycleId } from "./delivery-plus.js";
+import { pushIssue, userGithubToken } from "@radar/db";
+import { runtime } from "./runtime.js";
 
 /**
  * Delivery (Faza 10): klijenti, projekti i taskovi (issues) — kao Linear.
@@ -30,6 +32,16 @@ const labelsOf = (v: unknown) =>
 export function deliveryRoutes(getDb: () => Db, g: Guards) {
   const app = new Hono();
   const actor = (c: Context) => (c.get("actor" as never) as Actor | undefined) ?? { id: null, name: "team" };
+  /** Faza 14: izmena taska → GitHub (samo projekti sa dvosmernim sync-om). Greška ne prekida rad u aplikaciji. */
+  const syncOut = async (c: Context, issueId: string) => {
+    try {
+      const db = getDb();
+      const token = (await userGithubToken(db, actor(c).id)) ?? (await runtime(db)).githubToken;
+      if (token) await pushIssue(db, token, issueId);
+    } catch (e) {
+      console.warn(`[github sync] ${(e as Error).message}`);
+    }
+  };
   const member = g.require("member");
 
   // ── Tim (za dodelu taskova) ──
@@ -139,6 +151,7 @@ export function deliveryRoutes(getDb: () => Db, g: Guards) {
     if (b.ownerId !== undefined) f.ownerId = isUuid(b.ownerId) ? b.ownerId : null;
     if (b.repoUrl !== undefined) f.repoUrl = str(b.repoUrl, 300);
     if (b.githubImport !== undefined) f.githubImport = b.githubImport === true;
+    if (b.githubSync !== undefined) f.githubSync = b.githubSync === true;
     if (b.billing === "fixed" || b.billing === "hourly") f.billing = b.billing;
     if (b.hourlyRateEur !== undefined) f.hourlyRateEur = int(b.hourlyRateEur, 0, 10_000);
     return f;
@@ -282,6 +295,7 @@ export function deliveryRoutes(getDb: () => Db, g: Guards) {
       })
       .returning({ id: issues.id });
     await db.insert(issueEvents).values({ issueId: row!.id, type: "created", actor: actor(c).name });
+    await syncOut(c, row!.id);
     return c.json({ issue: await oneIssue(row!.id) }, 201);
   });
 
@@ -315,13 +329,24 @@ export function deliveryRoutes(getDb: () => Db, g: Guards) {
     }
     if (log.length) await db.insert(issueEvents).values(log);
     await db.update(projects).set({ updatedAt: new Date() }).where(eq(projects.id, cur.projectId));
+    // Na GitHub idu samo polja koja GitHub poznaje (ne redosled/sprint)
+    if (["title", "description", "status", "assigneeId", "labels"].some((k) => b[k] !== undefined)) await syncOut(c, id);
     return c.json({ issue: await oneIssue(id) });
   });
 
   app.delete("/issues/:id", member, async (c) => {
     const id = c.req.param("id")!;
     if (!isUuid(id)) return c.json({ error: "Issue not found." }, 404);
-    const [row] = await getDb().delete(issues).where(eq(issues.id, id)).returning({ id: issues.id });
+    const db = getDb();
+    // Projekat sa GitHub sync-om: brisanje = „Canceled“ (zatvori na GitHub-u kao „not planned“), da se ne vrati sa sledećim sync-om
+    const [synced] = await db.select({ sync: projects.githubSync }).from(issues).innerJoin(projects, eq(issues.projectId, projects.id)).where(eq(issues.id, id)).limit(1);
+    if (synced?.sync) {
+      await db.update(issues).set({ status: "canceled", updatedAt: new Date() }).where(eq(issues.id, id));
+      await db.insert(issueEvents).values({ issueId: id, type: "status", data: { to: "canceled", via: "delete (GitHub sync)" }, actor: actor(c).name });
+      await syncOut(c, id);
+      return c.json({ ok: true, canceled: true });
+    }
+    const [row] = await db.delete(issues).where(eq(issues.id, id)).returning({ id: issues.id });
     return row ? c.json({ ok: true }) : c.json({ error: "Issue not found." }, 404);
   });
 
