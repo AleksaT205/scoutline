@@ -1,6 +1,7 @@
 import { BarChart3, Building2, CircleDot, FolderKanban, Inbox, MessagesSquare, ListTodo, Kanban, LayoutGrid, RefreshCcw, Rss, Search, Settings, Users, X } from "lucide-react";
 import { useInboxCount } from "../lib/delivery";
 import { onlySpace, useSessionUser } from "../lib/session";
+import { useOrganization } from "../lib/org";
 import type { ApiStatus } from "../lib/api";
 
 const prospecting = (leadCount: number) => [
@@ -74,6 +75,7 @@ function StatusCard({ status, aiCostUsd }: { status: ApiStatus; aiCostUsd?: numb
 export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: { status: ApiStatus; open: boolean; onClose: () => void; leadCount: number; aiCostUsd?: number; page: string }) {
   const inbox = useInboxCount(DELIVERY_PAGES.includes(page));
   const only = onlySpace(useSessionUser()); // korisnik sa pristupom samo jednom delu nema prekidač
+  const org = useOrganization();
   return (
     <>
       {open && <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={onClose} />}
@@ -83,14 +85,18 @@ export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: {
         }`}
       >
         <div className="flex items-center gap-2.5 px-2 font-semibold tracking-tight">
+          {org?.logoUrl ? (
+            <img src={org.logoUrl} alt="" className="size-[26px] shrink-0 rounded-[7px] object-cover" />
+          ) : (
           <div className="grid size-[26px] place-items-center rounded-[7px] bg-gradient-to-br from-accent to-[#b4a9ff] shadow-[0_6px_18px_-6px_var(--accent)]">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round">
               <circle cx="12" cy="12" r="3" />
               <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
             </svg>
           </div>
-          Scoutline
-          <span className="ml-auto rounded border border-line px-1.5 text-[11px] font-normal text-faint">Beta</span>
+          )}
+          <span className="min-w-0 truncate">{org?.name || "Scoutline"}</span>
+          {org?.name ? <span className="ml-auto text-[10.5px] font-normal text-faint">Scoutline</span> : <span className="ml-auto rounded border border-line px-1.5 text-[11px] font-normal text-faint">Beta</span>}
           <button className="text-muted lg:hidden" onClick={onClose} aria-label="Close menu">
             <X size={16} />
           </button>

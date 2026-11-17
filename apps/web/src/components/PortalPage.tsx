@@ -4,6 +4,7 @@ import type { IssueStatus, ProjectStatus } from "@radar/shared";
 import { API_URL } from "../lib/api";
 import { fmtDate } from "../lib/delivery";
 import { ProgressRing, StatusIcon } from "./delivery/parts";
+import { useOrganization } from "../lib/org";
 
 /** Javni portal za klijenta (Faza 11): napredak projekta + slanje zahteva. Bez prijave, samo uz tajni link. */
 interface Item {
@@ -56,6 +57,7 @@ function Section({ title, icon, items, empty }: { title: string; icon: React.Rea
 export function PortalPage({ token }: { token: string }) {
   const [data, setData] = useState<PortalData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const org = useOrganization();
   const [form, setForm] = useState({ name: "", email: "", title: "", details: "", website: "" });
   const [sent, setSent] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -81,13 +83,24 @@ export function PortalPage({ token }: { token: string }) {
     <div className="min-h-screen bg-bg">
       <div className="mx-auto max-w-[920px] px-4 py-8 sm:px-6">
         <div className="mb-6 flex items-center gap-2.5 text-[13px] text-muted">
+          {org?.logoUrl ? (
+            <img src={org.logoUrl} alt="" className="size-[28px] rounded-[7px] object-cover" />
+          ) : (
           <div className="grid size-[24px] place-items-center rounded-[7px] bg-gradient-to-br from-accent to-[#b4a9ff]">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round">
               <circle cx="12" cy="12" r="3" />
               <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
             </svg>
           </div>
-          Project portal
+          )}
+          <span style={org?.name ? { color: org.accent } : undefined} className={org?.name ? "font-medium" : ""}>
+            {org?.name || "Project portal"}
+          </span>
+          {org?.website && (
+            <a href={org.website} target="_blank" rel="noreferrer" className="ml-auto text-[12px] text-faint hover:text-fg">
+              {org.website.replace(/^https?:\/\//, "")}
+            </a>
+          )}
         </div>
         {error ? (
           <div className="rounded-xl border border-line bg-surface p-8 text-center">
@@ -198,7 +211,7 @@ export function PortalPage({ token }: { token: string }) {
                 )}
               </section>
             )}
-            <p className="mt-6 text-center text-[11.5px] text-faint">Private link · shared by your project team</p>
+            <p className="mt-6 text-center text-[11.5px] text-faint">Private link · shared by {org?.name || "your project team"}{org?.email ? ` · ${org.email}` : ""}</p>
           </>
         )}
       </div>

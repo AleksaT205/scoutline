@@ -17,12 +17,14 @@ interface Workspace {
   imap: { host: string; port: number; user: string; mailbox: string; password: SecretView; source: Source; effectiveUser: string };
   sam: { apiKey: SecretView; source: Source };
   anthropic: { apiKey: SecretView; source: Source };
+  figma: { token: SecretView; source: Source };
 }
 interface Mine {
   account: boolean;
   github?: SecretView & { login: string | null };
   agent?: "claude" | "codex";
   anthropic?: SecretView;
+  figma?: SecretView;
 }
 
 const input = "h-[34px] w-full rounded-lg border border-line bg-bg px-3 text-[13px] outline-none placeholder:text-faint focus:border-accent/60 disabled:opacity-60";
@@ -66,7 +68,7 @@ function IntegrationCard({
   source: Source;
   fields: Field[];
   canEdit: boolean;
-  section: "github" | "telegram" | "imap" | "sam" | "anthropic";
+  section: "github" | "telegram" | "imap" | "sam" | "anthropic" | "figma";
   test?: "github" | "telegram" | "imap";
   help?: React.ReactNode;
   onSaved: () => void;
@@ -255,6 +257,13 @@ function MyIntegrations() {
           {me.anthropic?.set && <span className="rounded-full bg-success-soft px-2 py-0.5 text-[11px] font-medium text-success ring-1 ring-inset ring-success/30">Saved {me.anthropic.hint}</span>}
         </div>
         <ClaudeKeyForm saved={!!me.anthropic?.set} busy={busy} onSave={(k) => void put({ anthropicKey: k }, k ? "Claude key saved." : "Claude key removed.")} />
+        <div className="mt-4 flex flex-wrap items-center gap-2 text-[13px]">
+          <span className="font-medium">Your Figma token</span>
+          <span className="text-[12px] text-faint">optional · shows design previews in tasks</span>
+          {me.figma?.set && <span className="rounded-full bg-success-soft px-2 py-0.5 text-[11px] font-medium text-success ring-1 ring-inset ring-success/30">Saved {me.figma.hint}</span>}
+        </div>
+        <ClaudeKeyForm saved={!!me.figma?.set} busy={busy} placeholder="figd_…" validate={false} onSave={(k) => void put({ figmaToken: k }, k ? "Figma token saved." : "Figma token removed.")} />
+        <p className="mt-1.5 text-[12px] text-faint">Figma → Settings → Security → Personal access tokens (scope: File content — read).</p>
         <p className="mt-1.5 text-[12px] text-faint">Without a key the Assistant uses free models. Your Claude subscription (Pro/Max) works for agents on GitHub, not for API calls.</p>
       </div>
       <Note msg={msg} />
@@ -262,7 +271,7 @@ function MyIntegrations() {
   );
 }
 
-function ClaudeKeyForm({ saved, busy, onSave }: { saved: boolean; busy: boolean; onSave: (k: string | null) => void }) {
+function ClaudeKeyForm({ saved, busy, onSave, placeholder = "sk-ant-…" }: { saved: boolean; busy: boolean; onSave: (k: string | null) => void; placeholder?: string; validate?: boolean }) {
   const [k, setK] = useState("");
   return (
     <form
@@ -275,7 +284,7 @@ function ClaudeKeyForm({ saved, busy, onSave }: { saved: boolean; busy: boolean;
         }
       }}
     >
-      <input className={`${input} num min-w-[240px] flex-1`} type="password" autoComplete="off" value={k} onChange={(e) => setK(e.target.value)} placeholder={saved ? "Saved · paste a new key to replace" : "sk-ant-…"} />
+      <input className={`${input} num min-w-[240px] flex-1`} type="password" autoComplete="off" value={k} onChange={(e) => setK(e.target.value)} placeholder={saved ? "Saved · paste a new key to replace" : placeholder} />
       <button disabled={busy || !k.trim()} className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] bg-fg px-3 text-[12.5px] font-medium text-bg disabled:opacity-50">
         <Check size={13} /> Save
       </button>
@@ -387,6 +396,17 @@ export function IntegrationsSettings() {
                 onSaved={load}
                 fields={[{ key: "apiKey", label: "Anthropic API key", placeholder: "sk-ant-…", secret: w.anthropic.apiKey }]}
                 help="Without it, the Assistant uses the free models (Groq, Gemini, OpenRouter). console.anthropic.com → API keys."
+              />
+              <IntegrationCard
+                icon={<Plug size={15} />}
+                title="Figma (workspace)"
+                desc="Optional. Design previews for Figma links in tasks, for everyone. Personal tokens take priority."
+                source={w.figma.source}
+                canEdit={w.canEdit}
+                section="figma"
+                onSaved={load}
+                fields={[{ key: "token", label: "Figma personal access token", placeholder: "figd_…", secret: w.figma.token }]}
+                help="Figma → Settings → Security → Personal access tokens · scope: File content (read)."
               />
             </div>
           )}

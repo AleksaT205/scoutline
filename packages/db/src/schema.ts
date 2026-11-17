@@ -367,3 +367,14 @@ export const deploys = pgTable(
   },
   (t) => [index("deploys_project_idx").on(t.projectId)],
 );
+
+/** Skills / pravila za AI agente (Faza 15): biblioteka tima; „Add to project“ otvara PR u repou projekta. */
+export const skills = pgTable("skills", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  description: text("description"),
+  path: text("path").notNull(), // npr. .claude/skills/code-review/SKILL.md ili AGENTS.md
+  content: text("content").notNull(),
+  createdBy: text("created_by"),
+  ...timestamps,
+});

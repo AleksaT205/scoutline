@@ -192,9 +192,26 @@ export function githubFlowRoutes(getDb: () => Db, g: Guards) {
           const reviews = rv.ok ? ((await rv.json()) as Array<{ state: string; user: { login: string } }>) : [];
           const approved = reviews.some((x) => x.state === "APPROVED");
           const changes = reviews.some((x) => x.state === "CHANGES_REQUESTED");
+          // Preview okruženje za PR: status provere sa linkom (Netlify/Vercel/Coolify) ili GitHub Deployment
+          let preview: string | null = null;
+          const st = await ghFetch(tok, `/repos/${r.full}/commits/${pr.head.sha}/status`);
+          if (st.ok) {
+            const d = (await st.json()) as { statuses?: Array<{ context: string; description: string | null; target_url: string | null; state: string }> };
+            preview = d.statuses?.find((x) => x.target_url && /preview|netlify|vercel|coolify|deploy/i.test(`${x.context} ${x.description ?? ""}`) && x.state === "success")?.target_url ?? null;
+          }
+          if (!preview) {
+            const dep = await ghFetch(tok, `/repos/${r.full}/deployments?sha=${pr.head.sha}&per_page=3`);
+            if (dep.ok) {
+              const list = (await dep.json()) as Array<{ statuses_url: string; id: number }>;
+              if (list[0]) {
+                const ds = await ghFetch(tok, `/repos/${r.full}/deployments/${list[0].id}/statuses?per_page=1`);
+                if (ds.ok) preview = ((await ds.json()) as Array<{ environment_url?: string; target_url?: string }>)[0]?.environment_url || null;
+              }
+            }
+          }
           const [link] = await getDb().select({ issueId: issueLinks.issueId }).from(issueLinks).where(and(eq(issueLinks.kind, "pr"), eq(issueLinks.repo, r.full), eq(issueLinks.number, pr.number))).limit(1);
           const issue = link ? (await getDb().select({ number: issues.number }).from(issues).where(eq(issues.id, link.issueId)).limit(1))[0] : undefined;
-          return { number: pr.number, title: pr.title, url: pr.html_url, draft: pr.draft, author: pr.user.login, branch: pr.head.ref, base: pr.base.ref, createdAt: pr.created_at, checks, approved, changesRequested: changes, issueKey: issue ? `${r.p.key}-${issue.number}` : null };
+          return { number: pr.number, title: pr.title, url: pr.html_url, draft: pr.draft, author: pr.user.login, branch: pr.head.ref, base: pr.base.ref, createdAt: pr.created_at, checks, approved, changesRequested: changes, issueKey: issue ? `${r.p.key}-${issue.number}` : null, preview };
         }),
       );
       return c.json({ repo: r.full, pulls: out });

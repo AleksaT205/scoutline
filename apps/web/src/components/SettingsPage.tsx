@@ -3,8 +3,9 @@ import { BellRing, Check, Copy, Link2, Loader2, Trash2, UserPlus } from "lucide-
 import { getSessionUser, setSession, useSessionUser, type SessionUser } from "../lib/session";
 import { teamFetch } from "../lib/team";
 import { IntegrationsSettings } from "./IntegrationsSettings";
+import { OrganizationSettings } from "./OrganizationSettings";
 
-type Tab = "profile" | "team" | "shares" | "alerts" | "integrations";
+type Tab = "profile" | "organization" | "team" | "shares" | "alerts" | "integrations";
 interface Member { id: string; email: string; name: string; role: SessionUser["role"]; lastLoginAt: string | null }
 interface Invite { id: string; email: string | null; role: string; expiresAt: string }
 interface Share { id: string; label: string; minScore: number; expiresAt: string | null; lastViewedAt: string | null; createdAt: string }
@@ -286,6 +287,7 @@ export function SettingsPage({ initialTab = "profile", onOpenAlerts }: { initial
   const role = getSessionUser()?.role;
   const tabs: Array<[Tab, string]> = [
     ["profile", "Profile"],
+    ["organization", "Organization"],
     ["team", "Team"],
     ["integrations", "Integrations"],
     ["shares", "View-only links"],
@@ -297,15 +299,17 @@ export function SettingsPage({ initialTab = "profile", onOpenAlerts }: { initial
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
         <p className="mt-0.5 text-[13.5px] text-muted">Your profile, team access, integrations and sharing.</p>
       </div>
-      <div className="mb-4 inline-flex rounded-lg border border-line bg-surface p-0.5 text-[13px]">
+      <div className="mb-4 flex max-w-full overflow-x-auto"><div className="inline-flex shrink-0 rounded-lg border border-line bg-surface p-0.5 text-[13px]">
         {tabs.map(([k, label]) => (
-          <button key={k} onClick={() => setTab(k)} className={`h-[30px] rounded-md px-3 ${tab === k ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}>
+          <button key={k} onClick={() => setTab(k)} className={`h-[30px] whitespace-nowrap rounded-md px-3 ${tab === k ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}>
             {label}
           </button>
         ))}
       </div>
+      </div>
       {tab === "profile" && <Profile />}
       {tab === "integrations" && <IntegrationsSettings />}
+      {tab === "organization" && <OrganizationSettings />}
       {tab === "team" && (role === "viewer" ? <Card title="Team" sub="Only owners and members can see the team." children={null} /> : <Team />)}
       {tab === "shares" && (role === "viewer" ? <Card title="View-only links" sub="Viewers can't create links." children={null} /> : <Shares />)}
       {tab === "alerts" && (

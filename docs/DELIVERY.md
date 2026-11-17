@@ -80,3 +80,14 @@ Tip: u opisu taska napiši odeljak `Done when:` sa stavkama. To ide u brief kao 
   - **Netlify:** Build hook URL.
   - Čuva se šifrovano, a istorija deploy-a se pamti.
 - **Dozvole tokena** (GitHub → Fine-grained token): Issues R/W, Pull requests R/W, Contents R/W, Actions R/W, Metadata R — za svaki repo projekta.
+
+## Organizacija, skills, Figma, pokreni lokalno (Faza 15)
+- **Settings → Organization:** ime, logo (https), boja, sajt i email firme. Prikazuju se u meniju i na portalu klijenta.
+- **Code → Skills:** pravila i veštine za AI agente.
+  - Izaberi stavke iz biblioteke i klikni **Add to project**: otvara se PR u repou.
+  - **Draft AGENTS.md with AI** napiše vodič za projekat iz stvarnog koda.
+  - Svoje skills-e praviš sa **New skill**.
+- **Code → Run locally:** Open in VS Code / Cursor, GitHub Codespaces, i komande za pokretanje prepoznate iz repoa.
+- **Preview po PR-u:** uključi Deploy Previews u Netlify-u ili Preview Deployments u Coolify-ju; link se pojavi na PR-u u Code → Pull requests.
+- **Figma u tasku:** u detalju taska nalepi link na frame (desni klik → Copy link).
+  - Za sličicu treba Figma token (Settings → Integrations): Figma → Settings → Security → Personal access tokens, scope *File content: read*.

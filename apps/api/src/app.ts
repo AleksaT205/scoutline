@@ -18,6 +18,7 @@ import { integrationRoutes } from "./integrations.js";
 import { notificationRoutes } from "./notifications.js";
 import { assistantRoutes } from "./assistant.js";
 import { githubFlowRoutes } from "./github-flow.js";
+import { workspaceRoutes } from "./workspace.js";
 
 type Tier = "T1" | "T2" | "T3" | "DOMESTIC";
 type LeadRow = { lead: typeof leads.$inferSelect; raw: typeof rawItems.$inferSelect; source: string };
@@ -211,6 +212,8 @@ export function createApp(getDb: () => Db) {
   app.route("/assistant", assistantRoutes(getDb, a));
   // Faza 14: GitHub tok rada (repoi, analitika, PR-ovi, grane, Actions, deploy)
   app.route("/delivery", githubFlowRoutes(getDb, a));
+  // Faza 15: organizacija, skills, Figma, pokreni lokalno
+  app.route("/", workspaceRoutes(getDb, a));
   app.use("/dev/*", a.require("member"));
   app.route("/dev/tasks", devTasks(getDb));
 

@@ -21,9 +21,16 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 | 11 | Cycles (sprintovi + burn-up), Inbox (triage), GitHub PR sync (PR → In Review / Done, issues → Inbox), Assign to Claude/Codex (brief u GitHub issue), portal za klijenta (+ zahtevi) · [DELIVERY.md](DELIVERY.md) · #11 | ✅ |
 | 12 | Izveštaji: evidencija vremena na tasku, cena rada (po osobi), naplata fiksno/po satu, profitabilnost po projektu (vrednost, trošak, marža, potrošen budžet, €/h), sati po nedelji i osobi, AI trošak i ušteda po projektu, taskovi agenata, CSV · [DELIVERY.md](DELIVERY.md) | ✅ |
 
-**Sledeći korak:** Redeploy u Coolify-ju → podesiti Email-in po [EMAIL-IN.md](EMAIL-IN.md) (Gmail + App password u Coolify) i, po želji, `SAM_API_KEY`. Za Delivery + GitHub: `GITHUB_TOKEN` sa pristupom repoima projekata ([DELIVERY.md](DELIVERY.md)). Sledeće: Faza 15 (organizacije, skills po projektu, Figma, preview okruženja) po [ROADMAP-3.md](ROADMAP-3.md).
+**Sledeći korak:** Redeploy u Coolify-ju → podesiti Email-in po [EMAIL-IN.md](EMAIL-IN.md) (Gmail + App password u Coolify) i, po želji, `SAM_API_KEY`. Za Delivery + GitHub: `GITHUB_TOKEN` sa pristupom repoima projekata ([DELIVERY.md](DELIVERY.md)). Roadmap 3.0 je završen. Sledeće: Redeploy + podešavanja (DELIVERY.md), stvarni rad, pa nove ideje u GitHub Issues.
 
 ## Urađeno
+
+- **17. 11. 2026. — Faza 15 (organizacija, skills, Figma, pokreni lokalno)**
+  - **Settings → Organization** (vlasnik): ime, logo, boja, sajt, email — u meniju, portalu klijenta i potpisu. *Više firmi u jednoj instalaciji* nije urađeno namerno: za drugu firmu najbezbednije je posebna instalacija (drugi Coolify stack) — podaci su potpuno odvojeni.
+  - **Code → Skills**: biblioteka (AGENTS.md, CLAUDE.md, code review, tests first, commits & PRs, security, UI polish, PR šablon) + timski skills; „Add to project“ otvara **PR** u repou (grana `scoutline/skills-…`); **Draft AGENTS.md with AI** iz stvarnog repoa.
+  - **Code → Run locally**: Open in VS Code / Cursor (kloniranje), Codespaces, github.dev + komande prepoznate iz repoa (pnpm/npm/yarn, Python, Go, Docker, .env).
+  - **PR preview**: link ka Netlify / Coolify / Vercel preview-u na svakom PR-u (statusi i GitHub Deployments).
+  - **Figma u tasku**: link na frame → naziv i sličica (lični ili Figma token firme u Integrations). Migracija 0015.
 
 - **17. 11. 2026. — Faza 14 (GitHub tok rada) + sortiranje leadova**
   - **GitHub kao izvor istine** (Edit project → Two-way GitHub sync): GitHub issues → taskovi (naslov, opis, oznake, osoba po GitHub nalogu, zatvoren → Done / „not planned“ → Canceled); izmene u aplikaciji → nazad na GitHub; novi task → novi GitHub issue; bez petlje (pamti se GitHub vreme izmene). Brisanje u sync projektu = Canceled.

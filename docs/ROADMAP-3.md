@@ -33,7 +33,7 @@ Datum: 17. 11. 2026. Spisak želja iz razgovora, grupisan u faze. Urađeno odmah
 - **Deploy:** dugme po okruženju (Coolify webhook, Netlify build hook), istorija deploy-a.
 - **Testovi i analiza:** rezultati CI provera po PR-u; „AI review“ PR-a (Claude/Codex komentar).
 
-## Faza 15 — Organizacija, veštine, Figma
+## Faza 15 ✅ — Organizacija, veštine, Figma
 - **Organizacije:** više firmi u jednoj instalaciji (svaka svoji ljudi, projekti, ključevi); poziv u organizaciju.
 - **Skills / pravila po projektu:** biblioteka (AGENTS.md, CLAUDE.md, skill fajlovi), „Add to project“ otvara PR u repou.
 - **Figma:** lični Figma token → povezivanje okvira (frame) sa taskom, prikaz slike i linka u tasku.
@@ -48,3 +48,5 @@ Datum: 17. 11. 2026. Spisak želja iz razgovora, grupisan u faze. Urađeno odmah
 3. **Faza 15**: organizacije, skills, Figma, preview okruženja.
 
 Svaka faza = GitHub issue (epic) + manji taskovi.
+
+> **Odluka (17. 11.):** „Organizacija“ = profil i brend firme. Više odvojenih firmi u jednoj instalaciji je velika promena (svaki podatak bi morao da ima vlasnika-firmu) i rizik od mešanja podataka; za drugu firmu se pravi posebna instalacija (novi Coolify stack + Netlify sajt).

@@ -90,7 +90,7 @@ export interface Cycle {
 
 export interface IssueLink {
   id: string;
-  kind: "gh_issue" | "pr";
+  kind: "gh_issue" | "pr" | "figma";
   repo: string;
   number: number;
   url: string;

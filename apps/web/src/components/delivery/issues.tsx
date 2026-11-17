@@ -5,6 +5,7 @@ import { teamFetch } from "../../lib/team";
 import { canEdit, useSessionUser } from "../../lib/session";
 import { cycleLabel, fmtDate, patchIssue, toDateInput, useCycles, useMembers, type Issue, type IssueEvent, type IssueLink, type Project } from "../../lib/delivery";
 import { TimeBox } from "./time";
+import { FigmaBox } from "./workspace-ui";
 import { Avatar, BOARD_STATUSES, Dialog, ErrorNote, ISSUE_STATUS_META, Menu, PRIORITY_META, PriorityIcon, StatusIcon, btnPrimary, btnSecondary } from "./parts";
 
 const ESTIMATES = [null, 1, 2, 3, 5, 8];
@@ -441,10 +442,13 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
   useEffect(() => {
     void preferredAgent().then(setFirstAgent);
   }, []);
-  useEffect(() => {
+  const loadLinks = () =>
     teamFetch<{ links: IssueLink[] }>(`/delivery/issues/${issue.id}/links`)
       .then((d) => setLinks(d.links))
       .catch(() => setLinks([]));
+  useEffect(() => {
+    void loadLinks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [issue.id, issue.updatedAt]);
   useEffect(() => {
     teamFetch<{ project: Project }>(`/delivery/projects/${issue.projectId}`)
@@ -672,9 +676,9 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
               </div>
             )}
             {repoUrl && <p className="mt-1.5 text-[12px] text-faint">Opens a GitHub issue in the project repo with a short brief, using your GitHub (Settings → Integrations) or the workspace token. The repo needs the Claude app / Codex connected once.</p>}
-            {links.length > 0 && (
+            {links.some((l) => l.kind !== "figma") && (
               <ul className="mt-2 space-y-1">
-                {links.map((l) => (
+                {links.filter((l) => l.kind !== "figma").map((l) => (
                   <li key={l.id} className="flex items-center gap-2 text-[12.5px]">
                     {l.kind === "pr" ? (
                       l.state === "merged" ? (
@@ -697,6 +701,7 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
               </ul>
             )}
           </div>
+          <FigmaBox issueId={issue.id} links={links} onChanged={() => void loadLinks()} />
           <TimeBox issueId={issue.id} />
           {error && (
             <div className="mt-3">

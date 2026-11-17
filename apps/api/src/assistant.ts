@@ -96,7 +96,7 @@ function pickAuto(question: string, hasRepo: boolean): "free-fast" | "free-smart
   return (hasRepo && codey) || question.length > 280 ? "free-smart" : "free-fast";
 }
 
-async function runModel(db: Db, actorId: string | null, model: ModelId, system: string, messages: Array<{ role: "user" | "assistant"; content: string }>, maxTokens: number, auto: "free-fast" | "free-smart"): Promise<AiResult> {
+export async function runModel(db: Db, actorId: string | null, model: ModelId, system: string, messages: Array<{ role: "user" | "assistant"; content: string }>, maxTokens: number, auto: "free-fast" | "free-smart"): Promise<AiResult> {
   const chosen = model === "auto" ? auto : model;
   if (chosen.startsWith("claude-")) {
     const k = await claudeKey(db, actorId);
@@ -154,7 +154,7 @@ function pickFiles(paths: string[], question: string, max = 6): string[] {
   return [...new Set([...base, ...scored])].slice(0, max);
 }
 
-async function repoContext(token: string, full: string, question: string) {
+export async function repoContext(token: string, full: string, question: string) {
   const tree = await repoTree(token, full);
   const files = pickFiles(tree.paths, question);
   const parts: string[] = [];

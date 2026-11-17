@@ -4,6 +4,7 @@ import { teamFetch } from "../../lib/team";
 import { canEdit, useSessionUser } from "../../lib/session";
 import { fmtDate } from "../../lib/delivery";
 import { ErrorNote, field } from "./parts";
+import { RunLocallyView, SkillsView } from "./workspace-ui";
 
 /** Faza 14 — tab „Code“: GitHub iz aplikacije (analitika, PR-ovi, grane, Actions, deploy). */
 interface Repo {
@@ -12,7 +13,7 @@ interface Repo {
   label: string | null;
   primary: boolean;
 }
-type Section = "insights" | "pulls" | "branches" | "actions" | "deploy";
+type Section = "insights" | "pulls" | "branches" | "actions" | "deploy" | "skills" | "local";
 const ago = (iso: string) => {
   const m = Math.round((Date.now() - Date.parse(iso)) / 60_000);
   if (m < 60) return `${Math.max(1, m)}m ago`;
@@ -189,6 +190,7 @@ interface Pull {
   approved: boolean;
   changesRequested: boolean;
   issueKey: string | null;
+  preview?: string | null;
 }
 function PullsView({ projectId, repo }: { projectId: string; repo: string }) {
   const user = useSessionUser();
@@ -244,6 +246,11 @@ function PullsView({ projectId, repo }: { projectId: string; repo: string }) {
                   </span>
                 )}
                 {p.changesRequested && <span className="text-warning">changes requested</span>}
+                {p.preview && (
+                  <a href={p.preview} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 py-px text-accent hover:underline">
+                    <ExternalLink size={11} /> Preview
+                  </a>
+                )}
               </div>
             </div>
           </div>
@@ -587,6 +594,8 @@ export function CodeTab({ projectId }: { projectId: string }) {
                   ["branches", "Branches"],
                   ["actions", "Actions"],
                   ["deploy", "Deploy"],
+                  ["skills", "Skills"],
+                  ["local", "Run locally"],
                 ] as const
               ).map(([k, l]) => (
                 <button key={k} onClick={() => setSection(k)} className={seg(section === k)}>
@@ -600,6 +609,8 @@ export function CodeTab({ projectId }: { projectId: string }) {
           {section === "branches" && repo && <BranchesView key={repo} projectId={projectId} repo={repo} />}
           {section === "actions" && repo && <ActionsView key={repo} projectId={projectId} repo={repo} />}
           {section === "deploy" && <DeployView projectId={projectId} />}
+          {section === "skills" && repo && <SkillsView key={repo} projectId={projectId} repo={repo} />}
+          {section === "local" && repo && <RunLocallyView key={repo} projectId={projectId} repo={repo} />}
         </>
       )}
     </div>
