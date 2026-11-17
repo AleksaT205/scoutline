@@ -39,14 +39,17 @@ const CPV = [
   "72267000", "72268000", "72300000", "72310000", "72320000", "72400000", "72410000", "72413000", "72415000", "72420000", "72500000", "72600000",
   "72700000", "72800000", "72900000", "48000000", "48100000", "48200000", "48600000", "48700000", "48800000", "48900000",
 ];
-const ted: Connector = {
-  id: "ted",
-  name: "EU TED tenders",
+/** TED konektor; `countries` (ISO3) suzi na zemlje (npr. Zapadni Balkan), `days` = koliko unazad. */
+function makeTed(id: string, name: string, countries: string[] | null, days: number, intervalMinutes: number): Connector {
+  return {
+  id,
+  name,
   kind: "api",
-  intervalMinutes: 180,
+  intervalMinutes,
   defaultType: "tender",
   async fetch() {
-    const since = daysAgo(3).toISOString().slice(0, 10).replace(/-/g, "");
+    const since = daysAgo(days).toISOString().slice(0, 10).replace(/-/g, "");
+    const where = countries ? ` AND buyer-country IN (${countries.join(" ")})` : "";
     type Notice = Record<string, unknown> & { "publication-number": string };
     const out: RawItem[] = [];
     let token: string | undefined;
@@ -55,7 +58,7 @@ const ted: Connector = {
         method: "POST",
         headers: { "Content-Type": "application/json", "User-Agent": USER_AGENT },
         body: JSON.stringify({
-          query: `classification-cpv IN (${CPV.join(" ")}) AND notice-type IN (cn-standard cn-social) AND publication-date>=${since}`,
+          query: `classification-cpv IN (${CPV.join(" ")}) AND notice-type IN (cn-standard cn-social) AND publication-date>=${since}${where}`,
           fields: ["publication-number", "notice-title", "buyer-name", "buyer-country", "deadline-receipt-tender-date-lot", "estimated-value-lot", "estimated-value-cur-lot", "publication-date"],
           limit: 100,
           scope: "ACTIVE",
@@ -101,7 +104,11 @@ const ted: Connector = {
     }
     return out;
   },
-};
+  };
+}
+const ted = makeTed("ted", "EU TED tenders", null, 3, 180);
+// Zapadni Balkan + Hrvatska: posebno, da ih ne potisnu hiljade EU tendera (Srbija retko objavljuje na TED-u, ali MK/HR često)
+const tedRegion = makeTed("ted-region", "TED · Serbia & region", ["SRB", "BIH", "MNE", "MKD", "HRV", "ALB"], 14, 360);
 
 // ── UK: Contracts Finder + Find a Tender (OCDS, Open Government Licence) ──────
 type OcdsRelease = {
@@ -215,9 +222,9 @@ const canadaBuys: Connector = {
 };
 
 // ── Signali namere: vesti o investicijama (firma ima novac i raste) ───────────
-const FUNDING = /\b(raises?|raised|secures?|secured|funding|seed|pre-seed|series [a-d]|investment|investicij\w*|ulaganj\w*|prikupi\w*)\b/i;
+export const FUNDING = /\b(raises?|raised|secures?|secured|funding|seed|pre-seed|series [a-d]|investment|investicij\w*|ulaganj\w*|prikupi\w*)\b/i;
 const xml = new XMLParser({ ignoreAttributes: true });
-function rssIntent(id: string, name: string, feed: string, country: string | null): Connector {
+export function rssIntent(id: string, name: string, feed: string, country: string | null): Connector {
   return {
     id,
     name,
@@ -247,6 +254,7 @@ function rssIntent(id: string, name: string, feed: string, country: string | nul
 
 export const TENDER_CONNECTORS: Connector[] = [
   ted,
+  tedRegion,
   ukContractsFinder,
   ukFindTender,
   canadaBuys,

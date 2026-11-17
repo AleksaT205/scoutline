@@ -36,7 +36,20 @@ Legenda statusa: ✅ može odmah · 🟡 proveriti uslove pre upotrebe · 🔴 n
 | Wellfound | Bez javnog API-ja | 🟡 | Proveriti uslove |
 | Vesti o investicijama | RSS | ✅ radi | TechCrunch venture + Startit (Faza 8); EU-Startups vraća 403 — preskočeno |
 
-## Domaći
+## Domaći i region (provereno 17. 11. 2026)
+
+| Izvor | Pristup | Status | Napomena |
+|---|---|---|---|
+| TED · Srbija i region | TED API, `buyer-country IN (SRB BIH MNE MKD HRV ALB)` | ✅ radi | Najviše HR i MK; Srbija retko objavljuje na TED-u |
+| Svetska banka | Otvoren API `search.worldbank.org/api/v2/procnotices` (`project_ctry_name`) | ✅ radi | RS, BA, ME, MK, XK; samo otvoreni IT tenderi (bez dodela) |
+| HelloWorld.rs | RSS | 🟡 radi | Uslov: samo naslov i link, interno (hiring signal) |
+| Startit poslovi | RSS | ✅ radi | Hiring signal |
+| Netokracija, Forbes Srbija, Bizlife | RSS | 🟡 radi | Samo naslov i kratak odlomak; filter: investicije, runde, lansiranja |
+| Portal javnih nabavki RS | robots `Disallow: /`, nema API-ja | 📧 Email-in | Obaveštenja na email |
+| UNDP, UNGM, EBRD, EOJN (HR), CEJN (ME), e-nabavki (MK), eKapija, Joberty, Poslovi.rs | robots zabrana / nema feed-a / 403 | 🔴 | Ne koristiti (TED pokriva HR/MK/ME) |
+| APR nove firme | Otvoreni podaci (58 MB mesečno) | ⏸ | Moguće kasnije; nove IT firme su uglavnom konkurencija, ne klijenti |
+
+## Domaći (stara lista)
 
 | Izvor | Pristup | Status | Napomena |
 |---|---|---|---|

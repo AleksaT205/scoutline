@@ -25,6 +25,10 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 
 ## Urađeno
 
+- **17. 11. 2026. — Pipeline i izvori za Srbiju/region**
+  - Pipeline: pretraga u svim fazama, filter tipa i ocene, „Show 25 more“, klik otvara lead u bočnom panelu.
+  - Novi izvori: TED · Srbija i region, Svetska banka (RS/BA/ME/MK/XK), HelloWorld.rs i Startit poslovi (hiring), Netokracija, Forbes Srbija, Bizlife (investicije). Odbijeni izvori i razlozi u SOURCES.md.
+
 - **17. 11. 2026. — Faza 15 (organizacija, skills, Figma, pokreni lokalno)**
   - **Settings → Organization** (vlasnik): ime, logo, boja, sajt, email — u meniju, portalu klijenta i potpisu. *Više firmi u jednoj instalaciji* nije urađeno namerno: za drugu firmu najbezbednije je posebna instalacija (drugi Coolify stack) — podaci su potpuno odvojeni.
   - **Code → Skills**: biblioteka (AGENTS.md, CLAUDE.md, code review, tests first, commits & PRs, security, UI polish, PR šablon) + timski skills; „Add to project“ otvara **PR** u repou (grana `scoutline/skills-…`); **Draft AGENTS.md with AI** iz stvarnog repoa.

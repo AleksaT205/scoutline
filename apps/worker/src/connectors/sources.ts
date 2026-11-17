@@ -206,6 +206,7 @@ const jobicy: Connector = {
 import { TENDER_CONNECTORS } from "./tenders.js";
 import { emailIn } from "./email.js";
 import { MORE_CONNECTORS } from "./more.js";
+import { REGION_CONNECTORS } from "./region.js";
 
 /** Prvo projekti (tenderi, signali namere), pa oglasi za posao (hiring signal). */
-export const CONNECTORS: Connector[] = [emailIn, ...TENDER_CONNECTORS, ...MORE_CONNECTORS, remoteok, wwr, remotive, arbeitnow, hn, himalayas, jobicy];
+export const CONNECTORS: Connector[] = [emailIn, ...TENDER_CONNECTORS, ...MORE_CONNECTORS, ...REGION_CONNECTORS, remoteok, wwr, remotive, arbeitnow, hn, himalayas, jobicy];
