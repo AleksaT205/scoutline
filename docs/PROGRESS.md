@@ -162,5 +162,7 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 - [x] Faza 2 (MVP): AI Router — javni endpoint `/llm/v1` (OpenAI + Anthropic format), model `auto` bira `fast`/`smart`, klijenti sa sopstvenim ključem i mesečnim budžetom, potrošnja i ušteda po klijentu, opoziv ključa; stranica "AI Router" u dashboard-u
 - [ ] AI Router: plaćeni modeli u grupe `fast`/`smart` kad krenu pravi klijenti; pravila rutiranja po klijentu; izveštaj za klijenta (PDF/link)
 
+- **Praćenje grešaka** (ugrađeno): greške iz aplikacije (web) i servera (api) u bazi, grupisane po vrsti; nova greška → Telegram (najviše jednom na sat); pregled u Settings → System (vlasnik), Resolve / Resolve all.
+
 ## Otvoreno
 - Konačan naziv (predlog: Scoutline)

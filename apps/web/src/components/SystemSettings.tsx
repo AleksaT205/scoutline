@@ -1,0 +1,116 @@
+import { useState } from "react";
+import { AlertTriangle, Check, ChevronDown, Loader2 } from "lucide-react";
+import { useCached } from "../lib/cache";
+import { teamFetch } from "../lib/team";
+import { askConfirm } from "../lib/confirm";
+
+/** Settings → System (vlasnik): greške iz aplikacije i sa servera. Nova greška stiže i na Telegram. */
+interface AppError {
+  id: string;
+  source: "web" | "api" | "worker";
+  message: string;
+  stack: string | null;
+  url: string | null;
+  userAgent: string | null;
+  userName: string | null;
+  count: number;
+  firstSeen: string;
+  lastSeen: string;
+}
+const ago = (iso: string) => {
+  const m = Math.round((Date.now() - Date.parse(iso)) / 60_000);
+  return m < 1 ? "just now" : m < 60 ? `${m}m ago` : m < 1440 ? `${Math.round(m / 60)}h ago` : `${Math.round(m / 1440)}d ago`;
+};
+const browserOf = (ua: string | null) => (!ua ? "" : /iphone|ipad/i.test(ua) ? "iPhone" : /android/i.test(ua) ? "Android" : /edg\//i.test(ua) ? "Edge" : /chrome/i.test(ua) ? "Chrome" : /safari/i.test(ua) ? "Safari" : /firefox/i.test(ua) ? "Firefox" : "");
+
+export function SystemSettings() {
+  const [show, setShow] = useState<"open" | "resolved">("open");
+  const q = useCached<{ errors: AppError[]; open: number }>(`/system/errors${show === "resolved" ? "?show=resolved" : ""}`, { staleMs: 5_000, refreshMs: 60_000 });
+  const [busy, setBusy] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const act = async (key: string, path: string) => {
+    setBusy(key);
+    try {
+      await teamFetch(path, { method: "POST", body: "{}" });
+      await q.reload();
+    } finally {
+      setBusy(null);
+    }
+  };
+  const list = q.data?.errors ?? [];
+  const seg = (on: boolean) => `h-[28px] rounded-md px-3 text-[12.5px] ${on ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`;
+  return (
+    <section className="rounded-xl border border-line bg-surface p-4 sm:p-5">
+      <div className="flex flex-wrap items-start gap-3">
+        <div className="min-w-0 flex-1">
+          <h2 className="text-[15px] font-semibold">Errors</h2>
+          <p className="mt-0.5 text-[12.5px] text-muted">Crashes in the app and on the server. A new one is also sent to Telegram (at most once an hour).</p>
+        </div>
+        <div className="inline-flex rounded-lg border border-line bg-bg p-0.5">
+          <button onClick={() => setShow("open")} className={seg(show === "open")}>
+            Open{q.data && show === "open" ? ` · ${q.data.open}` : ""}
+          </button>
+          <button onClick={() => setShow("resolved")} className={seg(show === "resolved")}>
+            Resolved
+          </button>
+        </div>
+      </div>
+      {q.error && <p className="mt-3 text-[12.5px] text-danger">{q.error}</p>}
+      {!q.data && !q.error && <div className="mt-4 h-20 animate-pulse rounded-lg bg-surface-2" />}
+      {q.data && list.length === 0 && (
+        <div className="mt-4 grid place-items-center rounded-lg border border-dashed border-line px-6 py-10 text-center">
+          <Check size={20} className="mb-1.5 text-success" />
+          <div className="text-[13px] font-medium">{show === "open" ? "No open errors" : "Nothing resolved yet"}</div>
+          <p className="mt-0.5 text-[12px] text-faint">{show === "open" ? "Everything has been running cleanly." : "Errors you mark as resolved show up here."}</p>
+        </div>
+      )}
+      {list.length > 0 && (
+        <>
+          <ul className="mt-4 divide-y divide-line overflow-hidden rounded-lg border border-line">
+            {list.map((e) => (
+              <li key={e.id} className="px-3 py-2.5">
+                <div className="flex items-start gap-2.5">
+                  <AlertTriangle size={14} className={`mt-0.5 shrink-0 ${show === "open" ? "text-danger" : "text-faint"}`} />
+                  <button onClick={() => setOpenId(openId === e.id ? null : e.id)} className="min-w-0 flex-1 text-left">
+                    <div className="break-words text-[13px] font-medium leading-snug">{e.message}</div>
+                    <div className="mt-0.5 flex flex-wrap gap-x-2 text-[11.5px] text-faint">
+                      <span className="rounded bg-surface-2 px-1.5 font-mono text-[10.5px] uppercase text-muted">{e.source}</span>
+                      <span className="num">{e.count}×</span>
+                      <span>last {ago(e.lastSeen)}</span>
+                      {e.userName && <span>· {e.userName}</span>}
+                      {browserOf(e.userAgent) && <span>· {browserOf(e.userAgent)}</span>}
+                    </div>
+                  </button>
+                  <ChevronDown size={14} className={`mt-0.5 shrink-0 text-faint transition-transform ${openId === e.id ? "rotate-180" : ""}`} />
+                  {show === "open" && (
+                    <button onClick={() => void act(e.id, `/system/errors/${e.id}/resolve`)} disabled={!!busy} className="inline-flex h-[28px] shrink-0 items-center gap-1 rounded-md border border-line bg-surface px-2 text-[12px] hover:bg-surface-2 disabled:opacity-50">
+                      {busy === e.id ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} <span className="hidden sm:inline">Resolve</span>
+                    </button>
+                  )}
+                </div>
+                {openId === e.id && (
+                  <div className="mt-2 space-y-1.5 pl-6 text-[11.5px] text-muted">
+                    {e.url && <div className="break-all">Where: <span className="text-fg">{e.url}</span></div>}
+                    <div>First seen {new Date(e.firstSeen).toLocaleString("en-GB")} · last {new Date(e.lastSeen).toLocaleString("en-GB")}</div>
+                    {e.stack && <pre className="num max-h-56 overflow-auto whitespace-pre-wrap rounded-md bg-bg p-2 text-[10.5px] leading-relaxed text-faint">{e.stack}</pre>}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
+          <div className="mt-3 flex justify-end">
+            {show === "open" ? (
+              <button onClick={async () => (await askConfirm("Mark all errors as resolved? If one happens again, it comes back and you get a Telegram message.")) && void act("all", "/system/errors/resolve-all")} disabled={!!busy} className="text-[12px] text-muted hover:text-fg">
+                Resolve all
+              </button>
+            ) : (
+              <button onClick={async () => (await askConfirm("Clear resolved errors? They're deleted for good.")) && void act("clear", "/system/errors/clear-resolved")} disabled={!!busy} className="text-[12px] text-muted hover:text-danger">
+                Clear resolved
+              </button>
+            )}
+          </div>
+        </>
+      )}
+    </section>
+  );
+}

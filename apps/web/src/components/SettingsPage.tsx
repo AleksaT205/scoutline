@@ -6,8 +6,9 @@ import { IntegrationsSettings } from "./IntegrationsSettings";
 import { useHashParam } from "../lib/hashParams";
 import { askConfirm } from "../lib/confirm";
 import { OrganizationSettings } from "./OrganizationSettings";
+import { SystemSettings } from "./SystemSettings";
 
-type Tab = "profile" | "organization" | "team" | "shares" | "alerts" | "integrations";
+type Tab = "profile" | "organization" | "team" | "shares" | "alerts" | "integrations" | "system";
 interface Member { id: string; email: string; name: string; role: SessionUser["role"]; lastLoginAt: string | null }
 interface Invite { id: string; email: string | null; role: string; expiresAt: string }
 interface Share { id: string; label: string; minScore: number; expiresAt: string | null; lastViewedAt: string | null; createdAt: string }
@@ -318,7 +319,7 @@ function Shares() {
 }
 
 export function SettingsPage({ initialTab = "profile", onOpenAlerts }: { initialTab?: Tab; onOpenAlerts: () => void }) {
-  const [tab, setTab] = useHashParam<Tab>("tab", initialTab, ["profile", "organization", "team", "integrations", "shares", "alerts"]);
+  const [tab, setTab] = useHashParam<Tab>("tab", initialTab, ["profile", "organization", "team", "integrations", "shares", "alerts", "system"]);
   useEffect(() => {
     if (initialTab !== "profile") setTab(initialTab);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -331,6 +332,7 @@ export function SettingsPage({ initialTab = "profile", onOpenAlerts }: { initial
     ["integrations", "Integrations"],
     ["shares", "View-only links"],
     ["alerts", "Notifications"],
+    ...(role === "owner" ? ([["system", "System"]] as Array<[Tab, string]>) : []),
   ];
   return (
     <>
@@ -348,6 +350,7 @@ export function SettingsPage({ initialTab = "profile", onOpenAlerts }: { initial
       </div>
       {tab === "profile" && <Profile />}
       {tab === "integrations" && <IntegrationsSettings />}
+      {tab === "system" && role === "owner" && <SystemSettings />}
       {tab === "organization" && <OrganizationSettings />}
       {tab === "team" && (role === "viewer" ? <Card title="Team" sub="Only owners and members can see the team." children={null} /> : <Team />)}
       {tab === "shares" && (role === "viewer" ? <Card title="View-only links" sub="Viewers can't create links." children={null} /> : <Shares />)}

@@ -445,3 +445,24 @@ export const agentMessages = pgTable(
   },
   (t) => [index("agent_messages_run_idx").on(t.runId, t.createdAt)],
 );
+
+/** Greške iz aplikacije (web) i servera (api) — ista greška se broji (fingerprint), nova stiže na Telegram. */
+export const appErrors = pgTable(
+  "app_errors",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    fingerprint: text("fingerprint").notNull(),
+    source: text("source").notNull(), // web | api | worker
+    message: text("message").notNull(),
+    stack: text("stack"),
+    url: text("url"),
+    userAgent: text("user_agent"),
+    userName: text("user_name"),
+    count: integer("count").notNull().default(1),
+    resolved: boolean("resolved").notNull().default(false),
+    notifiedAt: timestamp("notified_at", { withTimezone: true }),
+    firstSeen: timestamp("first_seen", { withTimezone: true }).defaultNow().notNull(),
+    lastSeen: timestamp("last_seen", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("app_errors_fingerprint_idx").on(t.fingerprint), index("app_errors_last_idx").on(t.lastSeen)],
+);

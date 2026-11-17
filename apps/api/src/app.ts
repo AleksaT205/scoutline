@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
+import { HTTPException } from "hono/http-exception";
 import { compress } from "hono/compress";
 import { etag } from "hono/etag";
 import { and, count, desc, eq, gte, inArray, lt, ne, sql, type SQL } from "drizzle-orm";
@@ -18,6 +19,7 @@ import { reportRoutes } from "./reports.js";
 import { integrationRoutes } from "./integrations.js";
 import { notificationRoutes } from "./notifications.js";
 import { assistantRoutes } from "./assistant.js";
+import { errorRoutes, recordError } from "./errors.js";
 import { githubFlowRoutes } from "./github-flow.js";
 import { agentRoutes } from "./agents.js";
 import { previewRoutes } from "./preview.js";
@@ -102,6 +104,15 @@ export function createApp(getDb: () => Db) {
       .from(leads)
       .innerJoin(rawItems, eq(leads.rawItemId, rawItems.id))
       .innerJoin(sources, eq(rawItems.sourceId, sources.id));
+
+  // Greške servera: zabeleži (Settings → System, Telegram) i vrati razumljiv odgovor
+  app.onError((err, c) => {
+    if (err instanceof HTTPException && err.status < 500) return err.getResponse();
+    console.error(`[api] ${c.req.method} ${c.req.path}:`, err);
+    void recordError(getDb(), { source: "api", message: err.message, stack: err.stack, url: `${c.req.method} ${c.req.path}` }).catch(() => undefined);
+    return c.json({ error: "Something went wrong on the server. It's been logged." }, 500);
+  });
+  app.route("/", errorRoutes(getDb, a));
 
   app.get("/health", (c) => c.json({ ok: true, service: "radar-api", time: new Date().toISOString() }));
   // Detaljna provera za spoljni monitoring (UptimeRobot i sl.): 200 kad sve radi, 503 kad ne

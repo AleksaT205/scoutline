@@ -5,6 +5,7 @@ import { createDb } from "@radar/db";
 import { createApp } from "./app.js";
 import { startWatchdog } from "./monitor.js";
 import { startAgentPoller } from "./agents.js";
+import { recordError } from "./errors.js";
 import { refreshRuntime } from "./runtime.js";
 import { ensureEnvOwner } from "./auth.js";
 
@@ -26,5 +27,11 @@ setInterval(() => void refreshRuntime(db).catch(() => undefined), 60_000);
 const app = createApp(() => db);
 startWatchdog(() => db);
 startAgentPoller(() => db);
+// Greške van zahteva (pozadinski poslovi): zabeleži, ne obaraj server
+process.on("unhandledRejection", (e) => {
+  const err = e instanceof Error ? e : new Error(String(e));
+  console.error("[api] unhandled rejection:", err);
+  void recordError(db, { source: "api", message: err.message, stack: err.stack, url: "background" }).catch(() => undefined);
+});
 const port = Number(process.env.PORT ?? 3000);
 serve({ fetch: app.fetch, port }, () => console.log(`radar-api na http://localhost:${port}`));
