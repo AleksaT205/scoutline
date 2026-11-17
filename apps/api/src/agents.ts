@@ -1,7 +1,8 @@
 import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { eq } from "drizzle-orm";
 import sodium from "libsodium-wrappers";
-import { claudeCodeTokenFor, ghFetch, projectRepoNames, projects, userGithubToken, type Db } from "@radar/db";
+import { asc } from "drizzle-orm";
+import { claudeCodeTokenFor, customers, ghFetch, issues as tasks, projectRepoNames, projects, userGithubToken, users, type Db } from "@radar/db";
 import { runtime } from "./runtime.js";
 
 /**
@@ -21,7 +22,9 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const LABEL = "scoutline";
 const SECRET = "CLAUDE_CODE_OAUTH_TOKEN";
 const WORKFLOW_PATH = ".github/workflows/claude.yml";
-const MARKER = "# scoutline:claude-v2";
+const MARKER = "# scoutline:claude-v3";
+const MODELS = ["sonnet", "opus", "haiku"] as const;
+type Model = (typeof MODELS)[number];
 export const APP_INSTALL_URL = "https://github.com/apps/claude/installations/new";
 
 /** Workflow koji Scoutline upisuje u repo. Claude sam otvara PR (gh pr create) i ne dopisuje sebe u commit-e. */
@@ -66,8 +69,10 @@ jobs:
           claude_code_oauth_token: \${{ secrets.${SECRET} }}
           settings: |
             { "includeCoAuthoredBy": false }
+          # Model bira Scoutline oznakom na issue-u / PR-u (model:opus, model:sonnet, model:haiku); bez oznake = podrazumevani
           claude_args: |
             --max-turns 40
+            \${{ (contains(toJSON(github.event.issue.labels), '"model:opus"') || contains(toJSON(github.event.pull_request.labels), '"model:opus"')) && '--model opus' || ((contains(toJSON(github.event.issue.labels), '"model:haiku"') || contains(toJSON(github.event.pull_request.labels), '"model:haiku"')) && '--model haiku' || ((contains(toJSON(github.event.issue.labels), '"model:sonnet"') || contains(toJSON(github.event.pull_request.labels), '"model:sonnet"')) && '--model sonnet' || '')) }}
             --allowedTools "Bash(npm *),Bash(npx *),Bash(pnpm *),Bash(git *),Bash(gh pr create:*),Bash(gh pr view:*)"
 `;
 
@@ -136,6 +141,46 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     const want = c.req.query("repo") ?? names[0];
     const full = names.find((n) => n.toLowerCase() === (want ?? "").toLowerCase());
     return full ? { p, full } : null;
+  };
+
+  /** Model za sledeći rad: oznaka model:* na issue-u ili PR-u (workflow je čita). */
+  const setModel = async (tok: string, full: string, n: number, model: Model | null) => {
+    const cur = await gh<Array<{ name: string }>>(tok, `/repos/${full}/issues/${n}/labels`).catch(() => [] as Array<{ name: string }>);
+    const next = [...cur.map((l) => l.name).filter((l) => !l.startsWith("model:")), ...(model ? [`model:${model}`] : [])];
+    await gh(tok, `/repos/${full}/issues/${n}/labels`, { method: "PUT", body: JSON.stringify({ labels: next }) });
+  };
+
+  /** Kontekst iz Scoutline-a za Claude-a: projekat i taskovi po statusu (Claude ih inače ne vidi — nisu u repou). */
+  const projectContext = async (p: typeof projects.$inferSelect) => {
+    const db = getDb();
+    const [cust] = p.customerId ? await db.select({ name: customers.name }).from(customers).where(eq(customers.id, p.customerId)).limit(1) : [];
+    const list = await db
+      .select({ number: tasks.number, title: tasks.title, status: tasks.status, priority: tasks.priority, due: tasks.dueDate, who: users.name, labels: tasks.labels })
+      .from(tasks)
+      .leftJoin(users, eq(tasks.assigneeId, users.id))
+      .where(eq(tasks.projectId, p.id))
+      .orderBy(asc(tasks.sortOrder))
+      .limit(80);
+    const order = ["in_progress", "in_review", "todo", "backlog", "triage", "done"] as const;
+    const names: Record<string, string> = { in_progress: "In progress", in_review: "In review", todo: "To do", backlog: "Backlog", triage: "Requests (not accepted yet)", done: "Done" };
+    const prio = ["", "urgent", "high", "medium", "low"];
+    const groups = order
+      .map((st) => {
+        const items = list.filter((t) => t.status === st);
+        if (!items.length) return "";
+        const rows = items.slice(0, st === "done" ? 10 : 25).map((t) => `- ${p.key}-${t.number} ${t.title}${t.who ? ` · ${t.who}` : ""}${t.priority ? ` · ${prio[t.priority]}` : ""}${t.due ? ` · due ${t.due.toISOString().slice(0, 10)}` : ""}${t.labels.length ? ` · [${t.labels.join(", ")}]` : ""}`);
+        return `**${names[st]}** (${items.length})\n${rows.join("\n")}`;
+      })
+      .filter(Boolean);
+    return [
+      "<details><summary>Project context from Scoutline</summary>",
+      "",
+      `Project **${p.name}** (${p.key}) · status ${p.status}${cust?.name ? ` · client ${cust.name}` : ""}${p.dueDate ? ` · target ${p.dueDate.toISOString().slice(0, 10)}` : ""}${p.budgetEur ? ` · budget €${p.budgetEur}` : ""}`,
+      p.description ? `\n${p.description.slice(0, 1500)}\n` : "",
+      groups.length ? `Tasks in Scoutline (the team's plan — task keys like ${p.key}-1):\n\n${groups.join("\n\n")}` : "No tasks in Scoutline yet.",
+      "",
+      "</details>",
+    ].join("\n");
   };
 
   /** Secret u repou (GitHub traži šifrovanje javnim ključem repoa — sealed box). */
@@ -279,7 +324,8 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
       const prComments = pr ? await gh<GhComment[]>(tok, `/repos/${r.full}/issues/${pr.number}/comments?per_page=100`).catch(() => [] as GhComment[]) : [];
       const view = (x: GhComment, where: "issue" | "pr") => ({ id: x.id, where, author: x.user?.login ?? "?", bot: x.user?.type === "Bot" || /\[bot\]$/.test(x.user?.login ?? ""), body: x.body, createdAt: x.created_at, updatedAt: x.updated_at, url: x.html_url });
       return c.json({
-        issue: { number: issue.number, title: issue.title, body: (issue.body ?? "").replace(/\n---\nWhen you're done:[\s\S]*$/, "").replace(/^@claude\s*/, ""), url: issue.html_url, state: issue.state, createdAt: issue.created_at, by: startedBy(issue.body) },
+        issue: { number: issue.number, title: issue.title, body: (issue.body ?? "").replace(/\n---\nWhen you're done:[\s\S]*$/, "").replace(/^@claude\s*/, ""),
+          model: ((issue as GhIssue & { labels?: Array<{ name: string }> }).labels ?? []).find((l) => l.name.startsWith("model:"))?.name.slice(6) ?? null, url: issue.html_url, state: issue.state, createdAt: issue.created_at, by: startedBy(issue.body) },
         comments: [...comments.map((x) => view(x, "issue")), ...prComments.map((x) => view(x, "pr"))].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
         pr: pullView(pr),
       });
@@ -305,7 +351,9 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     if (!r) return c.json({ error: "Link a GitHub repo to the project first." }, 400);
     const tok = await ghToken(c);
     if (!tok) return c.json({ error: "No GitHub token yet — add yours in Settings → Integrations." }, 400);
-    const prompt = (((await c.req.json().catch(() => ({}))) as { prompt?: string }).prompt ?? "").trim().slice(0, 8000);
+    const input = (await c.req.json().catch(() => ({}))) as { prompt?: string; model?: string };
+    const prompt = (input.prompt ?? "").trim().slice(0, 8000);
+    const model = MODELS.includes(input.model as Model) ? (input.model as Model) : null;
     if (prompt.length < 3) return c.json({ error: "Describe what Claude should do." }, 400);
     const note = await useMyClaude(c, tok, r.full);
     const first = prompt.split("\n")[0]!.replace(/\s+/g, " ").trim();
@@ -314,12 +362,14 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
       `@claude ${prompt}`,
       "",
       "---",
-      "When you're done: commit to a new branch and open a pull request with `gh pr create` (short English title, summary of the changes, and `Closes #<this issue>`). Keep changes focused. Don't add yourself as a co-author.",
+      "When you're done: commit to a new branch and open a pull request with `gh pr create` (short English title, summary of the changes, and `Closes #<this issue>`). Keep changes focused. Don't add yourself as a co-author. If this is only a question, answer in a comment and don't change files.",
+      "",
+      await projectContext(r.p),
       "",
       `<sub>Started from Scoutline by ${actor(c).name}</sub>`,
     ].join("\n");
     try {
-      const created = await gh<GhIssue>(tok, `/repos/${r.full}/issues`, { method: "POST", body: JSON.stringify({ title, body, labels: [LABEL] }) });
+      const created = await gh<GhIssue>(tok, `/repos/${r.full}/issues`, { method: "POST", body: JSON.stringify({ title, body, labels: [LABEL, ...(model ? [`model:${model}`] : [])] }) });
       return c.json({ number: created.number, url: created.html_url, note }, 201);
     } catch (e) {
       return c.json({ error: (e as Error).message }, 502);
@@ -332,15 +382,32 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     if (!r || !Number.isInteger(n)) return c.json({ error: "Not found." }, 404);
     const tok = await ghToken(c);
     if (!tok) return c.json({ error: "No GitHub token yet." }, 400);
-    const b = (await c.req.json().catch(() => ({}))) as { text?: string; pr?: number };
+    const b = (await c.req.json().catch(() => ({}))) as { text?: string; pr?: number; model?: string };
     const text = (b.text ?? "").trim().slice(0, 8000);
     if (!text) return c.json({ error: "Write a message for Claude." }, 400);
     const note = await useMyClaude(c, tok, r.full);
     // Ako postoji PR, odgovor ide tamo (Claude onda menja isti PR), inače na issue
     const target = Number.isInteger(b.pr) && b.pr! > 0 ? b.pr! : n;
     try {
+      if (b.model !== undefined) await setModel(tok, r.full, target, MODELS.includes(b.model as Model) ? (b.model as Model) : null);
       await gh(tok, `/repos/${r.full}/issues/${target}/comments`, { method: "POST", body: JSON.stringify({ body: `@claude ${text}\n\n<sub>From Scoutline by ${actor(c).name}</sub>` }) });
       return c.json({ ok: true, note });
+    } catch (e) {
+      return c.json({ error: (e as Error).message }, 502);
+    }
+  });
+
+  // „Obriši razgovor“: GitHub ne dozvoljava brisanje issue-a preko API-ja — zatvaramo ga i skidamo oznaku, pa nestaje sa liste
+  app.post("/projects/:id/agent/runs/:n/delete", member, async (c) => {
+    const r = await repoOf(c);
+    const n = Number(c.req.param("n"));
+    if (!r || !Number.isInteger(n)) return c.json({ error: "Not found." }, 404);
+    const tok = await ghToken(c);
+    if (!tok) return c.json({ error: "No GitHub token yet." }, 400);
+    try {
+      const issue = await gh<GhIssue & { labels: Array<{ name: string }> }>(tok, `/repos/${r.full}/issues/${n}`);
+      await gh(tok, `/repos/${r.full}/issues/${n}`, { method: "PATCH", body: JSON.stringify({ state: "closed", state_reason: "not_planned", labels: issue.labels.map((l) => l.name).filter((l) => l !== LABEL && !l.startsWith("model:")) }) });
+      return c.json({ ok: true });
     } catch (e) {
       return c.json({ error: (e as Error).message }, 502);
     }

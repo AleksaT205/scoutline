@@ -72,6 +72,8 @@ export function Md({ text }: { text: string }) {
     .replace(/```[\w-]*\n([\s\S]*?)```/g, (_m, code: string) => `<pre class="my-2 overflow-x-auto rounded-lg border border-line bg-bg p-2.5 text-[12px] leading-relaxed"><code>${code}</code></pre>`)
     .replace(/`([^`\n]+)`/g, '<code class="rounded bg-surface-2 px-1 py-px text-[12px] text-fg">$1</code>')
     .replace(/\*\*([^*\n]+)\*\*/g, '<b class="font-semibold text-fg">$1</b>')
+    .replace(/\[([^\]\n]+)\]\((https?:\/\/[^\s)"'<>]+)\)/g, '<a href="$2" target="_blank" rel="noreferrer" class="text-accent underline-offset-2 hover:underline">$1</a>')
+    .replace(/^-{3,}\s*$/gm, "")
     .replace(/^#{1,4} (.+)$/gm, '<div class="mt-2 font-semibold text-fg">$1</div>')
     .replace(/^\s*[-*] (.+)$/gm, '<div class="flex gap-2"><span class="text-faint">•</span><span>$1</span></div>')
     .replace(/\n{2,}/g, '<div class="h-2"></div>')
@@ -160,7 +162,19 @@ export function AskPanel({ projectId, hasRepo }: { projectId?: string; hasRepo?:
         <MessagesSquare size={15} className="text-accent" />
         <span className="text-[13.5px] font-medium">Ask the project</span>
         <span className="hidden text-[12px] text-faint sm:inline">{projectId ? (hasRepo ? "answers from the repo code + tasks" : "answers from tasks (add a GitHub repo for code answers)") : "general questions"}</span>
-        <span className="ml-auto">
+        <span className="ml-auto flex items-center gap-2">
+          {turns.length > 0 && (
+            <button
+              onClick={async () => {
+                if (!window.confirm("Delete this chat? Your questions and answers here are removed.")) return;
+                await teamFetch(`/assistant/history${projectId ? `?projectId=${projectId}` : ""}`, { method: "DELETE" }).catch((e) => setError((e as Error).message));
+                setTurns([]);
+              }}
+              className="text-[12px] text-muted hover:text-danger"
+            >
+              Clear chat
+            </button>
+          )}
           <ModelPicker value={model} onChange={setModel} />
         </span>
       </div>

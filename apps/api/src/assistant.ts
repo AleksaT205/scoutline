@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { Hono, type Context, type MiddlewareHandler } from "hono";
-import { and, desc, eq, gte, inArray, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, sql, isNull } from "drizzle-orm";
 import { aiMessages, decryptSecret, issueEvents, issueLinks, issues, projects, readUserIntegrations, userGithubToken, users, type Db } from "@radar/db";
 import { parseRepo } from "@radar/shared";
 import { runtime } from "./runtime.js";
@@ -257,6 +257,17 @@ export function assistantRoutes(getDb: () => Db, g: Guards) {
     if (isUuid(pid)) conds.push(eq(aiMessages.projectId, pid));
     const rows = await getDb().select().from(aiMessages).where(and(...conds)).orderBy(desc(aiMessages.createdAt)).limit(20);
     return c.json({ items: rows.reverse() });
+  });
+
+  // DELETE /assistant/history?projectId= — obriši moj chat (za projekat ili opšti)
+  app.delete("/history", member, async (c) => {
+    const a = actor(c);
+    if (!a.id) return c.json({ error: "Sign in with your own account to manage your chats." }, 400);
+    const pid = c.req.query("projectId");
+    await getDb()
+      .delete(aiMessages)
+      .where(and(eq(aiMessages.kind, "ask"), eq(aiMessages.userId, a.id), isUuid(pid) ? eq(aiMessages.projectId, pid) : isNull(aiMessages.projectId)));
+    return c.json({ ok: true });
   });
 
   // GET /assistant/usage — potrošnja tokena ovog meseca (moja i ukupno)

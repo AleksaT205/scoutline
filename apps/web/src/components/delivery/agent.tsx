@@ -34,7 +34,7 @@ interface Run {
   pr: { number: number; url: string; title: string; state: string; branch: string } | null;
 }
 interface Thread {
-  issue: { number: number; title: string; body: string; url: string; state: string; createdAt: string; by: string | null };
+  issue: { number: number; title: string; body: string; url: string; state: string; createdAt: string; by: string | null; model: string | null };
   comments: Array<{ id: number; where: "issue" | "pr"; author: string; bot: boolean; body: string; createdAt: string; updatedAt: string; url: string }>;
   pr: Run["pr"];
 }
@@ -55,9 +55,53 @@ const ago = (iso: string) => {
 /** Claude-ov komentar: liste zadataka kao kvačice, bez praznih redova između stavki. */
 const tidy = (md: string) =>
   md
+    .replace(/^\*\*Claude (finished|is working)[^*]*\*\*[^\n]*\n?/i, "")
+    .replace(/<details><summary>Project context from Scoutline<\/summary>[\s\S]*?<\/details>/, "")
     .replace(/^(\s*)[-*] \[x\]\s*/gim, "$1✓ ")
     .replace(/^(\s*)[-*] \[ \]\s*/gm, "$1○ ")
     .replace(/\n{3,}/g, "\n\n");
+/** Zaglavlje Claude-ovog komentara: „Claude finished … in 11s — View job“ → kratko i sa linkom. */
+const headOf = (md: string) => {
+  const m = /^\*\*Claude (finished|is working)[^*]*?(?:in ([^*]+?))?\*\*[^\n]*?(?:\[View job\]\((https?:[^)\s]+)\))?/i.exec(md);
+  return m ? { done: /finished/i.test(m[1]!), took: m[2]?.trim() ?? null, job: m[3] ?? null } : null;
+};
+const MODEL_OPTIONS = [
+  ["", "Auto"],
+  ["sonnet", "Sonnet"],
+  ["opus", "Opus · strongest"],
+  ["haiku", "Haiku · fastest"],
+] as const;
+const savedModel = () => {
+  try {
+    return localStorage.getItem("claude-model") ?? "";
+  } catch {
+    return "";
+  }
+};
+function ModelSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => {
+        onChange(e.target.value);
+        try {
+          localStorage.setItem("claude-model", e.target.value);
+        } catch {
+          /* ništa */
+        }
+      }}
+      className="h-[32px] rounded-md border border-line bg-surface px-2 text-[12.5px]"
+      aria-label="Claude model"
+      title="Model for this task. Opus is strongest (uses more of your subscription), Haiku is fastest."
+    >
+      {MODEL_OPTIONS.map(([v, l]) => (
+        <option key={v} value={v}>
+          {l}
+        </option>
+      ))}
+    </select>
+  );
+}
 const repoQ = (repo: string) => `repo=${encodeURIComponent(repo)}`;
 /** Pregled grane u StackBlitz-u (aplikacije sa build korakom). */
 export const previewUrl = (repo: string, branch: string) => `https://stackblitz.com/github/${repo}/tree/${encodeURIComponent(branch)}`;
@@ -240,6 +284,7 @@ function BuildPanel({ projectId }: { projectId: string }) {
   useEffect(() => setAnyWorking(!!runs.data?.runs.some((r) => r.status === "working" || r.status === "queued")), [runs.data]);
   const [sel, setSel] = useState<number | null>(null);
   const [prompt, setPrompt] = useState("");
+  const [model, setModel] = useState(savedModel);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -250,7 +295,7 @@ function BuildPanel({ projectId }: { projectId: string }) {
     setError(null);
     setNote(null);
     try {
-      const r = await teamFetch<{ number: number; note?: string | null }>(`/delivery/projects/${projectId}/agent/runs?${repoQ(repo)}`, { method: "POST", body: JSON.stringify({ prompt }) });
+      const r = await teamFetch<{ number: number; note?: string | null }>(`/delivery/projects/${projectId}/agent/runs?${repoQ(repo)}`, { method: "POST", body: JSON.stringify({ prompt, model: model || undefined }) });
       setPrompt("");
       setNote(r.note ?? null);
       setSel(r.number);
@@ -318,7 +363,9 @@ function BuildPanel({ projectId }: { projectId: string }) {
             />
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className="text-[11.5px] text-faint">⌘ Enter to start · runs on your Claude subscription via GitHub Actions (usually 3–15 min)</span>
-              <button disabled={busy || prompt.trim().length < 3 || !repo} className={`${btnPrimary} ml-auto`}>
+              <span className="ml-auto" />
+              <ModelSelect value={model} onChange={setModel} />
+              <button disabled={busy || prompt.trim().length < 3 || !repo} className={btnPrimary}>
                 {busy ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />} Start
               </button>
             </div>
@@ -358,7 +405,18 @@ function BuildPanel({ projectId }: { projectId: string }) {
                     {r.minutes ? ` · ${r.minutes} min` : ""}
                   </span>
                 </button>
-                {sel === r.number && <RunThread projectId={projectId} repo={repo} run={r} onChanged={() => void runs.reload()} />}
+                {sel === r.number && (
+                  <RunThread
+                    projectId={projectId}
+                    repo={repo}
+                    run={r}
+                    onChanged={() => void runs.reload()}
+                    onDeleted={() => {
+                      setSel(null);
+                      runs.setData((d) => (d ? { ...d, runs: d.runs.filter((x) => x.number !== r.number) } : d));
+                    }}
+                  />
+                )}
               </li>
             ))}
           </ul>
@@ -368,11 +426,12 @@ function BuildPanel({ projectId }: { projectId: string }) {
   );
 }
 
-function RunThread({ projectId, repo, run, onChanged }: { projectId: string; repo: string; run: Run; onChanged: () => void }) {
+function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: string; repo: string; run: Run; onChanged: () => void; onDeleted: () => void }) {
   const user = useSessionUser();
   const working = run.status === "working" || run.status === "queued";
   const t = useCached<Thread>(`/delivery/projects/${projectId}/agent/runs/${run.number}?${repoQ(repo)}`, { staleMs: 3_000, refreshMs: working ? 10_000 : 0 });
   const [reply, setReply] = useState("");
+  const [model, setModel] = useState<string | null>(null); // null = isti kao do sad
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const end = useRef<HTMLDivElement>(null);
@@ -387,7 +446,7 @@ function RunThread({ projectId, repo, run, onChanged }: { projectId: string; rep
     setBusy("reply");
     setMsg(null);
     try {
-      const r = await teamFetch<{ note?: string | null }>(`/delivery/projects/${projectId}/agent/runs/${run.number}/reply?${repoQ(repo)}`, { method: "POST", body: JSON.stringify({ text: reply, pr: pr?.state === "open" ? pr.number : undefined }) });
+      const r = await teamFetch<{ note?: string | null }>(`/delivery/projects/${projectId}/agent/runs/${run.number}/reply?${repoQ(repo)}`, { method: "POST", body: JSON.stringify({ text: reply, pr: pr?.state === "open" ? pr.number : undefined, ...(model !== null ? { model } : {}) }) });
       setReply("");
       setMsg({ ok: true, text: r.note ?? "Sent — Claude picks it up in a minute." });
       await t.reload();
@@ -445,6 +504,12 @@ function RunThread({ projectId, repo, run, onChanged }: { projectId: string; rep
             <div key={c.id} className="max-w-[95%] rounded-2xl rounded-bl-md border border-line bg-surface px-3.5 py-2">
               <div className="mb-1 flex items-center gap-1.5 text-[11px] text-muted">
                 <Bot size={12} className="text-accent" /> Claude {c.where === "pr" ? "· on the PR" : ""} · {ago(c.updatedAt)}
+                {headOf(c.body)?.took && <span>· took {headOf(c.body)!.took}</span>}
+                {headOf(c.body)?.job && (
+                  <a href={headOf(c.body)!.job!} target="_blank" rel="noreferrer" className="hover:text-fg">
+                    · view job
+                  </a>
+                )}
                 <a href={c.url} target="_blank" rel="noreferrer" className="ml-auto text-faint hover:text-fg" aria-label="Open on GitHub">
                   <ExternalLink size={11} />
                 </a>
@@ -472,22 +537,44 @@ function RunThread({ projectId, repo, run, onChanged }: { projectId: string; rep
       </div>
       {canEdit(user) && (
         <form
-          className="flex gap-2"
+          className="flex flex-wrap gap-2"
           onSubmit={(e) => {
             e.preventDefault();
             void send();
           }}
         >
-          <input value={reply} onChange={(e) => setReply(e.target.value)} placeholder={pr?.state === "open" ? "Ask Claude to change something in this PR…" : "Reply to Claude…"} className="h-[36px] min-w-0 flex-1 rounded-lg border border-line bg-surface px-3 text-[13px] outline-none placeholder:text-faint focus:border-accent/60" />
+          <input value={reply} onChange={(e) => setReply(e.target.value)} placeholder={pr?.state === "open" ? "Ask Claude to change something in this PR…" : "Reply to Claude — e.g. “go ahead and build it”"} className="h-[36px] min-w-[200px] flex-1 rounded-lg border border-line bg-surface px-3 text-[13px] outline-none placeholder:text-faint focus:border-accent/60" />
+          <ModelSelect value={model ?? t.data?.issue.model ?? ""} onChange={setModel} />
           <button disabled={busy === "reply" || !reply.trim()} className={btnPrimary} aria-label="Send to Claude">
             {busy === "reply" ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
           </button>
         </form>
       )}
       {msg && <p className={`text-[12px] ${msg.ok ? "text-success" : "text-danger"}`}>{msg.text}</p>}
-      <a href={run.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11.5px] text-faint hover:text-fg">
-        Open on GitHub <ExternalLink size={11} />
-      </a>
+      <div className="flex flex-wrap items-center gap-3 text-[11.5px] text-faint">
+        <a href={run.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:text-fg">
+          Open on GitHub <ExternalLink size={11} />
+        </a>
+        {canEdit(user) && (
+          <button
+            onClick={async () => {
+              if (!window.confirm("Delete this conversation? It's closed on GitHub and removed from this list (any pull request stays).")) return;
+              setBusy("delete");
+              try {
+                await teamFetch(`/delivery/projects/${projectId}/agent/runs/${run.number}/delete?${repoQ(repo)}`, { method: "POST", body: "{}" });
+                onDeleted();
+              } catch (e) {
+                setMsg({ ok: false, text: (e as Error).message });
+                setBusy(null);
+              }
+            }}
+            disabled={!!busy}
+            className="ml-auto hover:text-danger"
+          >
+            {busy === "delete" ? "Deleting…" : "Delete conversation"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
