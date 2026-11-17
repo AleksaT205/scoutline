@@ -592,9 +592,9 @@ export function ProjectPage({ id }: { id: string }) {
         <div className="flex w-full whitespace-nowrap rounded-lg border border-line bg-surface p-0.5 text-[12.5px] sm:inline-flex sm:w-auto">
           {(
             [
+              ["overview", "Overview", FolderKanban],
               ["board", "Board", SquareKanban],
               ["list", "List", LayoutList],
-              ["overview", "Overview", FolderKanban],
               ["code", "Code", Code2],
               ["ask", "Ask AI", MessagesSquare],
             ] as const

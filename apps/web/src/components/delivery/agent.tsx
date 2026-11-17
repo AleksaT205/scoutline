@@ -369,7 +369,11 @@ export function LocalWorkDialog({ open, onClose, projectId, repo, issueId, promp
 }
 
 // ── Checklist: šta treba da bi Claude radio na repou ──
-export function ClaudeSetup({ projectId, repo, compact }: { projectId: string; repo: string; compact?: boolean }) {
+/**
+ * Stanje Claude-a na repou. `quiet`: kad je sve podešeno ne prikazuje ništa (Ask AI);
+ * `chip`: mala oznaka „Claude ready“ koja na klik otvara detalje (Code tab); `compact`: traka.
+ */
+export function ClaudeSetup({ projectId, repo, compact, quiet, chip }: { projectId: string; repo: string; compact?: boolean; quiet?: boolean; chip?: boolean }) {
   const user = useSessionUser();
   const s = useCached<Setup>(`/delivery/projects/${projectId}/agent/setup?${repoQ(repo)}`, { staleMs: 30_000 });
   const [busy, setBusy] = useState(false);
@@ -391,7 +395,14 @@ export function ClaudeSetup({ projectId, repo, compact }: { projectId: string; r
     }
   };
   if (s.error) return <ErrorNote>{s.error}</ErrorNote>;
-  if (!d) return <div className="h-12 animate-pulse rounded-xl bg-surface-2" />;
+  if (!d) return quiet ? null : chip ? <span className="h-[28px] w-28 animate-pulse rounded-full bg-surface-2" /> : <div className="h-12 animate-pulse rounded-xl bg-surface-2" />;
+  if (ready && quiet && !open) return null;
+  if (ready && chip && !open)
+    return (
+      <button onClick={() => setOpen(true)} className="inline-flex h-[28px] items-center gap-1.5 rounded-full bg-success-soft px-2.5 text-[12px] font-medium text-success hover:opacity-90" title="Claude is set up on this repo — click for details">
+        <Check size={12} strokeWidth={3} /> Claude ready
+      </button>
+    );
   if (ready && compact && !open)
     return (
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-success/30 bg-success-soft/40 px-3 py-2 text-[12.5px]">
@@ -411,7 +422,7 @@ export function ClaudeSetup({ projectId, repo, compact }: { projectId: string; r
     </li>
   );
   return (
-    <section className="rounded-xl border border-line bg-surface p-4">
+    <section className={`rounded-xl border border-line bg-surface p-4 ${chip ? "order-last w-full basis-full bg-bg" : ""}`}>
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Bot size={15} className="text-accent" />
         <span className="text-[13.5px] font-semibold">Claude on {d.repo}</span>
@@ -419,7 +430,7 @@ export function ClaudeSetup({ projectId, repo, compact }: { projectId: string; r
         <button onClick={() => void s.reload()} className="ml-auto text-faint hover:text-fg" aria-label="Check again" title="Check again">
           <RefreshCw size={13} className={s.refreshing ? "animate-spin" : ""} />
         </button>
-        {compact && ready && (
+        {(compact || chip || quiet) && ready && (
           <button onClick={() => setOpen(false)} className="text-[12px] text-muted hover:text-fg">
             Hide
           </button>
@@ -537,7 +548,7 @@ function BuildPanel({ projectId }: { projectId: string }) {
   const summary = runs.data?.summary;
   return (
     <div className="space-y-3">
-      {repo && <ClaudeSetup projectId={projectId} repo={repo} compact />}
+      {repo && <ClaudeSetup projectId={projectId} repo={repo} quiet />}
       <section className="rounded-xl border border-line bg-surface">
         <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2.5">
           <Sparkles size={15} className="text-accent" />

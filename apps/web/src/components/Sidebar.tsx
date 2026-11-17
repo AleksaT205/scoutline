@@ -5,20 +5,21 @@ import { useOrganization } from "../lib/org";
 import type { ApiStatus } from "../lib/api";
 import { prefetchHref } from "../pages";
 
+// Meni je grupisan po tome šta radiš: prvo svakodnevni rad, pa planiranje, pa uvid
 const prospecting = (leadCount: number | undefined) => [
-  { label: "Overview", icon: LayoutGrid, href: "#/overview" },
-  { label: "Leads", icon: Search, count: leadCount, href: "#/" },
-  { label: "Pipeline", icon: Kanban, href: "#/pipeline" },
-  { label: "Sources", icon: Rss, href: "#/sources" },
+  { group: "Find work", label: "Leads", icon: Search, count: leadCount, href: "#/", page: "leads" },
+  { group: "Find work", label: "Pipeline", icon: Kanban, href: "#/pipeline", page: "pipeline" },
+  { group: "Insights", label: "Overview", icon: LayoutGrid, href: "#/overview", page: "overview" },
+  { group: "Insights", label: "Sources", icon: Rss, href: "#/sources", page: "sources" },
 ];
 const delivery = [
-  { label: "Projects", icon: FolderKanban, href: "#/delivery", page: "projects" },
-  { label: "Clients", icon: Building2, href: "#/delivery/clients", page: "clients" },
-  { label: "My tasks", icon: CircleDot, href: "#/delivery/issues", page: "issues" },
-  { label: "Inbox", icon: Inbox, href: "#/delivery/inbox", page: "inbox" },
-  { label: "Cycles", icon: RefreshCcw, href: "#/delivery/cycles", page: "cycles" },
-  { label: "Reports", icon: BarChart3, href: "#/delivery/reports", page: "reports" },
-  { label: "Assistant", icon: MessagesSquare, href: "#/delivery/assistant", page: "assistant" },
+  { group: "Work", label: "Projects", icon: FolderKanban, href: "#/delivery", page: "projects" },
+  { group: "Work", label: "My tasks", icon: CircleDot, href: "#/delivery/issues", page: "issues" },
+  { group: "Work", label: "Inbox", icon: Inbox, href: "#/delivery/inbox", page: "inbox" },
+  { group: "Plan", label: "Clients", icon: Building2, href: "#/delivery/clients", page: "clients" },
+  { group: "Plan", label: "Cycles", icon: RefreshCcw, href: "#/delivery/cycles", page: "cycles" },
+  { group: "Insights", label: "Reports", icon: BarChart3, href: "#/delivery/reports", page: "reports" },
+  { group: "Insights", label: "Assistant", icon: MessagesSquare, href: "#/delivery/assistant", page: "assistant" },
 ];
 export const DELIVERY_PAGES = ["inbox", "issues", "projects", "project", "cycles", "clients", "reports", "assistant"];
 const formatCost = (v?: number) => (v === undefined ? "—" : v > 0 && v < 0.01 ? `$${v.toFixed(4)}` : `$${v.toFixed(2)}`);
@@ -84,7 +85,7 @@ export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: {
     <>
       {open && <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={onClose} />}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-[232px] flex-col gap-5 border-r border-line bg-bg px-3 py-4 transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-40 flex w-[232px] flex-col gap-5 overflow-y-auto border-r border-line bg-bg px-3 py-4 transition-transform lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -120,21 +121,21 @@ export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: {
           ))}
         </div>
         )}
-        {DELIVERY_PAGES.includes(page) ? (
-          <nav className="flex flex-col gap-0.5">
-            <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wider text-faint">Delivery</div>
-            {delivery.filter((i) => i.page !== "reports" || !user || user.role === "owner").map((i) => (
-              <NavItem key={i.label} label={i.label} icon={i.icon} href={i.href} count={i.page === "inbox" && inbox ? inbox : undefined} active={page === i.page || (i.page === "projects" && page === "project")} />
-            ))}
-          </nav>
-        ) : (
-          <nav className="flex flex-col gap-0.5">
-            <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wider text-faint">Prospecting</div>
-            {prospecting(leadCount).map((i) => (
-              <NavItem key={i.label} {...i} active={(i.label === "Leads" && page === "leads") || (i.label === "Sources" && page === "sources") || (i.label === "Pipeline" && page === "pipeline") || (i.label === "Overview" && page === "overview")} />
-            ))}
-          </nav>
-        )}
+        {(() => {
+          const inDelivery = DELIVERY_PAGES.includes(page);
+          const items = inDelivery ? delivery.filter((i) => i.page !== "reports" || !user || user.role === "owner") : prospecting(leadCount);
+          const groups = [...new Set(items.map((i) => i.group))];
+          return groups.map((gname) => (
+            <nav key={gname} className="flex flex-col gap-0.5">
+              <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wider text-faint">{gname}</div>
+              {items
+                .filter((i) => i.group === gname)
+                .map((i) => (
+                  <NavItem key={i.label} label={i.label} icon={i.icon} href={i.href} count={"count" in i ? (i.count as number | undefined) : i.page === "inbox" && inbox ? inbox : undefined} active={page === i.page || (i.page === "projects" && page === "project")} />
+                ))}
+            </nav>
+          ));
+        })()}
         <nav className="flex flex-col gap-0.5">
           <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wider text-faint">Workspace</div>
           {workspace.map((i) => (

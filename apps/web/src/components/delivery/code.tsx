@@ -8,7 +8,7 @@ import { ClaudeSetup, PreviewButton } from "./agent";
 import { TerminalView } from "./terminal";
 import { useHashParam } from "../../lib/hashParams";
 import { askConfirm } from "../../lib/confirm";
-import { btnSm, segItem } from "../../lib/ui";
+import { btnSecondary, btnSm, segItem } from "../../lib/ui";
 import { PrFiles } from "./pr-files";
 import { RunLocallyView, SkillsView } from "./workspace-ui";
 
@@ -665,6 +665,7 @@ export function CodeTab({ projectId, initialSection }: { projectId: string; init
   }, [initialSection]);
   const [repo, setRepo] = useState<string>("");
   const [adding, setAdding] = useState({ repo: "", label: "" });
+  const [manage, setManage] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   useEffect(() => {
     if (repos.data?.repos.length && !repos.data.repos.find((r) => r.full === repo)) setRepo(repos.data.repos[0]!.full);
@@ -673,52 +674,78 @@ export function CodeTab({ projectId, initialSection }: { projectId: string; init
   const seg = (on: boolean) => `h-[28px] whitespace-nowrap rounded-md px-2.5 text-[12.5px] ${on ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`;
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-2">
-        {list.map((r) => (
-          <button key={r.full} onClick={() => setRepo(r.full)} className={`inline-flex h-[28px] items-center gap-1.5 rounded-full border px-3 text-[12.5px] ${repo === r.full ? "border-accent/50 bg-accent-soft text-fg" : "border-line bg-surface text-muted hover:text-fg"}`}>
-            <GitBranch size={12} /> {r.full}
-            {r.label && <span className="text-faint">· {r.label}</span>}
-            <a href={`https://github.com/${r.full}`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-faint hover:text-fg" aria-label={`Open ${r.full} on GitHub`}>
-              <ExternalLink size={11} />
+      {/* Zaglavlje: repo (izbor ako ih je više), stanje Claude-a i upravljanje repoima — sve u jednom redu */}
+      <div className="rounded-xl border border-line bg-surface">
+        <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
+          <GitBranch size={14} className="shrink-0 text-faint" />
+          {list.length > 1 ? (
+            <select value={repo} onChange={(e) => setRepo(e.target.value)} className="h-[28px] min-w-0 max-w-full rounded-md border border-line bg-bg px-2 text-[12.5px]" aria-label="Repository">
+              {list.map((r) => (
+                <option key={r.full} value={r.full}>
+                  {r.full}
+                  {r.label ? ` · ${r.label}` : ""}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <span className="num min-w-0 truncate text-[13px] font-medium">{repo || "No repo linked yet"}</span>
+          )}
+          {repo && (
+            <a href={`https://github.com/${repo}`} target="_blank" rel="noreferrer" className="text-faint hover:text-fg" aria-label={`Open ${repo} on GitHub`} title="Open on GitHub">
+              <ExternalLink size={13} />
             </a>
-            {!r.primary && canEdit(user) && (
-              <span
-                role="button"
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  if (!await askConfirm(`Unlink ${r.full} from this project?`)) return;
-                  await teamFetch(`/delivery/projects/${projectId}/repos/${r.id}`, { method: "DELETE" });
-                  repos.reload();
-                }}
-                className="text-faint hover:text-danger"
-                aria-label={`Unlink ${r.full}`}
-              >
-                <X size={11} />
-              </span>
-            )}
-          </button>
-        ))}
-        {canEdit(user) && (
-          <form
-            className="flex w-full flex-wrap gap-1.5 sm:inline-flex sm:w-auto"
-            onSubmit={async (e) => {
-              e.preventDefault();
-              setErr(null);
-              try {
-                await teamFetch(`/delivery/projects/${projectId}/repos`, { method: "POST", body: JSON.stringify(adding) });
-                setAdding({ repo: "", label: "" });
-                repos.reload();
-              } catch (er) {
-                setErr((er as Error).message);
-              }
-            }}
-          >
-            <input className={`${inp} num h-[34px] w-full sm:h-[28px] sm:w-56`} value={adding.repo} onChange={(e) => setAdding({ ...adding, repo: e.target.value })} placeholder={list.length ? "owner/repo or GitHub link" : "Paste a GitHub link…"} aria-label="GitHub repo link or owner/repo" />
-            <input className={`${inp} h-[34px] min-w-0 flex-1 sm:h-[28px] sm:w-36 sm:flex-none`} value={adding.label} onChange={(e) => setAdding({ ...adding, label: e.target.value })} placeholder="Label (optional)" aria-label="Repo label, e.g. frontend" />
-            <button disabled={!adding.repo.trim()} className={small.replace("h-[28px]", "h-[34px] sm:h-[28px]")}>
-              <Plus size={12} /> {list.length ? "Add repo" : "Link repo"}
+          )}
+          <span className="ml-auto" />
+          {repo && <ClaudeSetup key={repo} projectId={projectId} repo={repo} chip />}
+          {canEdit(user) && (
+            <button onClick={() => setManage((v) => !v)} className={small} aria-expanded={manage || list.length === 0}>
+              <Plus size={12} /> {list.length ? "Repos" : "Link repo"}
             </button>
-          </form>
+          )}
+        </div>
+        {(manage || list.length === 0) && canEdit(user) && (
+          <div className="space-y-2 border-t border-line px-3 py-3">
+            {list.map((r) => (
+              <div key={r.full} className="flex items-center gap-2 text-[12.5px]">
+                <span className="num min-w-0 flex-1 truncate">{r.full}</span>
+                <span className="text-faint">{r.primary ? "main" : (r.label ?? "")}</span>
+                {!r.primary && (
+                  <button
+                    onClick={async () => {
+                      if (!(await askConfirm(`Unlink ${r.full} from this project?`))) return;
+                      await teamFetch(`/delivery/projects/${projectId}/repos/${r.id}`, { method: "DELETE" });
+                      repos.reload();
+                    }}
+                    className="text-faint hover:text-danger"
+                    aria-label={`Unlink ${r.full}`}
+                  >
+                    <X size={13} />
+                  </button>
+                )}
+              </div>
+            ))}
+            <form
+              className="flex flex-wrap gap-1.5"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setErr(null);
+                try {
+                  await teamFetch(`/delivery/projects/${projectId}/repos`, { method: "POST", body: JSON.stringify(adding) });
+                  setAdding({ repo: "", label: "" });
+                  setManage(false);
+                  repos.reload();
+                } catch (er) {
+                  setErr((er as Error).message);
+                }
+              }}
+            >
+              <input className={`${inp} num h-[34px] w-full sm:w-72`} value={adding.repo} onChange={(e) => setAdding({ ...adding, repo: e.target.value })} placeholder={list.length ? "owner/repo or GitHub link" : "Paste a GitHub link…"} aria-label="GitHub repo link or owner/repo" />
+              <input className={`${inp} h-[34px] min-w-0 flex-1 sm:w-40 sm:flex-none`} value={adding.label} onChange={(e) => setAdding({ ...adding, label: e.target.value })} placeholder="Label, e.g. frontend" aria-label="Repo label, e.g. frontend" />
+              <button disabled={!adding.repo.trim()} className={btnSecondary}>
+                <Plus size={13} /> {list.length ? "Add repo" : "Link repo"}
+              </button>
+            </form>
+          </div>
         )}
       </div>
       {err && <ErrorNote>{err}</ErrorNote>}
@@ -726,24 +753,35 @@ export function CodeTab({ projectId, initialSection }: { projectId: string; init
         <div className="rounded-xl border border-dashed border-line px-6 py-12 text-center text-[13px] text-muted">Paste the GitHub link above — you'll get activity, pull requests, branches, Actions, run-in-browser and Claude, all from here.</div>
       ) : (
         <>
-          {repo && <ClaudeSetup key={repo} projectId={projectId} repo={repo} compact />}
-          <div className="-mx-1 overflow-x-auto px-1">
-            <div className="inline-flex rounded-lg border border-line bg-surface p-0.5">
+          {/* Tabovi po grupama: kod · automatizacija · pokretanje · pravila za AI */}
+          <div className="-mx-1 overflow-x-auto px-1 [scrollbar-width:none]">
+            <div className="inline-flex items-center rounded-lg border border-line bg-surface p-0.5">
               {(
                 [
-                  ["insights", "Activity"],
-                  ["pulls", "Pull requests"],
-                  ["branches", "Branches"],
-                  ["actions", "Actions"],
-                  ["deploy", "Deploy"],
-                  ["skills", "Skills"],
-                  ["local", "Run locally"],
-                  ["terminal", "Terminal"],
+                  [
+                    ["insights", "Activity"],
+                    ["pulls", "Pull requests"],
+                    ["branches", "Branches"],
+                  ],
+                  [
+                    ["actions", "Actions"],
+                    ["deploy", "Deploy"],
+                  ],
+                  [
+                    ["local", "Run locally"],
+                    ["terminal", "Terminal"],
+                  ],
+                  [["skills", "Skills"]],
                 ] as const
-              ).map(([k, l]) => (
-                <button key={k} onClick={() => setSection(k)} className={seg(section === k)}>
-                  {l}
-                </button>
+              ).map((group, gi) => (
+                <div key={gi} className="flex items-center">
+                  {gi > 0 && <span className="mx-1.5 h-4 w-px shrink-0 bg-line" aria-hidden />}
+                  {group.map(([k, l]) => (
+                    <button key={k} onClick={() => setSection(k)} className={seg(section === k)}>
+                      {l}
+                    </button>
+                  ))}
+                </div>
               ))}
             </div>
           </div>

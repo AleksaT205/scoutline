@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { INDUSTRIES, LEAD_TYPES, SERVICE_CATEGORIES, type LeadType, type Tier } from "@radar/shared";
-import { Check, ChevronDown, Info, RotateCcw, Search, X } from "lucide-react";
+import { Check, ChevronDown, Info, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
 import type { UiLead } from "../data/demo";
 import { CATEGORY_LABEL, TYPE_META } from "./ui";
 
@@ -167,7 +167,7 @@ function FilterMenu({ label, value, active, children, wide, onClear }: { label: 
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className={`inline-flex h-[28px] items-center gap-1.5 rounded-lg border px-2.5 text-[12.5px] transition-colors ${active ? "border-accent/50 bg-accent-soft text-fg" : "border-line bg-surface text-muted hover:text-fg"}`}
+        className={`inline-flex h-[34px] items-center gap-1.5 rounded-lg border px-2.5 text-[12.5px] transition-colors ${active ? "border-accent/50 bg-accent-soft text-fg" : "border-line bg-surface text-muted hover:text-fg"}`}
       >
         <span className={active ? "text-muted" : "text-faint"}>{label}</span>
         <span className={`max-w-[150px] truncate ${active ? "font-medium text-fg" : "text-fg"}`}>{value}</span>
@@ -232,7 +232,7 @@ const labelOf = <T extends readonly (readonly [number | string, string])[]>(list
 
 export function Filters({ value, onChange, all, shown }: { value: FilterState; onChange: (f: FilterState) => void; all: UiLead[]; shown: number }) {
   const [sourceQ, setSourceQ] = useState("");
-  const [mobileOpen, setMobileOpen] = useState(false); // na telefonu su filteri iza jednog dugmeta
+  const [moreOpen, setMoreOpen] = useState(false); // ređe korišćeni filteri su iza dugmeta „Filters“
   const set = (p: Partial<FilterState>) => onChange({ ...value, ...p });
   const visible = all.filter((l) => (l.status ?? "new") !== "hidden");
   const count = <K,>(key: (l: UiLead) => K) => {
@@ -277,14 +277,17 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
     ...(value.remoteOnly ? [{ key: "remote", label: "Remote-friendly", clear: () => set({ remoteOnly: false }) }] : []),
   ];
 
+  // Koliko je filtera iz panela „Filters“ uključeno (oznaka na dugmetu)
+  const moreCount =
+    (value.minBudget || value.budgetKnownOnly ? 1 : 0) + (value.sources.size ? 1 : 0) + (value.markets.size !== ALL_MARKETS.length ? 1 : 0) + (value.status !== "open" ? 1 : 0) + (value.category !== "all" ? 1 : 0) + (value.industry !== "all" ? 1 : 0) + (value.remoteOnly ? 1 : 0);
   const marketValue = value.markets.size === ALL_MARKETS.length ? "All" : value.markets.size === 0 ? "None" : MARKETS.filter((m) => value.markets.has(m.key)).map((m) => m.label.replace("🇷🇸 ", "")).join(", ");
   const sourceValue = !value.sources.size ? "All" : value.sources.size === 1 ? [...value.sources][0]! : `${value.sources.size} sources`;
 
   return (
     <div className="mb-3 space-y-2">
-      {/* Tip prilike — glavni izbor */}
+      {/* Red 1: tip prilike (glavni izbor) i broj rezultata */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="inline-flex items-center gap-1 text-[12px] text-faint" title="Vrsta prilike. Oglasi za posao su podrazumevano isključeni — firmi trebaju projekti.">
+        <span className="hidden items-center gap-1 text-[12px] text-faint sm:inline-flex" title="Vrsta prilike. Oglasi za posao su podrazumevano isključeni — firmi trebaju projekti.">
           Type <Info size={12} />
         </span>
         {LEAD_TYPES.map((t) => (
@@ -293,32 +296,19 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
             <span className="num text-[11px] text-faint">{typeCounts.get(t) ?? 0}</span>
           </Chip>
         ))}
-      </div>
-
-      {/* Telefon: jedno dugme „Filters“ */}
-      <div className="flex items-center gap-2 sm:hidden">
-        <button onClick={() => setMobileOpen((o) => !o)} className={`inline-flex h-[34px] items-center gap-1.5 rounded-lg border px-3 text-[13px] ${!isDefault ? "border-accent/50 bg-accent-soft" : "border-line bg-surface"}`} aria-expanded={mobileOpen}>
-          Filters {!isDefault && <span className="size-1.5 rounded-full bg-accent" />}
-          <ChevronDown size={13} className={`text-faint transition-transform ${mobileOpen ? "rotate-180" : ""}`} />
-        </button>
-        {!isDefault && (
-          <button onClick={() => onChange(freshFilters())} className="inline-flex h-[34px] items-center gap-1 px-1 text-[12.5px] text-muted">
-            <RotateCcw size={12} /> Reset
-          </button>
-        )}
         <span className="ml-auto text-[12.5px] text-faint">
-          <span className="num">{shown}</span> of <span className="num">{all.length}</span>
+          <span className="num text-fg">{shown}</span> of <span className="num">{all.length}</span> leads
         </span>
       </div>
 
-      {/* Ostali filteri — isti stil za svaki meni */}
-      <div className={`${mobileOpen ? "flex" : "hidden"} flex-wrap items-center gap-1.5 sm:flex`}>
-        <label className="flex h-[28px] w-full items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 text-faint focus-within:border-accent/55 sm:w-56">
-          <Search size={13} />
-          <input value={value.query} onChange={(e) => set({ query: e.target.value })} placeholder="Search title, company, city…" className="w-full bg-transparent text-[12.5px] text-fg outline-none placeholder:text-faint" aria-label="Search leads" />
+      {/* Red 2: pretraga + najčešći filteri + „Filters“ (ostali) */}
+      <div className="flex flex-wrap items-center gap-1.5">
+        <label className="flex h-[34px] w-full items-center gap-2 rounded-lg border border-line bg-surface px-3 text-faint focus-within:border-accent/55 sm:w-72">
+          <Search size={14} />
+          <input value={value.query} onChange={(e) => set({ query: e.target.value })} placeholder="Search title, company, city…" className="w-full bg-transparent text-[13px] text-fg outline-none placeholder:text-faint" aria-label="Search leads" />
           {value.query && (
             <button onClick={() => set({ query: "" })} className="text-faint hover:text-fg" aria-label="Clear search">
-              <X size={12} />
+              <X size={13} />
             </button>
           )}
         </label>
@@ -340,6 +330,35 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
             ))
           }
         </FilterMenu>
+        <button
+          onClick={() => setMoreOpen((o) => !o)}
+          aria-expanded={moreOpen}
+          className={`inline-flex h-[34px] items-center gap-1.5 rounded-lg border px-2.5 text-[12.5px] transition-colors ${moreCount ? "border-accent/50 bg-accent-soft text-fg" : "border-line bg-surface text-muted hover:text-fg"}`}
+        >
+          <SlidersHorizontal size={13} /> Filters
+          {moreCount > 0 && <span className="num grid size-[16px] place-items-center rounded-full bg-accent text-[10px] font-semibold text-white">{moreCount}</span>}
+          <ChevronDown size={13} className={`text-faint transition-transform ${moreOpen ? "rotate-180" : ""}`} />
+        </button>
+        <div className="sm:hidden">
+        <FilterMenu label="Sort" value={`${SORTS.find(([k]) => k === value.sortBy)?.[1] ?? "Score"} ${value.sortDir === "desc" ? "↓" : "↑"}`} active={value.sortBy !== "score" || value.sortDir !== "desc"}>
+          {(close) => (
+            <>
+              {SORTS.map(([k, l, dir]) => (
+                <Option key={k} selected={value.sortBy === k} onClick={() => (set({ sortBy: k, sortDir: value.sortBy === k ? (value.sortDir === "desc" ? "asc" : "desc") : dir }), close())}>
+                  {l}
+                  {value.sortBy === k ? (value.sortDir === "desc" ? " ↓" : " ↑") : ""}
+                </Option>
+              ))}
+              <div className="px-2 pt-1 text-[11px] text-faint">Click again to reverse the order</div>
+            </>
+          )}
+        </FilterMenu>
+        </div>
+      </div>
+
+      {/* Ostali filteri — otvaraju se na „Filters“ */}
+      {moreOpen && (
+        <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-line bg-surface p-2.5">
         <FilterMenu label="Budget" value={`${labelOf(BUDGETS, value.minBudget)}${value.budgetKnownOnly ? " · stated" : ""}`} active={!!value.minBudget || value.budgetKnownOnly} onClear={() => set({ minBudget: 0, budgetKnownOnly: false })}>
           {(close) => (
             <>
@@ -439,36 +458,19 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
         <Chip on={value.remoteOnly} onClick={() => set({ remoteOnly: !value.remoteOnly })}>
           Remote-friendly
         </Chip>
-        <div className="sm:hidden">
-        <FilterMenu label="Sort" value={`${SORTS.find(([k]) => k === value.sortBy)?.[1] ?? "Score"} ${value.sortDir === "desc" ? "↓" : "↑"}`} active={value.sortBy !== "score" || value.sortDir !== "desc"}>
-          {(close) => (
-            <>
-              {SORTS.map(([k, l, dir]) => (
-                <Option key={k} selected={value.sortBy === k} onClick={() => (set({ sortBy: k, sortDir: value.sortBy === k ? (value.sortDir === "desc" ? "asc" : "desc") : dir }), close())}>
-                  {l}
-                  {value.sortBy === k ? (value.sortDir === "desc" ? " ↓" : " ↑") : ""}
-                </Option>
-              ))}
-              <div className="px-2 pt-1 text-[11px] text-faint">Click again to reverse the order</div>
-            </>
-          )}
-        </FilterMenu>
         </div>
-        <span className="ml-auto hidden text-[12.5px] text-faint sm:inline">
-          <span className="num">{shown}</span> of <span className="num">{all.length}</span> leads
-        </span>
-      </div>
+      )}
+
       {/* Aktivni filteri — vidi se šta je uključeno, × poništava jedan, „Clear all“ sve */}
       {active.length > 0 && (
-        <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-accent/25 bg-accent-soft/40 px-2 py-1.5">
-          <span className="text-[12px] text-muted">Active filters</span>
+        <div className="flex flex-wrap items-center gap-1.5">
           {active.map((a) => (
-            <button key={a.key} onClick={a.clear} className="inline-flex h-[24px] items-center gap-1 rounded-full border border-line bg-surface px-2 text-[12px] text-fg hover:border-danger/40" title="Remove this filter">
+            <button key={a.key} onClick={a.clear} className="inline-flex h-[24px] items-center gap-1 rounded-full bg-accent-soft px-2 text-[12px] text-fg hover:bg-danger/10" title="Remove this filter">
               {a.label} <X size={11} className="text-faint" />
             </button>
           ))}
-          <button onClick={() => onChange(freshFilters({ sortBy: value.sortBy, sortDir: value.sortDir }))} className="ml-auto inline-flex h-[28px] items-center gap-1 rounded-md bg-fg px-2.5 text-[12px] font-medium text-bg hover:opacity-90">
-            <RotateCcw size={12} /> Clear all
+          <button onClick={() => onChange(freshFilters({ sortBy: value.sortBy, sortDir: value.sortDir }))} className="inline-flex h-[24px] items-center gap-1 px-1.5 text-[12px] text-muted hover:text-fg">
+            <RotateCcw size={11} /> Clear all
           </button>
         </div>
       )}
