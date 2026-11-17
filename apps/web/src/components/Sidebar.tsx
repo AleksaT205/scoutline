@@ -101,8 +101,8 @@ export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: {
           </div>
           )}
           <span className="min-w-0 truncate">{org?.name || "Scoutline"}</span>
-          {org?.name ? <span className="ml-auto text-[10.5px] font-normal text-faint">Scoutline</span> : <span className="ml-auto rounded border border-line px-1.5 text-[11px] font-normal text-faint">Beta</span>}
-          <button className="text-muted lg:hidden" onClick={onClose} aria-label="Close menu">
+          {org?.name ? <span className="ml-auto text-[10.5px] font-normal text-faint max-lg:hidden">Scoutline</span> : <span className="ml-auto rounded border border-line px-1.5 text-[11px] font-normal text-faint">Beta</span>}
+          <button className="-mr-1.5 ml-auto grid size-[34px] shrink-0 place-items-center rounded-lg text-muted hover:bg-surface-2 lg:hidden" onClick={onClose} aria-label="Close menu">
             <X size={16} />
           </button>
         </div>
@@ -115,7 +115,7 @@ export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: {
               ["Delivery", "#/delivery", DELIVERY_PAGES.includes(page)],
             ] as const
           ).map(([label, href, on]) => (
-            <a key={label} href={href} onMouseEnter={() => prefetchHref(href)} onTouchStart={() => prefetchHref(href)} role="tab" aria-selected={on} className={`rounded-md py-1 text-center transition-colors ${on ? "bg-surface-2 font-medium text-fg ring-1 ring-line ring-inset" : "text-muted hover:text-fg"}`}>
+            <a key={label} href={href} onMouseEnter={() => prefetchHref(href)} onTouchStart={() => prefetchHref(href)} role="tab" aria-selected={on} className={`rounded-md py-1.5 text-center transition-colors lg:py-1 ${on ? "bg-surface-2 font-medium text-fg ring-1 ring-line ring-inset" : "text-muted hover:text-fg"}`}>
               {label}
             </a>
           ))}

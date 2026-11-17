@@ -443,7 +443,7 @@ export function RouterPage() {
 
       {error && <div className="mb-4 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[12.5px] text-danger">{error}</div>}
 
-      <section className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
         <Kpi label="Spent this month" value={t ? usd(t.spendUsd) : "—"} hint="Across all clients" />
         <Kpi label="Saved vs premium model" value={t ? usd(t.savingsUsd) : "—"} hint={savedPct ? `${savedPct}% cheaper than running everything on a premium model` : "Compared with GPT-4o-class pricing"} accent />
         <Kpi label="Requests this month" value={t ? t.requests.toLocaleString() : "—"} />

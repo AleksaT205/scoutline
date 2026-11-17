@@ -80,16 +80,25 @@ export function LeadsTable({ leads, selectedId, onSelect, sort, onSort, loading 
     {/* Tablet i računar: tabela */}
     <div className="hidden overflow-hidden rounded-xl border border-line bg-surface md:block">
       <div className="overflow-x-auto">
-        <table className="w-full border-collapse text-[13px]">
+        {/* Fiksne širine kolona: „Opportunity“ uzima ostatak, pa se ništa ne seče pored panela sa detaljima */}
+        <table className="w-full table-fixed border-collapse text-[13px]">
+          <colgroup>
+            <col className="w-[60px]" />
+            <col />
+            <col className="w-[88px]" />
+            <col className="hidden w-[150px] 2xl:table-column" />
+            <col className="w-[92px]" />
+            <col className="w-[150px]" />
+          </colgroup>
           <thead>
             <tr className="border-b border-line text-left text-xs text-faint">
               <SortTh k="score" label="Score" sort={sort} onSort={onSort} />
               <th className="px-2.5 py-2.5 font-medium">Opportunity</th>
               <th className="px-2.5 py-2.5 font-medium">Market</th>
-              <th className="hidden px-2.5 py-2.5 font-medium md:table-cell">Category</th>
+              <th className="hidden px-2.5 py-2.5 font-medium 2xl:table-cell">Category</th>
               <SortTh k="budget" label="Budget" sort={sort} onSort={onSort} />
-              <th className="hidden px-2.5 py-2.5 font-medium sm:table-cell">
-                <span className="inline-flex gap-2">
+              <th className="px-2.5 py-2.5 font-medium">
+                <span className="inline-flex gap-2 whitespace-nowrap">
                   <SortButton k="source" label="Source" sort={sort} onSort={onSort} />
                   <span className="text-faint">·</span>
                   <SortButton k="posted" label="Posted" sort={sort} onSort={onSort} />
@@ -111,10 +120,10 @@ export function LeadsTable({ leads, selectedId, onSelect, sort, onSort, loading 
                   <td className="px-2.5 py-2.5">
                     <ScoreRing score={l.score} />
                   </td>
-                  <td className="max-w-[300px] px-2.5 py-2.5">
-                    <div className="flex items-center gap-2">
+                  <td className="px-2.5 py-2.5">
+                    <div className="flex min-w-0 items-center gap-2">
                       <TypeBadge type={l.leadType} />
-                      <span className="truncate font-medium">{l.title}</span>
+                      <span className="truncate font-medium" title={l.title}>{l.title}</span>
                       {l.status && l.status !== "new" && <StatusPill status={l.status} />}
                     </div>
                     <div className="flex items-center gap-1.5 truncate text-xs text-muted">
@@ -134,12 +143,12 @@ export function LeadsTable({ leads, selectedId, onSelect, sort, onSort, loading 
                       {flag(l.country)} <TierBadge tier={l.tier} />
                     </span>
                   </td>
-                  <td className="hidden px-2.5 py-2.5 md:table-cell">
+                  <td className="hidden px-2.5 py-2.5 2xl:table-cell">
                     <Tag>{CATEGORY_LABEL[l.category]}</Tag>
                   </td>
                   <td className="num whitespace-nowrap px-2.5 py-2.5 text-[12.5px]">{l.budgetLabel}</td>
-                  <td className="hidden whitespace-nowrap px-2.5 py-2.5 text-xs text-muted sm:table-cell">
-                    {l.source}
+                  <td className="px-2.5 py-2.5 text-xs text-muted">
+                    <div className="truncate" title={l.source}>{l.source}</div>
                     <div className="text-faint">{timeAgo(l.postedMinutesAgo)}</div>
                   </td>
                 </tr>

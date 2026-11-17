@@ -688,7 +688,7 @@ export function CodeTab({ projectId, initialSection }: { projectId: string; init
               ))}
             </select>
           ) : (
-            <span className="num min-w-0 truncate text-[13px] font-medium">{repo || "No repo linked yet"}</span>
+            <span className={`min-w-0 truncate text-[13px] font-medium ${repo ? "num" : ""}`}>{repo || "No repo linked yet"}</span>
           )}
           {repo && (
             <a href={`https://github.com/${repo}`} target="_blank" rel="noreferrer" className="text-faint hover:text-fg" aria-label={`Open ${repo} on GitHub`} title="Open on GitHub">
@@ -697,8 +697,8 @@ export function CodeTab({ projectId, initialSection }: { projectId: string; init
           )}
           <span className="ml-auto" />
           {repo && <ClaudeSetup key={repo} projectId={projectId} repo={repo} chip />}
-          {canEdit(user) && (
-            <button onClick={() => setManage((v) => !v)} className={small} aria-expanded={manage || list.length === 0}>
+          {canEdit(user) && list.length > 0 && (
+            <button onClick={() => setManage((v) => !v)} className={small} aria-expanded={manage}>
               <Plus size={12} /> {list.length ? "Repos" : "Link repo"}
             </button>
           )}

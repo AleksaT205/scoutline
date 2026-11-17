@@ -74,7 +74,8 @@ export function CommandPalette({ open, onClose, onToggleTheme }: { open: boolean
     nav("team", "Team", "#/team", <Users size={15} />);
     nav("settings", "Settings", "#/settings", <Settings size={15} />);
     a.push({ id: "theme", group: "Actions", label: "Toggle dark / light mode", icon: <Moon size={15} />, run: onToggleTheme });
-    return a;
+    // Grupe moraju biti u komadu (naslov grupe se ispisuje pri svakoj promeni)
+    return [...a.filter((x) => x.group === "Go to"), ...a.filter((x) => x.group !== "Go to")];
   }, [space, onToggleTheme]);
 
   const items: Item[] = useMemo(() => {

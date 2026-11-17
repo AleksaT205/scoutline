@@ -504,7 +504,7 @@ export function ProjectPage({ id }: { id: string }) {
   if (project.error) return <ErrorNote>{project.error}</ErrorNote>;
   return (
     <>
-      <a href="#/delivery" className="mb-3 inline-flex items-center gap-1 text-[12.5px] text-muted hover:text-fg">
+      <a href="#/delivery" className="-ml-1.5 mb-1.5 inline-flex h-[28px] items-center gap-1 rounded-md px-1.5 text-[12.5px] text-muted hover:bg-surface-2 hover:text-fg">
         <ArrowLeft size={13} /> Projects
       </a>
       <div className="mb-4 flex flex-wrap items-start gap-x-4 gap-y-3">

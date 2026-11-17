@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Check, Copy, Inbox, Link2, Loader2, Plus, RefreshCcw, Trash2, X } from "lucide-react";
 import type { IssueStatus } from "@radar/shared";
 import { teamFetch } from "../../lib/team";
@@ -103,7 +103,16 @@ export function InboxPage() {
 
 // ── Sprintovi ──
 function BurnUp({ burn, scope }: { burn: Array<{ day: string; done: number }>; scope: number }) {
-  const w = 560;
+  // Širina crteža = stvarna širina kartice: grafikon popunjava prostor, a slova ostaju iste veličine i na telefonu
+  const box = useRef<HTMLDivElement>(null);
+  const [w, setW] = useState(560);
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const ro = new ResizeObserver(() => setW(Math.max(240, Math.round(el.clientWidth))));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const h = 140;
   const pad = 24;
   const max = Math.max(scope, 1);
@@ -112,7 +121,8 @@ function BurnUp({ burn, scope }: { burn: Array<{ day: string; done: number }>; s
   const pts = burn.filter((b) => b.done >= 0).map((b, i) => `${x(i)},${y(b.done)}`);
   const today = burn.findIndex((b) => b.done < 0) - 1;
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="h-[140px] w-full" role="img" aria-label="Cycle burn-up chart">
+    <div ref={box} className="relative h-[140px] w-full overflow-hidden">
+    <svg viewBox={`0 0 ${w} ${h}`} width={w} height={h} className="absolute left-0 top-0" role="img" aria-label="Cycle burn-up chart">
       <line x1={pad} y1={y(max)} x2={w - pad} y2={y(max)} stroke="var(--border-2)" strokeDasharray="4 4" />
       <text x={w - pad} y={y(max) - 6} textAnchor="end" fontSize="10" fill="var(--faint)">
         scope {scope}
@@ -124,6 +134,7 @@ function BurnUp({ burn, scope }: { burn: Array<{ day: string; done: number }>; s
       {today >= 0 && <line x1={x(today)} y1={pad} x2={x(today)} y2={h - pad} stroke="var(--accent)" strokeOpacity=".25" />}
       {burn.map((b, i) => (i === 0 || i === burn.length - 1 ? <text key={b.day} x={x(i)} y={h - 6} textAnchor={i === 0 ? "start" : "end"} fontSize="10" fill="var(--faint)">{fmtDate(b.day)}</text> : null))}
     </svg>
+    </div>
   );
 }
 

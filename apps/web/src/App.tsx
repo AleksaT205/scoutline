@@ -216,7 +216,7 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
 
       <main className="min-w-0">
         <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-line bg-bg/80 px-4 backdrop-blur-md sm:px-6">
-          <button className="text-muted lg:hidden" onClick={() => setMenuOpen(true)} aria-label="Open menu">
+          <button className="-ml-2 grid size-[34px] shrink-0 place-items-center rounded-lg text-muted hover:bg-surface-2 lg:hidden" onClick={() => setMenuOpen(true)} aria-label="Open menu">
             <Menu size={18} />
           </button>
           <div className="text-[13px] text-muted">
@@ -227,15 +227,6 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
               {{ router: "AI Router", sources: "Sources", pipeline: "Pipeline", overview: "Overview", settings: "Settings", team: "Team", leads: "Leads", issues: "My tasks", projects: "Projects", project: "Project", clients: "Clients", inbox: "Inbox", cycles: "Cycles", reports: "Reports", assistant: "Assistant" }[page]}
             </b>
           </div>
-          <label className="hidden">
-            <Search size={14} />
-            <input
-              value={filters.query}
-              onChange={(e) => setFilters({ ...filters, query: e.target.value })}
-              placeholder="Search leads, companies, locations…"
-              className="w-full bg-transparent text-fg placeholder:text-faint outline-none"
-            />
-          </label>
           <button
             onClick={() => setPaletteOpen(true)}
             className="ml-auto inline-flex h-[34px] items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-[12.5px] text-faint hover:bg-surface-2 hover:text-fg sm:w-56"
@@ -350,7 +341,7 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
               {api.live && api.loadedAt && (
                 <p className="mt-1 inline-flex items-center gap-1.5 text-[12px] text-faint">
                   Updated {Math.max(0, Math.round((Date.now() - api.loadedAt) / 60_000)) || "<1"} min ago · refreshes every minute · sources sync every 30–60 min
-                  <button onClick={api.reload} className="inline-flex items-center gap-1 text-muted hover:text-fg" aria-label="Refresh now">
+                  <button onClick={api.reload} className="-my-1 inline-flex h-[26px] items-center gap-1 rounded-md px-1.5 text-muted hover:bg-surface-2 hover:text-fg" aria-label="Refresh now">
                     <RefreshCw size={11} /> Refresh
                   </button>
                 </p>

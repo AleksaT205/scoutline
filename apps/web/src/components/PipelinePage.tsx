@@ -3,7 +3,9 @@ import { Loader2, Search, X, AlarmClock } from "lucide-react";
 import { LEAD_TYPES, type LeadStatus, type LeadType } from "@radar/shared";
 import type { UiLead } from "../data/demo";
 import { changeStatus } from "./LeadCrm";
+import { FilterChip } from "./Filters";
 import { LeadDetail } from "./LeadDetail";
+import { Segmented } from "../lib/ui";
 import { DeadlineChip, ScoreRing, STATUS_META, TYPE_META, TierBadge, TypeBadge, flag } from "./ui";
 
 const COLUMNS: Array<{ status: LeadStatus; hint: string }> = [
@@ -139,39 +141,48 @@ export function PipelinePage({ leads, live, onUpdated }: { leads: UiLead[]; live
         ))}
       </section>
 
-      {/* Pretraga i filteri */}
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <label className="flex h-[34px] min-w-[220px] flex-1 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-faint focus-within:border-accent/55 sm:max-w-[340px]">
-          <Search size={14} />
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search leads, companies, sources…" className="w-full bg-transparent text-fg outline-none placeholder:text-faint" />
-          {q && (
-            <button onClick={() => setQ("")} className="text-faint hover:text-fg" aria-label="Clear search">
-              <X size={13} />
-            </button>
-          )}
-        </label>
-        <div className="flex flex-wrap gap-1.5">
+      {/* Pretraga i filteri — ista traka kao na Leads */}
+      <div className="mb-3 rounded-xl border border-line bg-surface">
+        <div className="flex flex-wrap items-center gap-1.5 p-2">
+          <label className="flex h-[34px] min-w-0 flex-1 basis-full items-center gap-2 rounded-lg border border-line bg-bg px-3 text-faint focus-within:border-accent/55 sm:max-w-[420px] sm:basis-56">
+            <Search size={14} className="shrink-0" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search leads, companies, sources…" className="w-full min-w-0 bg-transparent text-[13px] text-fg outline-none placeholder:text-faint" aria-label="Search pipeline" />
+            {q && (
+              <button onClick={() => setQ("")} className="grid size-[22px] shrink-0 place-items-center rounded text-faint hover:text-fg" aria-label="Clear search">
+                <X size={13} />
+              </button>
+            )}
+          </label>
+          <Segmented
+            full
+            className="sm:ml-auto"
+            value={String(minScore) as "0" | "50" | "70"}
+            onChange={(v) => setMinScore(Number(v))}
+            options={[
+              ["0", "Any score"],
+              ["50", "50+"],
+              ["70", "70+"],
+            ]}
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5 border-t border-line px-2 py-2">
+          <span className="hidden pl-1 pr-0.5 text-[12px] text-faint sm:inline" title="Applies to the New column">
+            Type
+          </span>
           {LEAD_TYPES.map((t) => (
-            <button
+            <FilterChip
               key={t}
+              on={types.has(t)}
               onClick={() => {
                 const n = new Set(types);
                 if (n.has(t)) n.delete(t);
                 else n.add(t);
                 setTypes(n);
               }}
-              className={`inline-flex h-[28px] items-center rounded-full border px-2.5 text-[12.5px] ${types.has(t) ? "border-accent/55 bg-accent-soft text-fg" : "border-line bg-surface text-muted hover:text-fg"}`}
               title={`${TYPE_META[t].hint} (applies to the New column)`}
             >
               {TYPE_META[t].label}
-            </button>
-          ))}
-        </div>
-        <div className="inline-flex h-[28px] items-center rounded-full border border-line bg-surface p-0.5 text-[12.5px]">
-          {[0, 50, 70].map((s) => (
-            <button key={s} onClick={() => setMinScore(s)} className={`h-full rounded-full px-2.5 ${minScore === s ? "bg-surface-2 text-fg ring-1 ring-line ring-inset" : "text-muted hover:text-fg"}`}>
-              {s === 0 ? "Any score" : `${s}+`}
-            </button>
+            </FilterChip>
           ))}
         </div>
       </div>

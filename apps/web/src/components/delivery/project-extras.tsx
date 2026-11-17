@@ -19,7 +19,8 @@ function Section({ icon, title, sub, actions, children }: { icon: React.ReactNod
     <section className="rounded-xl border border-line bg-surface p-4 sm:p-5">
       <div className="mb-3 flex flex-wrap items-start gap-2">
         <span className="mt-0.5 text-accent">{icon}</span>
-        <div className="min-w-0 flex-1">
+        {/* min-w: kad pored teksta nema mesta za radnje, radnje prelaze u novi red (tekst se ne lomi reč po reč) */}
+        <div className="min-w-[190px] flex-1">
           <h3 className="text-[14px] font-semibold">{title}</h3>
           {sub && <p className="mt-0.5 text-[12px] text-muted">{sub}</p>}
         </div>
