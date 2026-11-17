@@ -193,10 +193,15 @@ interface Pull {
   changesRequested: boolean;
   issueKey: string | null;
   preview?: string | null;
+  state?: "open" | "merged" | "closed";
+  mergedAt?: string | null;
+  closedAt?: string | null;
 }
 function PullsView({ projectId, repo }: { projectId: string; repo: string }) {
   const user = useSessionUser();
-  const { data, error, reload } = useLoad<{ pulls: Pull[] }>(`/delivery/projects/${projectId}/pulls?repo=${encodeURIComponent(repo)}`);
+  const [filter, setFilter] = useState<"open" | "merged" | "closed" | "all">("open");
+  const { data, error, reload } = useLoad<{ pulls: Pull[] }>(`/delivery/projects/${projectId}/pulls?repo=${encodeURIComponent(repo)}&state=${filter === "open" ? "open" : filter === "all" ? "all" : "closed"}`);
+  const list = (data?.pulls ?? []).filter((p) => filter === "all" || filter === "open" || (p.state ?? "open") === filter);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const act = async (n: number, action: "approve" | "merge" | "review", body: object = {}) => {
@@ -213,15 +218,26 @@ function PullsView({ projectId, repo }: { projectId: string; repo: string }) {
       setBusy(null);
     }
   };
-  if (error) return <ErrorNote>{error}</ErrorNote>;
-  if (!data) return <div className="h-32 animate-pulse rounded-xl bg-surface-2" />;
+  const seg = (on: boolean) => `h-[28px] rounded-md px-3 text-[12.5px] ${on ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`;
+  const filters = (
+    <div className="inline-flex rounded-lg border border-line bg-surface p-0.5">
+      {(["open", "merged", "closed", "all"] as const).map((f) => (
+        <button key={f} onClick={() => setFilter(f)} className={seg(filter === f)}>
+          {f === "open" ? "Open" : f === "merged" ? "Merged" : f === "closed" ? "Closed" : "All"}
+        </button>
+      ))}
+    </div>
+  );
+  if (error) return <div className="space-y-2">{filters}<ErrorNote>{error}</ErrorNote></div>;
+  if (!data) return <div className="space-y-2">{filters}<div className="h-32 animate-pulse rounded-xl bg-surface-2" /></div>;
   return (
     <div className="space-y-2">
+      {filters}
       {msg && <div className={`rounded-lg border px-3 py-2 text-[12.5px] ${msg.ok ? "border-success/40 bg-success-soft text-success" : "border-danger/40 bg-danger/10 text-danger"}`}>{msg.text}</div>}
-      {data.pulls.map((p) => (
-        <div key={p.number} className="rounded-xl border border-line bg-surface p-3">
+      {list.map((p) => (
+        <div key={p.number} className={`rounded-xl border border-line bg-surface p-3 ${p.state && p.state !== "open" ? "opacity-90" : ""}`}>
           <div className="flex items-start gap-2.5">
-            <GitPullRequest size={15} className={`mt-0.5 shrink-0 ${p.draft ? "text-faint" : "text-success"}`} />
+            {p.state === "merged" ? <GitMerge size={15} className="mt-0.5 shrink-0 text-accent" /> : <GitPullRequest size={15} className={`mt-0.5 shrink-0 ${p.state === "closed" ? "text-danger" : p.draft ? "text-faint" : "text-success"}`} />}
             <div className="min-w-0 flex-1">
               <a href={p.url} target="_blank" rel="noreferrer" className="block truncate text-[13.5px] font-medium hover:underline">
                 {p.title}
@@ -234,7 +250,10 @@ function PullsView({ projectId, repo }: { projectId: string; repo: string }) {
                 </span>
                 <PreviewButton projectId={projectId} repo={repo} branch={p.branch} className="inline-flex items-center gap-1 text-accent hover:underline disabled:opacity-50" />
                 {p.draft && <span className="text-faint">draft</span>}
+                {p.state === "merged" && <span className="rounded-full bg-accent-soft px-2 py-px text-[11px] text-accent">merged {p.mergedAt ? ago(p.mergedAt) : ""}</span>}
+                {p.state === "closed" && <span className="rounded-full bg-danger/10 px-2 py-px text-[11px] text-danger">closed {p.closedAt ? ago(p.closedAt) : ""}</span>}
               </div>
+              {(p.state ?? "open") === "open" && (
               <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11.5px]">
                 {p.checks && p.checks.total > 0 ? (
                   <span className={p.checks.failed ? "text-danger" : p.checks.pending ? "text-warning" : "text-success"}>
@@ -255,9 +274,10 @@ function PullsView({ projectId, repo }: { projectId: string; repo: string }) {
                   </a>
                 )}
               </div>
+              )}
             </div>
           </div>
-          {canEdit(user) && (
+          {canEdit(user) && (p.state ?? "open") === "open" && (
             <div className="mt-2.5 flex flex-wrap gap-1.5 border-t border-line pt-2.5">
               <button disabled={!!busy} onClick={() => void act(p.number, "review", { agent: "claude" })} className={small} title="Comments @claude on the PR to review it">
                 {busy === `${p.number}:review` ? <Loader2 size={12} className="animate-spin" /> : <Bot size={12} />} AI review
@@ -272,7 +292,7 @@ function PullsView({ projectId, repo }: { projectId: string; repo: string }) {
           )}
         </div>
       ))}
-      {data.pulls.length === 0 && <div className="rounded-xl border border-dashed border-line px-6 py-10 text-center text-[13px] text-faint">No open pull requests in {repo}.</div>}
+      {list.length === 0 && <div className="rounded-xl border border-dashed border-line px-6 py-10 text-center text-[13px] text-faint">No {filter === "all" ? "" : `${filter} `}pull requests in {repo}.</div>}
     </div>
   );
 }

@@ -178,9 +178,23 @@ export function githubFlowRoutes(getDb: () => Db, g: Guards) {
     if (r instanceof Response) return r;
     try {
       const tok = await token(c);
-      const pulls = await ghJson<Array<{ number: number; title: string; html_url: string; draft: boolean; user: { login: string }; head: { ref: string; sha: string }; base: { ref: string }; created_at: string; requested_reviewers?: Array<{ login: string }> }>>(tok, `/repos/${r.full}/pulls?state=open&per_page=30`);
+      // state=open (podrazumevano) | closed (spojeni + zatvoreni) | all
+      const want = c.req.query("state");
+      const ghState = want === "closed" || want === "all" ? want : "open";
+      const pulls = await ghJson<Array<{ number: number; title: string; html_url: string; draft: boolean; state: "open" | "closed"; merged_at: string | null; closed_at: string | null; user: { login: string }; head: { ref: string; sha: string }; base: { ref: string }; created_at: string; requested_reviewers?: Array<{ login: string }> }>>(
+        tok,
+        `/repos/${r.full}/pulls?state=${ghState}&per_page=30&sort=updated&direction=desc`,
+      );
+      const linkOf = async (n: number) => {
+        const [link] = await getDb().select({ issueId: issueLinks.issueId }).from(issueLinks).where(and(eq(issueLinks.kind, "pr"), eq(issueLinks.repo, r.full), eq(issueLinks.number, n))).limit(1);
+        const issue = link ? (await getDb().select({ number: issues.number }).from(issues).where(eq(issues.id, link.issueId)).limit(1))[0] : undefined;
+        return issue ? `${r.p.key}-${issue.number}` : null;
+      };
       const out = await Promise.all(
         pulls.map(async (pr) => {
+          const base = { number: pr.number, title: pr.title, url: pr.html_url, draft: pr.draft, author: pr.user.login, branch: pr.head.ref, base: pr.base.ref, createdAt: pr.created_at, state: pr.merged_at ? "merged" : pr.state, mergedAt: pr.merged_at, closedAt: pr.closed_at };
+          // Zatvoreni / spojeni: bez skupih provera (CI, review, preview)
+          if (pr.state !== "open") return { ...base, checks: null, approved: false, changesRequested: false, issueKey: await linkOf(pr.number), preview: null };
           let checks: { total: number; ok: number; failed: number; pending: number } | null = null;
           const cr = await ghFetch(tok, `/repos/${r.full}/commits/${pr.head.sha}/check-runs?per_page=50`);
           if (cr.ok) {
@@ -209,9 +223,7 @@ export function githubFlowRoutes(getDb: () => Db, g: Guards) {
               }
             }
           }
-          const [link] = await getDb().select({ issueId: issueLinks.issueId }).from(issueLinks).where(and(eq(issueLinks.kind, "pr"), eq(issueLinks.repo, r.full), eq(issueLinks.number, pr.number))).limit(1);
-          const issue = link ? (await getDb().select({ number: issues.number }).from(issues).where(eq(issues.id, link.issueId)).limit(1))[0] : undefined;
-          return { number: pr.number, title: pr.title, url: pr.html_url, draft: pr.draft, author: pr.user.login, branch: pr.head.ref, base: pr.base.ref, createdAt: pr.created_at, checks, approved, changesRequested: changes, issueKey: issue ? `${r.p.key}-${issue.number}` : null, preview };
+          return { ...base, checks, approved, changesRequested: changes, issueKey: await linkOf(pr.number), preview };
         }),
       );
       return c.json({ repo: r.full, pulls: out });

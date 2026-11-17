@@ -3,6 +3,7 @@ import { Check, Copy, FileCode2, Loader2, MessagesSquare, Send, Sparkles, Wand2 
 import { useCached } from "../../lib/cache";
 import { teamFetch } from "../../lib/team";
 import { useProjects } from "../../lib/delivery";
+import { CreateTasksButton } from "./tasks-from-text";
 import { Dialog, ErrorNote, Menu, btnPrimary } from "./parts";
 
 /** Faza 13: AI asistent — „pitaj projekat“ i brzi status izveštaj. */
@@ -210,6 +211,7 @@ export function AskPanel({ projectId, hasRepo }: { projectId?: string; hasRepo?:
                   ))}
                 </div>
               )}
+              {projectId && <div className="mt-1.5"><CreateTasksButton projectId={projectId} text={t.content} /></div>}
               {t.meta && (
                 <div className="mt-1.5 text-[11px] text-faint">
                   {t.meta.provider === "anthropic" ? "Claude" : "Free model"} · {t.meta.model} · {(t.meta.tokens.in + t.meta.tokens.out).toLocaleString()} tokens

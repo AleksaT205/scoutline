@@ -92,11 +92,22 @@ export function TerminalView({ projectId, repo }: { projectId: string; repo: str
         <TerminalIcon size={15} className="text-accent" />
         <span className="text-[13.5px] font-medium">Terminal</span>
         <span className="hidden text-[12px] text-faint sm:inline">runs on a clean Linux machine (GitHub Actions) with this repo and Node 20 · read-only, no secrets</span>
-        {entries.length > 0 && (
-          <button onClick={() => setEntries([])} className="ml-auto inline-flex items-center gap-1 text-[12px] text-muted hover:text-danger" title="Clear history">
-            <Trash2 size={12} /> Clear
-          </button>
-        )}
+        <span className="ml-auto flex items-center gap-3">
+          {entries.length > 0 && (
+            <button onClick={() => setEntries([])} className="inline-flex items-center gap-1 text-[12px] text-muted hover:text-danger" title="Clear history">
+              <Trash2 size={12} /> Clear
+            </button>
+          )}
+          <a
+            href={`https://codespaces.new/${repo}${ref ? `/tree/${encodeURIComponent(ref)}` : ""}`}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex h-[28px] items-center gap-1.5 rounded-md border border-line bg-bg px-2.5 text-[12px] font-medium hover:bg-surface-2"
+            title="A full, live terminal in the browser (GitHub Codespaces) — type, run servers, see output as it happens"
+          >
+            <TerminalIcon size={12} /> Live terminal <ExternalLink size={11} className="text-faint" />
+          </a>
+        </span>
       </div>
       <div className="max-h-[520px] min-h-[200px] space-y-3 overflow-y-auto bg-[#0d0d10] px-4 py-3 font-mono text-[12.5px] leading-relaxed text-[#d7d7db]">
         {ordered.length === 0 && <div className="text-[#7c7c86]">Type a command below — e.g. <span className="text-[#c3b5ff]">npm install && npm run build</span>. Output appears when it finishes (usually 20–60 s).</div>}

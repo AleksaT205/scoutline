@@ -4,6 +4,7 @@ import { useCached } from "../../lib/cache";
 import { teamFetch } from "../../lib/team";
 import { canEdit, useSessionUser } from "../../lib/session";
 import { Dialog, ErrorNote, btnPrimary, btnSecondary } from "./parts";
+import { CreateTasksButton } from "./tasks-from-text";
 import { AskPanel, Md } from "./assistant";
 
 /**
@@ -103,6 +104,45 @@ function ModelSelect({ value, onChange }: { value: string; onChange: (v: string)
     </select>
   );
 }
+const EFFORT_OPTIONS = [
+  ["", "Effort: Auto"],
+  ["low", "Effort: Low"],
+  ["medium", "Effort: Medium"],
+  ["high", "Effort: High"],
+  ["max", "Effort: Max"],
+] as const;
+const savedEffort = () => {
+  try {
+    return localStorage.getItem("claude-effort") ?? "";
+  } catch {
+    return "";
+  }
+};
+/** Koliko Claude razmišlja pre rada. Auto: pitanje → Low, rad → Medium, redizajn/refaktor → High. */
+function EffortSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <select
+      value={value}
+      onChange={(e) => {
+        onChange(e.target.value);
+        try {
+          localStorage.setItem("claude-effort", e.target.value);
+        } catch {
+          /* ništa */
+        }
+      }}
+      className="h-[32px] rounded-md border border-line bg-surface px-2 text-[12.5px]"
+      aria-label="Effort"
+      title="How hard Claude thinks before working. Auto picks it from the task: questions → Low, normal work → Medium, redesigns and refactors → High. Higher = better results, slower, uses more of your subscription."
+    >
+      {EFFORT_OPTIONS.map(([v, l]) => (
+        <option key={v} value={v}>
+          {l}
+        </option>
+      ))}
+    </select>
+  );
+}
 const repoQ = (repo: string) => `repo=${encodeURIComponent(repo)}`;
 /** Pregled grane u StackBlitz-u (aplikacije sa build korakom). */
 export const previewUrl = (repo: string, branch: string) => `https://stackblitz.com/github/${repo}/tree/${encodeURIComponent(branch)}`;
@@ -141,19 +181,21 @@ export function PreviewButton({ projectId, repo, branch, className, children }: 
 }
 
 // ── „Work locally“: Claude Code na tvom računaru (interaktivno), lokalni pregled, pa PR → main ──
-export function LocalWorkDialog({ open, onClose, projectId, repo, issueId, prompt, model }: { open: boolean; onClose: () => void; projectId: string; repo?: string; issueId?: string; prompt?: string; model?: string }) {
-  const [d, setD] = useState<{ branch: string; main: string; folder: string; command: string; task: string | null } | null>(null);
+export function LocalWorkDialog({ open, onClose, projectId, repo, issueId, prompt, model: initialModel, effort: initialEffort }: { open: boolean; onClose: () => void; projectId: string; repo?: string; issueId?: string; prompt?: string; model?: string; effort?: string }) {
+  const [d, setD] = useState<{ branch: string; main: string; folder: string; command: string; task: string | null; effort?: string } | null>(null);
+  const [model, setModel] = useState(initialModel ?? savedModel());
+  const [effort, setEffort] = useState(initialEffort ?? savedEffort());
   const [err, setErr] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   useEffect(() => {
     if (!open) return;
     setD(null);
     setErr(null);
-    teamFetch<NonNullable<typeof d>>(`/delivery/projects/${projectId}/local${repo ? `?${repoQ(repo)}` : ""}`, { method: "POST", body: JSON.stringify({ issueId, prompt, model: model || undefined }) })
+    teamFetch<NonNullable<typeof d>>(`/delivery/projects/${projectId}/local${repo ? `?${repoQ(repo)}` : ""}`, { method: "POST", body: JSON.stringify({ issueId, prompt, model: model || undefined, effort: effort || undefined }) })
       .then(setD)
       .catch((e) => setErr((e as Error).message));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open]);
+  }, [open, model, effort]);
   return (
     <Dialog open={open} onClose={onClose} title="Work locally with Claude Code" width={680}>
       <div className="space-y-3 px-4 py-4 text-[13px]">
@@ -167,6 +209,10 @@ export function LocalWorkDialog({ open, onClose, projectId, repo, issueId, promp
               <code className="num rounded bg-surface-2 px-1.5 py-0.5 text-fg">{d.branch}</code>
               <span className="text-faint">from {d.main}</span>
               {d.task && <span className="rounded-full bg-accent-soft px-2 py-px text-[11px] text-accent">{d.task} → In progress</span>}
+              <span className="ml-auto flex gap-2">
+                <ModelSelect value={model} onChange={setModel} />
+                <EffortSelect value={effort} onChange={setEffort} />
+              </span>
             </div>
             <ol className="list-decimal space-y-1 pl-5 text-[12.5px] text-muted">
               <li>Copy the command and paste it into Terminal. It gets the code into <code className="num text-fg">{d.folder}</code>, creates the branch and starts Claude with the task and the project's plan.</li>
@@ -341,6 +387,7 @@ function BuildPanel({ projectId }: { projectId: string }) {
   const [sel, setSel] = useState<number | null>(null);
   const [prompt, setPrompt] = useState("");
   const [model, setModel] = useState(savedModel);
+  const [effort, setEffort] = useState(savedEffort);
   const [localOpen, setLocalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -352,9 +399,9 @@ function BuildPanel({ projectId }: { projectId: string }) {
     setError(null);
     setNote(null);
     try {
-      const r = await teamFetch<{ number: number; note?: string | null }>(`/delivery/projects/${projectId}/agent/runs?${repoQ(repo)}`, { method: "POST", body: JSON.stringify({ prompt, model: model || undefined }) });
+      const r = await teamFetch<{ number: number; note?: string | null; effort?: string; effortAuto?: boolean }>(`/delivery/projects/${projectId}/agent/runs?${repoQ(repo)}`, { method: "POST", body: JSON.stringify({ prompt, model: model || undefined, effort: effort || undefined }) });
       setPrompt("");
-      setNote(r.note ?? null);
+      setNote([r.effort ? `Effort: ${r.effort[0]!.toUpperCase()}${r.effort.slice(1)}${r.effortAuto ? " (picked automatically)" : ""}.` : "", r.note ?? ""].filter(Boolean).join(" ") || null);
       setSel(r.number);
       await runs.reload();
     } catch (e) {
@@ -422,6 +469,7 @@ function BuildPanel({ projectId }: { projectId: string }) {
               <span className="text-[11.5px] text-faint">⌘ Enter to start · runs on your Claude subscription via GitHub Actions (usually 3–15 min)</span>
               <span className="ml-auto" />
               <ModelSelect value={model} onChange={setModel} />
+              <EffortSelect value={effort} onChange={setEffort} />
               <button type="button" disabled={prompt.trim().length < 3 || !repo} onClick={() => setLocalOpen(true)} className={btnSecondary} title="Run Claude Code on your computer instead of GitHub — live preview on localhost">
                 Work locally
               </button>
@@ -429,7 +477,7 @@ function BuildPanel({ projectId }: { projectId: string }) {
                 {busy ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />} Start
               </button>
             </div>
-            {note && <p className="mt-1.5 text-[12px] text-warning">{note}</p>}
+            {note && <p className="mt-1.5 text-[12px] text-muted">{note}</p>}
             {error && (
               <div className="mt-2">
                 <ErrorNote>{error}</ErrorNote>
@@ -437,7 +485,7 @@ function BuildPanel({ projectId }: { projectId: string }) {
             )}
           </form>
         )}
-        <LocalWorkDialog open={localOpen} onClose={() => setLocalOpen(false)} projectId={projectId} repo={repo} prompt={prompt} model={model} />
+        <LocalWorkDialog open={localOpen} onClose={() => setLocalOpen(false)} projectId={projectId} repo={repo} prompt={prompt} model={model} effort={effort} />
         {runs.data?.error || runs.error ? (
           <div className="p-3">
             <ErrorNote>{runs.data?.error ?? runs.error}</ErrorNote>
@@ -493,6 +541,7 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
   const t = useCached<Thread>(`/delivery/projects/${projectId}/agent/runs/${run.number}?${repoQ(repo)}`, { staleMs: 3_000, refreshMs: working ? 10_000 : 0 });
   const [reply, setReply] = useState("");
   const [model, setModel] = useState<string | null>(null); // null = isti kao do sad
+  const [effort, setEffort] = useState(savedEffort);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const end = useRef<HTMLDivElement>(null);
@@ -507,7 +556,7 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
     setBusy("reply");
     setMsg(null);
     try {
-      const r = await teamFetch<{ note?: string | null }>(`/delivery/projects/${projectId}/agent/runs/${run.number}/reply?${repoQ(repo)}`, { method: "POST", body: JSON.stringify({ text: reply, pr: pr?.state === "open" ? pr.number : undefined, ...(model !== null ? { model } : {}) }) });
+      const r = await teamFetch<{ note?: string | null }>(`/delivery/projects/${projectId}/agent/runs/${run.number}/reply?${repoQ(repo)}`, { method: "POST", body: JSON.stringify({ text: reply, pr: pr?.state === "open" ? pr.number : undefined, ...(model !== null ? { model } : {}), effort: effort || undefined }) });
       setReply("");
       setMsg({ ok: true, text: r.note ?? "Sent — Claude picks it up in a minute." });
       await t.reload();
@@ -578,13 +627,14 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
               <div className="text-[13px]">
                 <Md text={tidy(c.body)} />
               </div>
+              {canEdit(user) && <div className="mt-1.5 border-t border-line pt-1.5"><CreateTasksButton projectId={projectId} text={tidy(c.body)} /></div>}
             </div>
           ) : (
             <div key={c.id} className="ml-auto w-fit max-w-[90%] rounded-2xl rounded-br-md bg-accent-soft px-3.5 py-2 text-[13px]">
               <div className="mb-0.5 text-[11px] text-muted">
                 {c.author} · {ago(c.createdAt)}
               </div>
-              <div className="whitespace-pre-wrap">{c.body.replace(/^@claude\s*/, "").replace(/\n*<sub>From Scoutline by [^<]+<\/sub>\s*$/, "")}</div>
+              <div className="whitespace-pre-wrap">{c.body.replace(/^@claude\s*/, "").replace(/\n*<sub>From Scoutline by [^<]+<\/sub>\s*$/, "").replace(/\n*\((think|think hard|ultrathink)\)\s*$/, "")}</div>
             </div>
           ),
         )}
@@ -606,6 +656,7 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
         >
           <input value={reply} onChange={(e) => setReply(e.target.value)} placeholder={pr?.state === "open" ? "Ask Claude to change something in this PR…" : "Reply to Claude — e.g. “go ahead and build it”"} className="h-[36px] min-w-[200px] flex-1 rounded-lg border border-line bg-surface px-3 text-[13px] outline-none placeholder:text-faint focus:border-accent/60" />
           <ModelSelect value={model ?? t.data?.issue.model ?? ""} onChange={setModel} />
+          <EffortSelect value={effort} onChange={setEffort} />
           <button disabled={busy === "reply" || !reply.trim()} className={btnPrimary} aria-label="Send to Claude">
             {busy === "reply" ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
           </button>

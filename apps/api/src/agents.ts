@@ -26,6 +26,19 @@ const SECRET = "CLAUDE_CODE_OAUTH_TOKEN";
 const WORKFLOW_PATH = ".github/workflows/claude.yml";
 const MARKER = "# scoutline:claude-v3";
 const MODELS = ["sonnet", "opus", "haiku"] as const;
+const EFFORTS = ["low", "medium", "high", "max"] as const;
+type Effort = (typeof EFFORTS)[number];
+/** Koliko Claude razmišlja: Claude Code prepoznaje „think“ / „think hard“ / „ultrathink“ u zadatku. */
+const EFFORT_WORD: Record<Effort, string> = { low: "", medium: "think", high: "think hard", max: "ultrathink" };
+/** Auto: pitanje → malo, običan rad → srednje, redizajn / refaktor / arhitektura / dug zadatak → puno. */
+export function autoEffort(text: string): Effort {
+  const t = text.toLowerCase().trim();
+  if (t.length > 700 || /\b(redesign|redizajn|refactor|refaktor|architecture|arhitektur|migrat|security|bezbednost|performance|performans|optimi[sz]|from scratch|od nule|premium|ceo sajt|whole app)/.test(t)) return "high";
+  if (/\?\s*$/.test(t) || /^(what|how|where|why|which|who|is|are|can|kako|gde|šta|sta|zašto|zasto|koji|koja|dokle|da li|ima li)\b/.test(t)) return "low";
+  return "medium";
+}
+const pickEffort = (v: unknown, text: string): Effort => (EFFORTS.includes(v as Effort) ? (v as Effort) : autoEffort(text));
+const withEffort = (text: string, e: Effort) => (EFFORT_WORD[e] ? `${text}\n\n(${EFFORT_WORD[e]})` : text);
 type Model = (typeof MODELS)[number];
 export const APP_INSTALL_URL = "https://github.com/apps/claude/installations/new";
 
@@ -398,7 +411,7 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
       const prComments = pr ? await gh<GhComment[]>(tok, `/repos/${r.full}/issues/${pr.number}/comments?per_page=100`).catch(() => [] as GhComment[]) : [];
       const view = (x: GhComment, where: "issue" | "pr") => ({ id: x.id, where, author: x.user?.login ?? "?", bot: x.user?.type === "Bot" || /\[bot\]$/.test(x.user?.login ?? ""), body: x.body, createdAt: x.created_at, updatedAt: x.updated_at, url: x.html_url });
       return c.json({
-        issue: { number: issue.number, title: issue.title, body: (issue.body ?? "").replace(/\n---\nWhen you're done:[\s\S]*$/, "").replace(/^@claude\s*/, ""),
+        issue: { number: issue.number, title: issue.title, body: (issue.body ?? "").replace(/\n---\nWhen you're done:[\s\S]*$/, "").replace(/^@claude\s*/, "").replace(/\n*\((think|think hard|ultrathink)\)\s*$/, ""),
           model: ((issue as GhIssue & { labels?: Array<{ name: string }> }).labels ?? []).find((l) => l.name.startsWith("model:"))?.name.slice(6) ?? null, url: issue.html_url, state: issue.state, createdAt: issue.created_at, by: startedBy(issue.body) },
         comments: [...comments.map((x) => view(x, "issue")), ...prComments.map((x) => view(x, "pr"))].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
         pr: pullView(pr),
@@ -425,15 +438,16 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     if (!r) return c.json({ error: "Link a GitHub repo to the project first." }, 400);
     const tok = await ghToken(c);
     if (!tok) return c.json({ error: "No GitHub token yet — add yours in Settings → Integrations." }, 400);
-    const input = (await c.req.json().catch(() => ({}))) as { prompt?: string; model?: string };
+    const input = (await c.req.json().catch(() => ({}))) as { prompt?: string; model?: string; effort?: string };
     const prompt = (input.prompt ?? "").trim().slice(0, 8000);
     const model = MODELS.includes(input.model as Model) ? (input.model as Model) : null;
     if (prompt.length < 3) return c.json({ error: "Describe what Claude should do." }, 400);
     const note = await useMyClaude(c, tok, r.full);
     const first = prompt.split("\n")[0]!.replace(/\s+/g, " ").trim();
     const title = first.length > 90 ? `${first.slice(0, 87)}…` : first;
+    const effort = pickEffort(input.effort, prompt);
     const body = [
-      `@claude ${prompt}`,
+      `@claude ${withEffort(prompt, effort)}`,
       "",
       "---",
       "When you're done: commit to a new branch and open a pull request with `gh pr create` (short English title, summary of the changes, and `Closes #<this issue>`). Keep changes focused. Don't add yourself as a co-author. If this is only a question, answer in a comment and don't change files.",
@@ -444,7 +458,7 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     ].join("\n");
     try {
       const created = await gh<GhIssue>(tok, `/repos/${r.full}/issues`, { method: "POST", body: JSON.stringify({ title, body, labels: [LABEL, ...(model ? [`model:${model}`] : [])] }) });
-      return c.json({ number: created.number, url: created.html_url, note }, 201);
+      return c.json({ number: created.number, url: created.html_url, note, effort, effortAuto: !EFFORTS.includes(input.effort as Effort) }, 201);
     } catch (e) {
       return c.json({ error: (e as Error).message }, 502);
     }
@@ -456,7 +470,7 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     if (!r || !Number.isInteger(n)) return c.json({ error: "Not found." }, 404);
     const tok = await ghToken(c);
     if (!tok) return c.json({ error: "No GitHub token yet." }, 400);
-    const b = (await c.req.json().catch(() => ({}))) as { text?: string; pr?: number; model?: string };
+    const b = (await c.req.json().catch(() => ({}))) as { text?: string; pr?: number; model?: string; effort?: string };
     const text = (b.text ?? "").trim().slice(0, 8000);
     if (!text) return c.json({ error: "Write a message for Claude." }, 400);
     const note = await useMyClaude(c, tok, r.full);
@@ -464,7 +478,7 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     const target = Number.isInteger(b.pr) && b.pr! > 0 ? b.pr! : n;
     try {
       if (b.model !== undefined) await setModel(tok, r.full, target, MODELS.includes(b.model as Model) ? (b.model as Model) : null);
-      await gh(tok, `/repos/${r.full}/issues/${target}/comments`, { method: "POST", body: JSON.stringify({ body: `@claude ${text}\n\n<sub>From Scoutline by ${actor(c).name}</sub>` }) });
+      await gh(tok, `/repos/${r.full}/issues/${target}/comments`, { method: "POST", body: JSON.stringify({ body: `@claude ${withEffort(text, pickEffort(b.effort, text))}\n\n<sub>From Scoutline by ${actor(c).name}</sub>` }) });
       return c.json({ ok: true, note });
     } catch (e) {
       return c.json({ error: (e as Error).message }, 502);
@@ -476,7 +490,7 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
   app.post("/projects/:id/local", member, async (c) => {
     const r = await repoOf(c);
     if (!r) return c.json({ error: "Link a GitHub repo to the project first." }, 400);
-    const b = (await c.req.json().catch(() => ({}))) as { issueId?: string; prompt?: string; model?: string };
+    const b = (await c.req.json().catch(() => ({}))) as { issueId?: string; prompt?: string; model?: string; effort?: string };
     const db = getDb();
     const model = MODELS.includes(b.model as Model) ? (b.model as Model) : null;
     let title = "";
@@ -508,7 +522,9 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     const dir = r.full.split("/")[1]!;
     const folder = `~/scoutline/${r.p.key}`;
     const ref = key && number ? `${key}-${number}` : null;
+    const effort = pickEffort(b.effort, `${title}\n${details}`);
     const prompt = [
+      EFFORT_WORD[effort] ? `${EFFORT_WORD[effort]}.` : "",
       `You're working on the Scoutline project ${r.p.name} (${r.p.key}), repo ${r.full}, on branch \`${branch}\` (from ${main}).`,
       "",
       ref ? `Task ${ref}: ${title}` : `Task: ${title}`,
@@ -532,7 +548,7 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
       "SCOUTLINE_TASK",
       `)"`,
     ].join("\n");
-    return c.json({ branch, main, folder: `${folder}/${dir}`, command, task: ref });
+    return c.json({ branch, main, folder: `${folder}/${dir}`, command, task: ref, effort });
   });
 
   // ── Terminal: POST pokreće komandu (GitHub Actions), GET vraća status i izlaz ──
