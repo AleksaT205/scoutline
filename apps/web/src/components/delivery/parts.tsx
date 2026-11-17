@@ -175,7 +175,7 @@ export function Menu<V extends string | number | null>({
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className={`inline-flex items-center gap-1.5 rounded-md text-[12.5px] transition-colors hover:bg-surface-2 disabled:cursor-default disabled:hover:bg-transparent ${className}`}
+        className={`inline-flex items-center gap-1.5 rounded-md text-[13px] transition-colors hover:bg-surface-2 disabled:cursor-default disabled:hover:bg-transparent ${className}`}
       >
         {children}
       </button>
@@ -190,7 +190,7 @@ export function Menu<V extends string | number | null>({
                 setHi(0);
               }}
               placeholder={`${label}…`}
-              className="mb-1 h-[28px] w-full rounded-md border border-line bg-bg px-2 text-[12.5px] outline-none placeholder:text-faint focus:border-accent/60"
+              className="mb-1 h-[28px] w-full rounded-md border border-line bg-bg px-2 text-[12px] outline-none placeholder:text-faint focus:border-accent/60"
               onKeyDown={(e) => {
                 if (e.key === "ArrowDown") (e.preventDefault(), setHi((h) => Math.min(shown.length - 1, h + 1)));
                 if (e.key === "ArrowUp") (e.preventDefault(), setHi((h) => Math.max(0, h - 1)));
@@ -208,7 +208,7 @@ export function Menu<V extends string | number | null>({
                 aria-selected={o.value === value}
                 onMouseMove={() => hi !== i && setHi(i)}
                 onClick={() => pick(o.value)}
-                className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12.5px] ${i === hi ? "bg-surface-2 text-fg" : "text-muted"}`}
+                className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] ${i === hi ? "bg-surface-2 text-fg" : "text-muted"}`}
               >
                 {o.icon}
                 <span className="min-w-0 flex-1 truncate">{o.label}</span>
@@ -262,5 +262,5 @@ export function ProgressRing({ value, size = 18 }: { value: number; size?: numbe
 export { btnPrimary, btnSecondary, field } from "../../lib/ui";
 
 export function ErrorNote({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[12.5px] text-danger">{children}</div>;
+  return <div className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[13px] text-danger">{children}</div>;
 }

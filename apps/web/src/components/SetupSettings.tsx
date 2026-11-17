@@ -26,7 +26,7 @@ const Step = ({ text }: { text: string }) => (
   <>
     {text.split(/(`[^`]+`)/).map((p, i) =>
       p.startsWith("`") ? (
-        <code key={i} className="num rounded bg-surface-2 px-1 py-px text-[11.5px] text-fg">
+        <code key={i} className="num rounded bg-surface-2 px-1 py-px text-[12px] text-fg">
           {p.slice(1, -1)}
         </code>
       ) : (
@@ -57,8 +57,8 @@ export function SetupSettings() {
       <section className="rounded-xl border border-line bg-surface p-4 sm:p-5">
         <div className="flex flex-wrap items-start gap-3">
           <div className="min-w-0 flex-1">
-            <h2 className="text-[15px] font-semibold">Setup</h2>
-            <p className="mt-0.5 text-[12.5px] text-muted">Everything Scoutline needs to work fully. Nothing here changes settings — it only checks them and tells you where each one goes.</p>
+            <h2 className="text-[14px] font-semibold">Setup</h2>
+            <p className="mt-0.5 text-[13px] text-muted">Everything Scoutline needs to work fully. Nothing here changes settings — it only checks them and tells you where each one goes.</p>
           </div>
           <button onClick={() => void q.reload()} className={btnSm} disabled={q.refreshing}>
             <RefreshCw size={12} className={q.refreshing ? "animate-spin" : ""} /> Check again
@@ -66,7 +66,7 @@ export function SetupSettings() {
         </div>
         {d && (
           <div className="mt-4">
-            <div className="mb-1.5 flex items-baseline justify-between text-[12.5px]">
+            <div className="mb-1.5 flex items-baseline justify-between text-[13px]">
               <span className="font-medium">
                 {d.done === d.total ? "All required items are ready" : `${d.done} of ${d.total} required items ready`}
               </span>
@@ -77,13 +77,13 @@ export function SetupSettings() {
             </div>
           </div>
         )}
-        {q.error && <p className="mt-3 text-[12.5px] text-danger">{q.error}</p>}
+        {q.error && <p className="mt-3 text-[13px] text-danger">{q.error}</p>}
         {!d && !q.error && <div className="mt-4 h-24 animate-pulse rounded-lg bg-surface-2" />}
       </section>
 
       {groups.map((g) => (
         <section key={g} className="rounded-xl border border-line bg-surface">
-          <div className="border-b border-line px-4 py-2.5 text-[11.5px] font-medium uppercase tracking-wider text-faint">{g}</div>
+          <div className="border-b border-line px-4 py-2.5 text-[12px] font-medium uppercase tracking-wider text-faint">{g}</div>
           <ul className="divide-y divide-line">
             {d!.items
               .filter((i) => i.group === g)
@@ -97,11 +97,11 @@ export function SetupSettings() {
                         {ICON[i.state]}
                       </span>
                       <button className="min-w-0 flex-1 text-left" onClick={() => hasMore && setOpen(expanded ? null : i.key)} aria-expanded={expanded}>
-                        <div className="flex flex-wrap items-center gap-x-2 text-[13.5px] font-medium">
+                        <div className="flex flex-wrap items-center gap-x-2 text-[14px] font-medium">
                           {i.title}
-                          {!i.required && <span className="rounded bg-surface-2 px-1.5 text-[10.5px] font-normal text-faint">optional</span>}
+                          {!i.required && <span className="rounded bg-surface-2 px-1.5 text-[11px] font-normal text-faint">optional</span>}
                         </div>
-                        <div className="mt-0.5 break-words text-[12.5px] text-muted">{i.detail}</div>
+                        <div className="mt-0.5 break-words text-[13px] text-muted">{i.detail}</div>
                       </button>
                       {i.link && (
                         <a href={i.link} className={`${btnSm} hidden sm:inline-flex`}>
@@ -117,7 +117,7 @@ export function SetupSettings() {
                     {expanded && (
                       <div className="mt-2.5 space-y-2 pl-8">
                         {i.steps.length > 0 && (
-                          <ol className="list-decimal space-y-1 pl-4 text-[12.5px] leading-relaxed text-muted">
+                          <ol className="list-decimal space-y-1 pl-4 text-[13px] leading-relaxed text-muted">
                             {i.steps.map((s, k) => (
                               <li key={k}>
                                 <Step text={s} />

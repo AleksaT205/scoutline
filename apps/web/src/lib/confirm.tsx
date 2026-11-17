@@ -71,7 +71,7 @@ export function ConfirmHost() {
             </span>
           )}
           <div className="min-w-0">
-            <h2 id="confirm-title" className="text-[15px] font-semibold leading-snug">
+            <h2 id="confirm-title" className="text-[16px] font-semibold leading-snug">
               {p.title}
             </h2>
             {p.message && <p className="mt-1.5 whitespace-pre-line text-[13px] leading-relaxed text-muted">{p.message}</p>}

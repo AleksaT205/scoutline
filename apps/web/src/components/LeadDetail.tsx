@@ -9,7 +9,7 @@ import { NotesPanel, StatusBar } from "./LeadCrm";
 function Signal({ label, value, ok }: { label: string; value: string; ok?: boolean }) {
   return (
     <div className="rounded-lg border border-line bg-bg px-2.5 py-2">
-      <div className="text-[11.5px] text-faint">{label}</div>
+      <div className="text-[12px] text-faint">{label}</div>
       <div className={`text-[13px] font-medium ${ok ? "text-success" : ""}`}>{value}</div>
     </div>
   );
@@ -17,7 +17,7 @@ function Signal({ label, value, ok }: { label: string; value: string; ok?: boole
 
 function Label({ children, ai, rules }: { children: React.ReactNode; ai?: boolean; rules?: boolean }) {
   return (
-    <div className="mb-2 flex items-center text-[11.5px] uppercase tracking-wider text-faint">
+    <div className="mb-2 flex items-center text-[12px] uppercase tracking-wider text-faint">
       {children}
       {ai && !rules && (
         <span className="ml-1.5 inline-flex items-center gap-1 rounded-full bg-accent-soft px-2 text-[11px] normal-case tracking-normal text-accent">
@@ -157,7 +157,7 @@ export function LeadDetail({ lead, live, onUpdated }: { lead: UiLead; live: bool
             </div>
           )}
           <div className="text-base font-semibold leading-snug tracking-tight">{lead.title}</div>
-          <div className="mt-1 flex flex-wrap gap-x-2.5 gap-y-1 text-[12.5px] text-muted">
+          <div className="mt-1 flex flex-wrap gap-x-2.5 gap-y-1 text-[13px] text-muted">
             <span>{lead.company}</span>
             <span>
               {flag(lead.country)} {lead.city}
@@ -215,7 +215,7 @@ export function LeadDetail({ lead, live, onUpdated }: { lead: UiLead; live: bool
           </div>
         )}
         {draftErr && <p className="mb-2 text-[12px] text-danger">{draftErr}</p>}
-        <div className={`whitespace-pre-line rounded-[10px] border border-line bg-bg p-3 text-[12.5px] leading-relaxed text-muted ${drafting ? "opacity-50" : ""}`}>
+        <div className={`whitespace-pre-line rounded-[10px] border border-line bg-bg p-3 text-[13px] leading-relaxed text-muted ${drafting ? "opacity-50" : ""}`}>
           <div className="mb-1.5 font-medium text-fg">{lead.email.subject}</div>
           {lead.email.body}
         </div>

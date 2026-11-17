@@ -106,14 +106,14 @@ export function SourcesPage() {
       <div className="mb-5 flex flex-wrap items-end gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Sources</h1>
-          <p className="mt-0.5 text-[13.5px] text-muted">Where leads come from. Every source uses an official API, open data, RSS or your own email alerts — and respects its terms.</p>
+          <p className="mt-0.5 text-[14px] text-muted">Where leads come from. Every source uses an official API, open data, RSS or your own email alerts — and respects its terms.</p>
         </div>
         <button onClick={() => window.dispatchEvent(new Event("open-add-lead"))} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2 sm:ml-auto">
           <Plus size={14} /> Add a lead manually
         </button>
       </div>
 
-      {error && <div className="mb-4 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[12.5px] text-danger">{error}</div>}
+      {error && <div className="mb-4 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[13px] text-danger">{error}</div>}
 
       <section className="mb-5 grid grid-cols-3 gap-2 sm:gap-3">
         {[
@@ -122,7 +122,7 @@ export function SourcesPage() {
           ["New in last 24 h", "New · 24 h", items ? today.toLocaleString() : "—"],
         ].map(([label, short, value]) => (
           <div key={label} className="rounded-xl border border-line bg-surface px-3 py-3 sm:px-4 sm:py-4">
-            <div className="truncate text-[11.5px] text-muted sm:text-[12.5px]" title={label}>
+            <div className="truncate text-[12px] text-muted sm:text-[13px]" title={label}>
               <span className="sm:hidden">{short}</span>
               <span className="hidden sm:inline">{label}</span>
             </div>
@@ -152,7 +152,7 @@ export function SourcesPage() {
                   ["70+", String(s.good)],
                 ].map(([l, v]) => (
                   <div key={l}>
-                    <div className="num text-[15px] font-semibold">{v}</div>
+                    <div className="num text-[16px] font-semibold">{v}</div>
                     <div className="text-[11px] text-faint">{l}</div>
                   </div>
                 ))}
@@ -162,7 +162,7 @@ export function SourcesPage() {
                   <select
                     value={s.intervalMinutes}
                     onChange={(e) => void act(s.id, `/sources/${s.id}`, { method: "PATCH", body: JSON.stringify({ intervalMinutes: Number(e.target.value) }) }, { intervalMinutes: Number(e.target.value) })}
-                    className="h-[34px] flex-1 rounded-md border border-line bg-bg px-2 text-[12.5px] outline-none"
+                    className="h-[34px] flex-1 rounded-md border border-line bg-bg px-2 text-[13px] outline-none"
                     aria-label={`${s.name} schedule`}
                   >
                     {[...new Set([...SCHEDULES, s.intervalMinutes])].sort((a, b) => a - b).map((m) => (
@@ -171,10 +171,10 @@ export function SourcesPage() {
                       </option>
                     ))}
                   </select>
-                  <button onClick={() => void act(s.id, `/sources/${s.id}`, { method: "PATCH", body: JSON.stringify({ enabled: !s.enabled }) }, { enabled: !s.enabled })} className={`grid size-8 place-items-center rounded-md border border-line ${s.enabled ? "text-muted" : "bg-warning/10 text-warning"}`} aria-label={s.enabled ? "Pause" : "Resume"}>
+                  <button onClick={() => void act(s.id, `/sources/${s.id}`, { method: "PATCH", body: JSON.stringify({ enabled: !s.enabled }) }, { enabled: !s.enabled })} className={`grid size-[34px] place-items-center rounded-lg border border-line ${s.enabled ? "text-muted" : "bg-warning/10 text-warning"}`} aria-label={s.enabled ? "Pause" : "Resume"}>
                     {s.enabled ? <Pause size={13} /> : <Play size={13} />}
                   </button>
-                  <button disabled={!!s.runRequestedAt} onClick={() => void act(s.id, `/sources/${s.id}/run`, { method: "POST", body: "{}" }, { runRequestedAt: new Date().toISOString() })} className="inline-flex h-8 items-center gap-1 rounded-md border border-line px-2.5 text-[12.5px] font-medium disabled:opacity-60">
+                  <button disabled={!!s.runRequestedAt} onClick={() => void act(s.id, `/sources/${s.id}/run`, { method: "POST", body: "{}" }, { runRequestedAt: new Date().toISOString() })} className="inline-flex h-[34px] items-center gap-1 rounded-lg border border-line px-2.5 text-[13px] font-medium disabled:opacity-60">
                     {s.runRequestedAt ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />} {s.runRequestedAt ? "Queued" : "Run now"}
                   </button>
                 </div>

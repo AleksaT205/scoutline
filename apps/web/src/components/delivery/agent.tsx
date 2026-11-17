@@ -80,7 +80,7 @@ function UsageBar({ s }: { s: Summary }) {
   const Row = ({ label, w, weekly }: { label: string; w: { pct: number; resetsAt: string | null }; weekly?: boolean }) => (
     <div className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_4.5rem] items-center gap-3">
       <div className="min-w-0">
-        <div className="text-[12.5px] text-fg">{label}</div>
+        <div className="text-[13px] text-fg">{label}</div>
         <div className="truncate text-[11px] text-faint">{resetIn(w.resetsAt, weekly)}</div>
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
@@ -98,7 +98,7 @@ function UsageBar({ s }: { s: Summary }) {
           {d.opusWeek && d.opusWeek.pct > 0 && <Row label="This week · Opus" w={d.opusWeek} weekly />}
         </>
       ) : d?.reason === "no_token" ? (
-        <div className="text-[11.5px] text-faint">Add your Claude Code token in Settings → Integrations — Claude runs only on your own subscription.</div>
+        <div className="text-[12px] text-faint">Add your Claude Code token in Settings → Integrations — Claude runs only on your own subscription.</div>
       ) : null}
       {/* Limiti plana (sesija / nedelja) dolaze samo ako ih Anthropic da za ovaj token; token iz `claude setup-token` ih ne dobija — tada samo pregled meseca */}
       <div className="flex flex-wrap items-center gap-2 text-[11px] text-faint">
@@ -106,7 +106,7 @@ function UsageBar({ s }: { s: Summary }) {
           This month: {s.month.runs} tasks · {s.month.sessions} sessions · {s.month.merged} merged
         </span>
         {(s.sessions?.length ?? 0) > 0 && (
-          <button type="button" onClick={() => setShowSessions(!showSessions)} className="ml-auto text-[11.5px] text-muted hover:text-fg">
+          <button type="button" onClick={() => setShowSessions(!showSessions)} className="ml-auto text-[12px] text-muted hover:text-fg">
             {showSessions ? "Hide sessions" : "Sessions"}
           </button>
         )}
@@ -218,7 +218,7 @@ function ModelSelect({ value, onChange, className = "" }: { value: string; onCha
           /* ništa */
         }
       }}
-      className={`h-[34px] min-w-0 rounded-md border border-line bg-surface px-2 text-[12.5px] ${className}`}
+      className={`h-[34px] min-w-0 rounded-md border border-line bg-surface px-2 text-[13px] ${className}`}
       aria-label="Claude model"
       title="Model for this task. Opus is strongest (uses more of your subscription), Haiku is fastest."
     >
@@ -257,7 +257,7 @@ function EffortSelect({ value, onChange, className = "" }: { value: string; onCh
           /* ništa */
         }
       }}
-      className={`h-[34px] min-w-0 rounded-md border border-line bg-surface px-2 text-[12.5px] ${className}`}
+      className={`h-[34px] min-w-0 rounded-md border border-line bg-surface px-2 text-[13px] ${className}`}
       aria-label="Effort"
       title="How hard Claude thinks before working. Auto picks it from the task: questions → Low, normal work → Medium, redesigns and refactors → High. Higher = better results, slower, uses more of your subscription."
     >
@@ -332,7 +332,7 @@ export function LocalWorkDialog({ open, onClose, projectId, repo, issueId, promp
         {!d && !err && <div className="h-40 animate-pulse rounded-lg bg-surface-2" />}
         {d && (
           <>
-            <div className="flex flex-wrap items-center gap-2 text-[12.5px]">
+            <div className="flex flex-wrap items-center gap-2 text-[13px]">
               <span className="text-muted">Branch</span>
               <code className="num rounded bg-surface-2 px-1.5 py-0.5 text-fg">{d.branch}</code>
               <span className="text-faint">from {d.main}</span>
@@ -342,12 +342,12 @@ export function LocalWorkDialog({ open, onClose, projectId, repo, issueId, promp
                 <EffortSelect value={effort} onChange={setEffort} />
               </span>
             </div>
-            <ol className="list-decimal space-y-1 pl-5 text-[12.5px] text-muted">
+            <ol className="list-decimal space-y-1 pl-5 text-[13px] text-muted">
               <li>Copy the command and paste it into Terminal. It gets the code into <code className="num text-fg">{d.folder}</code>, creates the branch and starts Claude with the task and the project's plan.</li>
               <li>Work with Claude there. It starts a local preview (e.g. <code className="num">localhost:3000</code>) — open it and ask for changes.</li>
               <li>Say <b className="text-fg">“done, push and open the PR”</b>. The PR shows up in Scoutline (Code → Pull requests and on the task) — review, Preview, Merge → {d.main}. The task moves to Done.</li>
             </ol>
-            <pre className="num max-h-56 overflow-auto rounded-lg border border-line bg-bg p-3 text-[11.5px] leading-relaxed text-fg">{d.command.split("\n").slice(0, 5).join("\n")}{"\n"}…</pre>
+            <pre className="num max-h-56 overflow-auto rounded-lg border border-line bg-bg p-3 text-[12px] leading-relaxed text-fg">{d.command.split("\n").slice(0, 5).join("\n")}{"\n"}…</pre>
             <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={async () => {
@@ -359,7 +359,7 @@ export function LocalWorkDialog({ open, onClose, projectId, repo, issueId, promp
               >
                 {copied ? <Check size={14} /> : <Play size={14} />} {copied ? "Copied — paste into Terminal" : "Copy command"}
               </button>
-              <span className="text-[11.5px] text-faint">Needs Git, the GitHub CLI signed in (<code className="num">gh auth login</code>) and Claude Code (<code className="num">claude</code>).</span>
+              <span className="text-[12px] text-faint">Needs Git, the GitHub CLI signed in (<code className="num">gh auth login</code>) and Claude Code (<code className="num">claude</code>).</span>
             </div>
           </>
         )}
@@ -405,7 +405,7 @@ export function ClaudeSetup({ projectId, repo, compact, quiet, chip }: { project
     );
   if (ready && compact && !open)
     return (
-      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-success/30 bg-success-soft/40 px-3 py-2 text-[12.5px]">
+      <div className="flex flex-wrap items-center gap-2 rounded-xl border border-success/30 bg-success-soft/40 px-3 py-2 text-[13px]">
         <Check size={14} className="text-success" /> Claude is set up on <span className="num">{d.repo}</span>
         <button onClick={() => setOpen(true)} className="ml-auto text-[12px] text-muted hover:text-fg">
           Details
@@ -425,7 +425,7 @@ export function ClaudeSetup({ projectId, repo, compact, quiet, chip }: { project
     <section className={`rounded-xl border border-line bg-surface p-4 ${chip ? "order-last w-full basis-full bg-bg" : ""}`}>
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Bot size={15} className="text-accent" />
-        <span className="text-[13.5px] font-semibold">Claude on {d.repo}</span>
+        <span className="text-[14px] font-semibold">Claude on {d.repo}</span>
         <span className={`rounded-full px-2 py-px text-[11px] ${ready ? "bg-success-soft text-success" : "bg-warning/15 text-warning"}`}>{ready ? "Ready" : "Needs setup"}</span>
         <button onClick={() => void s.reload()} className="ml-auto text-faint hover:text-fg" aria-label="Check again" title="Check again">
           <RefreshCw size={13} className={s.refreshing ? "animate-spin" : ""} />
@@ -487,7 +487,7 @@ export function ClaudeSetup({ projectId, repo, compact, quiet, chip }: { project
 // ── Ask AI na projektu: „Build with Claude“ (radi u repou) ili „Ask“ (samo odgovara) ──
 export function ProjectAI({ projectId, hasRepo }: { projectId: string; hasRepo: boolean }) {
   const [mode, setMode] = useHashParam<"build" | "ask">("ai", hasRepo ? "build" : "ask", ["build", "ask"]);
-  const seg = (on: boolean) => `inline-flex h-[28px] flex-1 items-center justify-center gap-1.5 rounded-md px-3 text-[12.5px] sm:flex-none ${on ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`;
+  const seg = (on: boolean) => `inline-flex h-[28px] flex-1 items-center justify-center gap-1.5 rounded-md px-3 text-[12px] sm:flex-none ${on ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`;
   return (
     <div className="space-y-3">
       <div className="flex w-full rounded-lg border border-line bg-surface p-0.5 sm:inline-flex sm:w-auto">
@@ -552,8 +552,8 @@ function BuildPanel({ projectId }: { projectId: string }) {
       <section className="rounded-xl border border-line bg-surface">
         {(repos.data?.repos.length ?? 0) > 1 && (
           <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2.5">
-            <span className="text-[12.5px] text-muted">Repository</span>
-            <select value={repo} onChange={(e) => (setRepo(e.target.value), setSel(null))} className="ml-auto h-[28px] rounded-md border border-line bg-bg px-2 text-[12.5px]" aria-label="Repository">
+            <span className="text-[13px] text-muted">Repository</span>
+            <select value={repo} onChange={(e) => (setRepo(e.target.value), setSel(null))} className="ml-auto h-[28px] rounded-md border border-line bg-bg px-2 text-[12px]" aria-label="Repository">
               {repos.data!.repos.map((r) => (
                 <option key={r.full} value={r.full}>
                   {r.full}
@@ -580,7 +580,7 @@ function BuildPanel({ projectId }: { projectId: string }) {
                 onChange={(e) => setPrompt(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && (e.metaKey || e.ctrlKey) && (e.preventDefault(), void start())}
                 placeholder="What should Claude build or fix? e.g. “Add a contact page with a map and opening hours, mobile friendly.” — paste a screenshot with ⌘V, or talk"
-                className="h-24 w-full resize-none rounded-lg border border-line bg-bg px-3 pb-10 pt-2 text-[13.5px] outline-none placeholder:text-faint focus:border-accent/60"
+                className="h-24 w-full resize-none rounded-lg border border-line bg-bg px-3 pb-10 pt-2 text-[14px] outline-none placeholder:text-faint focus:border-accent/60"
               />
               <VoiceButton value={prompt} onChange={setPrompt} size="sm" className="absolute bottom-2 right-2" />
             </div>
@@ -604,7 +604,7 @@ function BuildPanel({ projectId }: { projectId: string }) {
                 </button>
               </div>
             </div>
-            <p className="mt-2 text-[11.5px] leading-snug text-faint">
+            <p className="mt-2 text-[12px] leading-snug text-faint">
               <span className="hidden sm:inline">⌘ Enter to start · </span>Runs on your Claude subscription via GitHub Actions — usually 3–15 min.
             </p>
             {note && <p className="mt-1.5 text-[12px] text-muted">{note}</p>}
@@ -627,7 +627,7 @@ function BuildPanel({ projectId }: { projectId: string }) {
             ))}
           </div>
         ) : runs.data.runs.length === 0 ? (
-          <div className="px-4 py-10 text-center text-[12.5px] text-faint">No Claude tasks yet. Describe one above — you'll follow it here.</div>
+          <div className="px-4 py-10 text-center text-[13px] text-faint">No Claude tasks yet. Describe one above — you'll follow it here.</div>
         ) : (
           <ul className="divide-y divide-line">
             {runs.data.runs.map((r) => (
@@ -638,7 +638,7 @@ function BuildPanel({ projectId }: { projectId: string }) {
                     {r.status === "working" && <Loader2 size={10} className="animate-spin" />}
                     {STATUS[r.status].label}
                   </span>
-                  <span className="w-full text-[11.5px] text-faint sm:w-auto">
+                  <span className="w-full text-[12px] text-faint sm:w-auto">
                     {r.by ?? "—"} · {ago(r.createdAt)}
                     {r.model && r.model !== "default" ? ` · ${r.model[0]!.toUpperCase()}${r.model.slice(1)}` : ""}
                     {r.minutes ? ` · ${r.minutes} min` : ""}
@@ -729,7 +729,7 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
   return (
     <div className="space-y-3 border-t border-line bg-bg px-4 py-3">
       {pr && (
-        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 text-[12.5px]">
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 text-[13px]">
           {pr.state === "merged" ? <GitMerge size={14} className="text-accent" /> : <GitPullRequest size={14} className={pr.state === "open" ? "text-success" : "text-faint"} />}
           <a href={pr.url} target="_blank" rel="noreferrer" className="min-w-0 flex-1 basis-[60%] truncate hover:underline">
             <span className="num text-faint">#{pr.number}</span> {pr.title ?? pr.branch}
@@ -835,7 +835,7 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
         )}
         {!t.data && <div className="h-16 animate-pulse rounded-lg bg-surface-2" />}
         {working && (
-          <div className="inline-flex items-center gap-2 text-[12.5px] text-muted">
+          <div className="inline-flex items-center gap-2 text-[13px] text-muted">
             <Loader2 size={13} className="animate-spin" /> Claude is working — this updates by itself.
           </div>
         )}
@@ -856,7 +856,7 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
             </div>
           )}
           <div className="relative w-full min-w-0 sm:w-auto sm:flex-1">
-            <input value={reply} onPaste={att.onPaste} onChange={(e) => setReply(e.target.value)} placeholder={pr?.state === "open" ? "Ask Claude to change something in this PR…" : "Reply to Claude — e.g. “go ahead and build it”"} className="h-[38px] w-full min-w-0 rounded-lg border border-line bg-surface pl-3 pr-[72px] text-[13px] outline-none placeholder:text-faint focus:border-accent/60" />
+            <input value={reply} onPaste={att.onPaste} onChange={(e) => setReply(e.target.value)} placeholder={pr?.state === "open" ? "Ask Claude to change something in this PR…" : "Reply to Claude — e.g. “go ahead and build it”"} className="h-[34px] w-full min-w-0 rounded-lg border border-line bg-surface pl-3 pr-[72px] text-[13px] outline-none placeholder:text-faint focus:border-accent/60" />
             <VoiceButton value={reply} onChange={setReply} size="sm" className="absolute right-1 top-1/2 -translate-y-1/2" />
           </div>
           <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
@@ -870,7 +870,7 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
         </form>
       )}
       {msg && <p className={`text-[12px] ${msg.ok ? "text-success" : "text-danger"}`}>{msg.text}</p>}
-      <div className="flex flex-wrap items-center gap-3 text-[11.5px] text-faint">
+      <div className="flex flex-wrap items-center gap-3 text-[12px] text-faint">
         {t.data?.run.jobUrl && (
           <a href={t.data.run.jobUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:text-fg">
             Job log <ExternalLink size={11} />

@@ -76,16 +76,16 @@ function ActivityChart({ weeks: all }: { weeks: Insights["weeks"] }) {
           <div className="text-[13px] font-semibold">Activity per week</div>
           <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
             <span>
-              <span className="num text-[22px] font-semibold leading-none">{sum("commits")}</span> <span className="text-[12px] text-muted">commits</span>
+              <span className="num text-[20px] font-semibold leading-none">{sum("commits")}</span> <span className="text-[12px] text-muted">commits</span>
             </span>
             <span>
-              <span className="num text-[22px] font-semibold leading-none">{sum("merged")}</span> <span className="text-[12px] text-muted">PRs merged</span>
+              <span className="num text-[20px] font-semibold leading-none">{sum("merged")}</span> <span className="text-[12px] text-muted">PRs merged</span>
             </span>
             <span className="text-[12px] text-muted">
               <span className="num text-fg">{sum("opened")}</span> opened
             </span>
           </div>
-          <div className="mt-0.5 text-[11.5px] text-faint">{cur ? `Week of ${label(cur.week)}` : weeks[0] ? `Since ${label(weeks[0].week)}` : "\u00a0"}</div>
+          <div className="mt-0.5 text-[12px] text-faint">{cur ? `Week of ${label(cur.week)}` : weeks[0] ? `Since ${label(weeks[0].week)}` : "\u00a0"}</div>
         </div>
         <span className="ml-auto inline-flex items-center gap-3 pt-0.5 text-[11px] text-faint">
           <span className="inline-flex items-center gap-1">
@@ -109,7 +109,7 @@ function ActivityChart({ weeks: all }: { weeks: Insights["weeks"] }) {
           >
             {(["commits", "merged"] as const).map((k) => (
               <span key={k} className="flex h-full w-full max-w-[14px] flex-col items-center justify-end">
-                {few && w[k] > 0 && <span className="num mb-0.5 text-[10px] leading-none text-muted">{w[k]}</span>}
+                {few && w[k] > 0 && <span className="num mb-0.5 text-[11px] leading-none text-muted">{w[k]}</span>}
                 <span className={`w-full rounded-t-[3px] ${k === "commits" ? "bg-accent" : "bg-line-2"}`} style={{ height: `${w[k] ? Math.max(3, (w[k] / max) * 82) : 0}%` }} />
               </span>
             ))}
@@ -144,7 +144,7 @@ function InsightsView({ projectId }: { projectId: string }) {
           ["CI passing", t.ciSuccessPct === null ? "—" : `${t.ciSuccessPct}%`],
         ].map(([l, v]) => (
           <div key={String(l)} className="rounded-xl border border-line bg-surface px-3 py-3">
-            <div className="truncate text-[11.5px] text-muted">{l}</div>
+            <div className="truncate text-[12px] text-muted">{l}</div>
             <div className="num mt-1 text-[20px] font-semibold">{v}</div>
           </div>
         ))}
@@ -155,13 +155,13 @@ function InsightsView({ projectId }: { projectId: string }) {
           <div className="mb-2 text-[13px] font-semibold">Who's shipping</div>
           <ul className="space-y-1.5">
             {data.people.map((p) => (
-              <li key={p.login} className="flex items-center gap-2 text-[12.5px]">
+              <li key={p.login} className="flex items-center gap-2 text-[13px]">
                 <span className="min-w-0 flex-1 truncate">{p.login}</span>
                 <span className="num text-muted">{p.commits} commits</span>
                 <span className="num text-faint">{p.prs} PRs</span>
               </li>
             ))}
-            {data.people.length === 0 && <li className="text-[12.5px] text-faint">No activity in the last 12 weeks.</li>}
+            {data.people.length === 0 && <li className="text-[13px] text-faint">No activity in the last 12 weeks.</li>}
           </ul>
           {data.lastRun && (
             <a href={data.lastRun.url} target="_blank" rel="noreferrer" className="mt-3 flex items-center gap-2 border-t border-line pt-2 text-[12px] text-muted hover:text-fg">
@@ -177,14 +177,14 @@ function InsightsView({ projectId }: { projectId: string }) {
           <ul className="space-y-1.5">
             {data.openPrs.slice(0, 8).map((p) => (
               <li key={`${p.repo}#${p.number}`}>
-                <a href={p.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-[12.5px] hover:text-fg">
+                <a href={p.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-[13px] hover:text-fg">
                   <GitPullRequest size={13} className={p.draft ? "text-faint" : "text-success"} />
                   <span className="min-w-0 flex-1 truncate text-muted">{p.title}</span>
-                  <span className={`num shrink-0 text-[11.5px] ${p.ageDays > 7 ? "text-warning" : "text-faint"}`}>{p.ageDays}d</span>
+                  <span className={`num shrink-0 text-[12px] ${p.ageDays > 7 ? "text-warning" : "text-faint"}`}>{p.ageDays}d</span>
                 </a>
               </li>
             ))}
-            {data.openPrs.length === 0 && <li className="text-[12.5px] text-faint">No open pull requests.</li>}
+            {data.openPrs.length === 0 && <li className="text-[13px] text-faint">No open pull requests.</li>}
           </ul>
         </section>
         <section className="rounded-xl border border-line bg-surface p-4">
@@ -195,7 +195,7 @@ function InsightsView({ projectId }: { projectId: string }) {
               const pct = total ? Math.round((m.closed / total) * 100) : 0;
               return (
                 <li key={`${m.repo}:${m.title}`}>
-                  <div className="mb-1 flex items-baseline justify-between text-[12.5px]">
+                  <div className="mb-1 flex items-baseline justify-between text-[13px]">
                     <span className="truncate">{m.title}</span>
                     <span className="num text-muted">
                       {pct}% · {m.closed}/{total}
@@ -208,11 +208,11 @@ function InsightsView({ projectId }: { projectId: string }) {
                 </li>
               );
             })}
-            {data.milestones.length === 0 && <li className="text-[12.5px] text-faint">No open milestones on GitHub.</li>}
+            {data.milestones.length === 0 && <li className="text-[13px] text-faint">No open milestones on GitHub.</li>}
           </ul>
         </section>
       </div>
-      <div className="flex flex-wrap items-center gap-2 text-[11.5px] text-faint">
+      <div className="flex flex-wrap items-center gap-2 text-[12px] text-faint">
         From GitHub · {data.repos.join(", ")} · updated {ago(data.at)}
         <button onClick={() => setFresh(Date.now())} className="inline-flex items-center gap-1 text-muted hover:text-fg">
           <RefreshCw size={11} /> Refresh
@@ -337,13 +337,13 @@ function PullsView({ projectId, repo }: { projectId: string; repo: string }) {
   return (
     <div className="space-y-2">
       {filters}
-      {msg && <div className={`rounded-lg border px-3 py-2 text-[12.5px] ${msg.ok ? "border-success/40 bg-success-soft text-success" : "border-danger/40 bg-danger/10 text-danger"}`}>{msg.text}</div>}
+      {msg && <div className={`rounded-lg border px-3 py-2 text-[13px] ${msg.ok ? "border-success/40 bg-success-soft text-success" : "border-danger/40 bg-danger/10 text-danger"}`}>{msg.text}</div>}
       {list.map((p) => (
         <div key={p.number} className={`rounded-xl border border-line bg-surface p-3 ${p.state && p.state !== "open" ? "opacity-90" : ""}`}>
           <div className="flex items-start gap-2.5">
             {p.state === "merged" ? <GitMerge size={15} className="mt-0.5 shrink-0 text-accent" /> : <GitPullRequest size={15} className={`mt-0.5 shrink-0 ${p.state === "closed" ? "text-danger" : p.draft ? "text-faint" : "text-success"}`} />}
             <div className="min-w-0 flex-1">
-              <a href={p.url} target="_blank" rel="noreferrer" className="block truncate text-[13.5px] font-medium hover:underline">
+              <a href={p.url} target="_blank" rel="noreferrer" className="block truncate text-[14px] font-medium hover:underline">
                 {p.title}
               </a>
               <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-muted">
@@ -367,7 +367,7 @@ function PullsView({ projectId, repo }: { projectId: string; repo: string }) {
                 ))}
               </div>
               {(p.state ?? "open") === "open" && (
-              <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11.5px]">
+              <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[12px]">
                 {p.checks && p.checks.total > 0 ? (
                   <span className={p.checks.failed ? "text-danger" : p.checks.pending ? "text-warning" : "text-success"}>
                     {p.checks.failed ? `✕ ${p.checks.failed} check(s) failed` : p.checks.pending ? `● ${p.checks.pending} check(s) running` : `✓ ${p.checks.ok} checks passed`}
@@ -449,7 +449,7 @@ function BranchesView({ projectId, repo }: { projectId: string; repo: string }) 
           <span className="self-center text-[12px] text-faint">Tip: open a task → “Create branch” names it after the task.</span>
         </form>
       )}
-      {msg && <div className="text-[12.5px] text-muted">{msg}</div>}
+      {msg && <div className="text-[13px] text-muted">{msg}</div>}
       <div className="overflow-hidden rounded-xl border border-line bg-surface">
         {data.branches.map((b) => (
           <div key={b.name} className="flex items-center gap-2.5 border-b border-line px-3 py-2 text-[13px] last:border-0">
@@ -459,7 +459,7 @@ function BranchesView({ projectId, repo }: { projectId: string; repo: string }) 
             </a>
             {b.isDefault && <span className="rounded-full bg-accent-soft px-2 py-px text-[11px] text-accent">default</span>}
             {b.protected && <span className="text-[11px] text-faint">protected</span>}
-            {b.pr && <span className={`text-[11.5px] ${b.pr.merged ? "text-accent" : b.pr.state === "open" ? "text-success" : "text-faint"}`}>PR #{b.pr.number} {b.pr.merged ? "merged" : b.pr.state}</span>}
+            {b.pr && <span className={`text-[12px] ${b.pr.merged ? "text-accent" : b.pr.state === "open" ? "text-success" : "text-faint"}`}>PR #{b.pr.number} {b.pr.merged ? "merged" : b.pr.state}</span>}
             {canEdit(user) && !b.isDefault && b.pr && b.pr.state === "closed" && (
               <button
                 onClick={async () => {
@@ -499,7 +499,7 @@ function ActionsView({ projectId, repo }: { projectId: string; repo: string }) {
         <div className="mb-2 text-[13px] font-semibold">Workflows</div>
         <ul className="space-y-1.5">
           {data.workflows.map((w) => (
-            <li key={w.id} className="flex items-center gap-2 text-[12.5px]">
+            <li key={w.id} className="flex items-center gap-2 text-[13px]">
               <span className="min-w-0 flex-1 truncate">{w.name}</span>
               {canEdit(user) && w.canRun ? (
                 <button
@@ -526,7 +526,7 @@ function ActionsView({ projectId, repo }: { projectId: string; repo: string }) {
               )}
             </li>
           ))}
-          {data.workflows.length === 0 && <li className="text-[12.5px] text-faint">No GitHub Actions workflows in this repo.</li>}
+          {data.workflows.length === 0 && <li className="text-[13px] text-faint">No GitHub Actions workflows in this repo.</li>}
         </ul>
         {msg && <p className="mt-2 text-[12px] text-muted">{msg}</p>}
       </section>
@@ -540,7 +540,7 @@ function ActionsView({ projectId, repo }: { projectId: string; repo: string }) {
         <ul className="space-y-1.5">
           {data.runs.map((r) => (
             <li key={r.id}>
-              <a href={r.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-[12.5px] hover:text-fg">
+              <a href={r.url} target="_blank" rel="noreferrer" className="flex items-center gap-2 text-[13px] hover:text-fg">
                 {r.status !== "completed" ? <Loader2 size={13} className="animate-spin text-warning" /> : r.conclusion === "success" ? <Check size={13} className="text-success" /> : <X size={13} className="text-danger" />}
                 <span className="min-w-0 flex-1 truncate text-muted">
                   {r.name} <span className="text-faint">· {r.branch}</span>
@@ -549,7 +549,7 @@ function ActionsView({ projectId, repo }: { projectId: string; repo: string }) {
               </a>
             </li>
           ))}
-          {data.runs.length === 0 && <li className="text-[12.5px] text-faint">No runs yet.</li>}
+          {data.runs.length === 0 && <li className="text-[13px] text-faint">No runs yet.</li>}
         </ul>
       </section>
     </div>
@@ -587,7 +587,7 @@ function DeployView({ projectId }: { projectId: string }) {
                   reload();
                 }
               }}
-              className="inline-flex h-[28px] items-center gap-1.5 rounded-md bg-fg px-3 text-[12.5px] font-medium text-bg disabled:opacity-50"
+              className="inline-flex h-[28px] items-center gap-1.5 rounded-md bg-fg px-3 text-[12px] font-medium text-bg disabled:opacity-50"
             >
               {busy === h.id ? <Loader2 size={13} className="animate-spin" /> : <Rocket size={13} />} Deploy {h.name}
             </button>
@@ -608,7 +608,7 @@ function DeployView({ projectId }: { projectId: string }) {
         ))}
         {data.hooks.length === 0 && <p className="text-[13px] text-muted">No deploy buttons yet{owner ? " — add one below." : " — ask the owner to add one."}</p>}
       </div>
-      {msg && <div className={`rounded-lg border px-3 py-2 text-[12.5px] ${msg.ok ? "border-success/40 bg-success-soft text-success" : "border-danger/40 bg-danger/10 text-danger"}`}>{msg.text}</div>}
+      {msg && <div className={`rounded-lg border px-3 py-2 text-[13px] ${msg.ok ? "border-success/40 bg-success-soft text-success" : "border-danger/40 bg-danger/10 text-danger"}`}>{msg.text}</div>}
       {owner && (
         <form
           className="grid gap-2 rounded-xl border border-line bg-surface p-4 sm:grid-cols-[1fr_2fr]"
@@ -639,7 +639,7 @@ function DeployView({ projectId }: { projectId: string }) {
         <div className="mb-2 text-[13px] font-semibold">Deploy history</div>
         <ul className="space-y-1.5">
           {data.history.map((d) => (
-            <li key={d.id} className="flex items-center gap-2 text-[12.5px]">
+            <li key={d.id} className="flex items-center gap-2 text-[13px]">
               {d.ok ? <Check size={13} className="text-success" /> : <X size={13} className="text-danger" />}
               <span className="min-w-0 flex-1 truncate text-muted">
                 {d.hookName} · {d.actor} <span className="text-faint">· {d.message}</span>
@@ -647,7 +647,7 @@ function DeployView({ projectId }: { projectId: string }) {
               <span className="shrink-0 text-[11px] text-faint">{ago(d.createdAt)}</span>
             </li>
           ))}
-          {data.history.length === 0 && <li className="text-[12.5px] text-faint">No deploys yet.</li>}
+          {data.history.length === 0 && <li className="text-[13px] text-faint">No deploys yet.</li>}
         </ul>
       </section>
     </div>
@@ -671,7 +671,7 @@ export function CodeTab({ projectId, initialSection }: { projectId: string; init
     if (repos.data?.repos.length && !repos.data.repos.find((r) => r.full === repo)) setRepo(repos.data.repos[0]!.full);
   }, [repos.data, repo]);
   const list = repos.data?.repos ?? [];
-  const seg = (on: boolean) => `h-[28px] whitespace-nowrap rounded-md px-2.5 text-[12.5px] ${on ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`;
+  const seg = (on: boolean) => `h-[28px] whitespace-nowrap rounded-md px-2.5 text-[12px] ${on ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`;
   return (
     <div className="space-y-4">
       {/* Zaglavlje: repo (izbor ako ih je više), stanje Claude-a i upravljanje repoima — sve u jednom redu */}
@@ -679,7 +679,7 @@ export function CodeTab({ projectId, initialSection }: { projectId: string; init
         <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
           <GitBranch size={14} className="shrink-0 text-faint" />
           {list.length > 1 ? (
-            <select value={repo} onChange={(e) => setRepo(e.target.value)} className="h-[28px] min-w-0 max-w-full rounded-md border border-line bg-bg px-2 text-[12.5px]" aria-label="Repository">
+            <select value={repo} onChange={(e) => setRepo(e.target.value)} className="h-[28px] min-w-0 max-w-full rounded-md border border-line bg-bg px-2 text-[12px]" aria-label="Repository">
               {list.map((r) => (
                 <option key={r.full} value={r.full}>
                   {r.full}
@@ -706,7 +706,7 @@ export function CodeTab({ projectId, initialSection }: { projectId: string; init
         {(manage || list.length === 0) && canEdit(user) && (
           <div className="space-y-2 border-t border-line px-3 py-3">
             {list.map((r) => (
-              <div key={r.full} className="flex items-center gap-2 text-[12.5px]">
+              <div key={r.full} className="flex items-center gap-2 text-[13px]">
                 <span className="num min-w-0 flex-1 truncate">{r.full}</span>
                 <span className="text-faint">{r.primary ? "main" : (r.label ?? "")}</span>
                 {!r.primary && (

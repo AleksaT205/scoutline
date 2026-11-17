@@ -21,7 +21,7 @@ function Panel({ title, sub, children, className = "" }: { title: string; sub?: 
   return (
     <section className={`min-w-0 rounded-xl border border-line bg-surface p-4 ${className}`}>
       <div className="mb-3">
-        <div className="text-[13.5px] font-medium">{title}</div>
+        <div className="text-[14px] font-medium">{title}</div>
         {sub && <div className="text-[12px] text-faint">{sub}</div>}
       </div>
       {children}
@@ -32,8 +32,8 @@ function Panel({ title, sub, children, className = "" }: { title: string; sub?: 
 function Kpi({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="rounded-xl border border-line bg-surface px-4 py-4">
-      <div className="text-[12.5px] text-muted">{label}</div>
-      <div className="num mt-1.5 text-[28px] font-semibold leading-tight tracking-tight">{value}</div>
+      <div className="text-[13px] text-muted">{label}</div>
+      <div className="num mt-1.5 text-[20px] font-semibold leading-tight tracking-tight sm:text-[28px]">{value}</div>
       {hint && <div className="mt-1 text-xs text-faint">{hint}</div>}
     </div>
   );
@@ -152,16 +152,16 @@ function LeadsChart({ data, days }: { data: Analytics["daily"] | null; days: num
     <section className="min-w-0 rounded-xl border border-line bg-surface p-4 xl:col-span-2">
       <div className="mb-3 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <div className="min-w-0">
-          <div className="text-[13.5px] font-medium">Leads per day</div>
+          <div className="text-[14px] font-medium">Leads per day</div>
           <div className="mt-1 flex items-baseline gap-2">
-            <span className="num text-[26px] font-semibold leading-none tracking-tight">{data && cur ? cur.leads.toLocaleString() : "—"}</span>
-            <span className="text-[12.5px] text-muted">
+            <span className="num text-[24px] font-semibold leading-none tracking-tight">{data && cur ? cur.leads.toLocaleString() : "—"}</span>
+            <span className="text-[13px] text-muted">
               new leads · <span className="num font-medium text-accent">{(cur?.good ?? 0).toLocaleString()}</span> score ≥ 70
             </span>
           </div>
           <div className="mt-1 text-[12px] text-faint">{cur ? (idx === null ? `Today · ${fmtDay(cur.day)}` : fmtDay(cur.day)) : " "}</div>
         </div>
-        <div className="flex items-center gap-3 pt-0.5 text-[11.5px] text-muted">
+        <div className="flex items-center gap-3 pt-0.5 text-[12px] text-muted">
           <span className="inline-flex items-center gap-1.5"><i className="size-2.5 rounded-[3px] bg-line-2" /> all leads</span>
           <span className="inline-flex items-center gap-1.5"><i className="size-2.5 rounded-[3px] bg-accent" /> score ≥ 70</span>
         </div>
@@ -192,7 +192,7 @@ function LeadsChart({ data, days }: { data: Analytics["daily"] | null; days: num
             {ticks.map((t) => (
               <g key={t}>
                 <line x1={pad.left} x2={w - pad.right} y1={y(t)} y2={y(t)} stroke="var(--color-line)" strokeDasharray={t ? "2 5" : undefined} />
-                <text x={pad.left - 8} y={y(t) + 3.5} textAnchor="end" className="num fill-faint text-[10.5px]">
+                <text x={pad.left - 8} y={y(t) + 3.5} textAnchor="end" className="num fill-faint text-[11px]">
                   {t >= 1000 ? `${(t / 1000).toFixed(t % 1000 ? 1 : 0)}k` : Math.round(t)}
                 </text>
               </g>
@@ -209,7 +209,7 @@ function LeadsChart({ data, days }: { data: Analytics["daily"] | null; days: num
               );
             })}
             {labels.map((i) => (
-              <text key={i} x={cx(i)} y={H - 6} textAnchor={n > 6 ? (i === 0 ? "start" : i === n - 1 ? "end" : "middle") : "middle"} className="fill-faint text-[10.5px]">
+              <text key={i} x={cx(i)} y={H - 6} textAnchor={n > 6 ? (i === 0 ? "start" : i === n - 1 ? "end" : "middle") : "middle"} className="fill-faint text-[11px]">
                 {i === n - 1 ? "Today" : shortDay(series[i]!.day)}
               </text>
             ))}
@@ -226,13 +226,13 @@ function LeadsChart({ data, days }: { data: Analytics["daily"] | null; days: num
 
 function HBars({ rows, color = "bg-accent" }: { rows: Array<{ label: string; value: number; extra?: string }>; color?: string }) {
   const max = Math.max(...rows.map((r) => r.value), 1);
-  if (!rows.length) return <div className="py-6 text-center text-[12.5px] text-faint">No data yet</div>;
+  if (!rows.length) return <div className="py-6 text-center text-[13px] text-faint">No data yet</div>;
   const hasExtra = rows.some((r) => r.extra);
   // Kolone poravnate kao tabela: naziv · traka · broj · dodatak (npr. „25% good“)
   return (
     <ul className="space-y-2.5">
       {rows.map((r) => (
-        <li key={r.label} className={`grid items-center gap-x-3 text-[12.5px] ${hasExtra ? "grid-cols-[minmax(0,10rem)_minmax(0,1fr)_3rem_4.5rem]" : "grid-cols-[minmax(0,10rem)_minmax(0,1fr)_3rem]"}`}>
+        <li key={r.label} className={`grid items-center gap-x-3 text-[13px] ${hasExtra ? "grid-cols-[minmax(0,10rem)_minmax(0,1fr)_3rem_4.5rem]" : "grid-cols-[minmax(0,10rem)_minmax(0,1fr)_3rem]"}`}>
           <span className="truncate" title={r.label}>
             {r.label}
           </span>
@@ -274,9 +274,9 @@ export function OverviewPage() {
       <div className="mb-5 flex flex-wrap items-end gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Overview</h1>
-          <p className="mt-0.5 text-[13.5px] text-muted">How your lead flow and outreach are performing.</p>
+          <p className="mt-0.5 text-[14px] text-muted">How your lead flow and outreach are performing.</p>
         </div>
-        <div className="inline-flex rounded-lg border border-line bg-surface p-0.5 text-[12.5px] sm:ml-auto">
+        <div className="inline-flex rounded-lg border border-line bg-surface p-0.5 text-[12px] sm:ml-auto">
           {[7, 30, 90].map((d) => (
             <button key={d} onClick={() => setDays(d)} className={`h-[28px] rounded-md px-3 ${days === d ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}>
               {d} days
@@ -285,7 +285,7 @@ export function OverviewPage() {
         </div>
       </div>
 
-      {error && <div className="mb-4 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[12.5px] text-danger">{error}</div>}
+      {error && <div className="mb-4 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[13px] text-danger">{error}</div>}
 
       <section className="mb-4 grid grid-cols-2 gap-3 xl:grid-cols-4">
         <Kpi label={`Leads · ${days} days`} value={data ? total.toLocaleString() : "—"} hint={data ? `${(total / days).toFixed(1)} per day` : undefined} />
@@ -310,7 +310,7 @@ export function OverviewPage() {
                 const top = (arr[0]![1] as number) || 1;
                 return (
                   <li key={label as string}>
-                    <div className="mb-1 flex justify-between text-[12.5px]">
+                    <div className="mb-1 flex justify-between text-[13px]">
                       <span>{label}</span>
                       <span className="num text-muted">{(value as number).toLocaleString()}</span>
                     </div>

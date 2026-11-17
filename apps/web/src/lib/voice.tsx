@@ -217,7 +217,7 @@ export function VoiceButton({ value, onChange, className = "", size = "md" }: { 
           type="button"
           onClick={() => v.setLang(v.lang === "sr" ? "en" : "sr")}
           disabled={v.active}
-          className="border-l border-line px-1.5 font-mono text-[10.5px] font-semibold tracking-wide text-muted hover:text-fg disabled:opacity-50"
+          className="border-l border-line px-1.5 font-mono text-[11px] font-semibold tracking-wide text-muted hover:text-fg disabled:opacity-50"
           aria-label={`Voice language: ${v.lang === "sr" ? "Serbian" : "English"}. Click to switch.`}
           title="Language you speak — click to switch"
         >
@@ -226,9 +226,9 @@ export function VoiceButton({ value, onChange, className = "", size = "md" }: { 
       </span>
       {v.blocked ? (
         <span role="alertdialog" aria-label="Turn on the microphone" className="absolute right-0 top-full z-20 mt-1.5 w-[280px] rounded-lg border border-line bg-surface p-3 text-left text-[12px] leading-relaxed text-muted shadow-float">
-          <span className="mb-1 flex items-center gap-1.5 text-[12.5px] font-semibold text-fg">
+          <span className="mb-1 flex items-center gap-1.5 text-[13px] font-semibold text-fg">
             <Mic size={13} className="text-danger" /> Microphone isn't available
-            {micReason && <span className="ml-auto font-mono text-[10px] font-normal text-faint">{micReason}</span>}
+            {micReason && <span className="ml-auto font-mono text-[11px] font-normal text-faint">{micReason}</span>}
           </span>
           {micReason === "NotFoundError" || micReason === "OverconstrainedError" ? (
             <>No microphone found. Plug one in, or pick the right one in <b className="text-fg">chrome://settings/content/microphone</b> (the menu at the top), then reload.</>
@@ -248,17 +248,17 @@ export function VoiceButton({ value, onChange, className = "", size = "md" }: { 
             </>
           )}
           <span className="mt-2 flex gap-2">
-            <button type="button" onClick={() => window.location.reload()} className="rounded-md bg-fg px-2.5 py-1 text-[11.5px] font-medium text-bg hover:opacity-90">
+            <button type="button" onClick={() => window.location.reload()} className="rounded-md bg-fg px-2.5 py-1 text-[12px] font-medium text-bg hover:opacity-90">
               Reload
             </button>
-            <button type="button" onClick={v.clearError} className="rounded-md border border-line px-2.5 py-1 text-[11.5px] hover:text-fg">
+            <button type="button" onClick={v.clearError} className="rounded-md border border-line px-2.5 py-1 text-[12px] hover:text-fg">
               Close
             </button>
           </span>
         </span>
       ) : (
         v.error && (
-          <span role="status" className="absolute right-0 top-full z-10 mt-1 w-max max-w-[260px] rounded-md border border-danger/40 bg-surface px-2 py-1 text-[11.5px] text-danger shadow-float">
+          <span role="status" className="absolute right-0 top-full z-10 mt-1 w-max max-w-[260px] rounded-md border border-danger/40 bg-surface px-2 py-1 text-[12px] text-danger shadow-float">
             {v.error}
           </span>
         )

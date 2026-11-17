@@ -21,7 +21,7 @@ function PageHead({ title, sub, children }: { title: React.ReactNode; sub?: Reac
     <div className="mb-5 flex flex-wrap items-end gap-4">
       <div className="min-w-0">
         <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-        {sub && <p className="mt-0.5 text-[13.5px] text-muted">{sub}</p>}
+        {sub && <p className="mt-0.5 text-[14px] text-muted">{sub}</p>}
       </div>
       {children && <div className="flex gap-2 sm:ml-auto">{children}</div>}
     </div>
@@ -207,7 +207,7 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
             </label>
           )}
           {f.repoUrl.trim() && (
-            <label className="flex items-start gap-2 rounded-lg border border-line bg-bg p-2.5 text-[12.5px] text-muted sm:col-span-2">
+            <label className="flex items-start gap-2 rounded-lg border border-line bg-bg p-2.5 text-[13px] text-muted sm:col-span-2">
               <input type="checkbox" checked={f.githubSync} onChange={(e) => setF({ ...f, githubSync: e.target.checked })} className="mt-0.5 accent-[var(--accent)]" />
               <span>
                 <b className="font-medium text-fg">Two-way GitHub sync</b> — GitHub issues become tasks automatically, and changes here (status, title, assignee, labels) are written back to GitHub. Use it when the team works on GitHub.
@@ -215,7 +215,7 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
             </label>
           )}
           {f.repoUrl.trim() && !f.githubSync && (
-            <label className="inline-flex items-center gap-2 text-[12.5px] text-muted sm:col-span-2">
+            <label className="inline-flex items-center gap-2 text-[13px] text-muted sm:col-span-2">
               <input type="checkbox" checked={f.githubImport} onChange={(e) => setF({ ...f, githubImport: e.target.checked })} className="accent-[var(--accent)]" />
               Import new GitHub issues from this repo into the Inbox (pull requests are always linked by issue key)
             </label>
@@ -319,12 +319,12 @@ export function ProjectsPage() {
           ["Due in 14 days", String((data ?? []).filter((p) => p.dueDate && p.status !== "done" && Date.parse(p.dueDate) - Date.now() < 14 * 86_400_000).length)],
         ].map(([l, v]) => (
           <div key={l} className="rounded-xl border border-line bg-surface px-4 py-4">
-            <div className="text-[12.5px] text-muted">{l}</div>
-            <div className="num mt-1.5 text-[26px] font-semibold leading-tight tracking-tight">{data ? v : "—"}</div>
+            <div className="text-[13px] text-muted">{l}</div>
+            <div className="num mt-1.5 text-[20px] font-semibold leading-tight tracking-tight sm:text-[28px]">{data ? v : "—"}</div>
           </div>
         ))}
       </section>
-      <div className="mb-3 inline-flex rounded-lg border border-line bg-surface p-0.5 text-[12.5px]">
+      <div className="mb-3 inline-flex rounded-lg border border-line bg-surface p-0.5 text-[12px]">
         {(["open", "all"] as const).map((s) => (
           <button key={s} onClick={() => setFilter(s)} className={`h-[28px] rounded-md px-3 ${filter === s ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}>
             {s === "open" ? "In progress" : "All"}
@@ -339,7 +339,7 @@ export function ProjectsPage() {
                 <ProgressRing value={p.progress} size={34} />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-1.5">
-                    <span className="num rounded bg-surface-2 px-1.5 py-px text-[10.5px] text-muted ring-1 ring-line">{p.key}</span>
+                    <span className="num rounded bg-surface-2 px-1.5 py-px text-[11px] text-muted ring-1 ring-line">{p.key}</span>
                     <ProjectStatusPill status={p.status} />
                   </div>
                   <div className="mt-1 line-clamp-2 text-[14px] font-medium leading-snug">{p.name}</div>
@@ -408,8 +408,8 @@ export function ProjectsPage() {
                 <tr>
                   <td colSpan={6} className="px-6 py-14 text-center">
                     <FolderKanban size={22} className="mx-auto mb-2 text-faint" />
-                    <div className="text-[13.5px] font-medium">No projects yet</div>
-                    <p className="mt-1 text-[12.5px] text-muted">Create one, open a won lead and click “Create project”, or add a sample project to try everything.</p>
+                    <div className="text-[14px] font-medium">No projects yet</div>
+                    <p className="mt-1 text-[13px] text-muted">Create one, open a won lead and click “Create project”, or add a sample project to try everything.</p>
                   </td>
                 </tr>
               )}
@@ -504,7 +504,7 @@ export function ProjectPage({ id }: { id: string }) {
   if (project.error) return <ErrorNote>{project.error}</ErrorNote>;
   return (
     <>
-      <a href="#/delivery" className="-ml-1.5 mb-1.5 inline-flex h-[28px] items-center gap-1 rounded-md px-1.5 text-[12.5px] text-muted hover:bg-surface-2 hover:text-fg">
+      <a href="#/delivery" className="-ml-1.5 mb-1.5 inline-flex h-[28px] items-center gap-1 rounded-md px-1.5 text-[12px] text-muted hover:bg-surface-2 hover:text-fg">
         <ArrowLeft size={13} /> Projects
       </a>
       <div className="mb-4 flex flex-wrap items-start gap-x-4 gap-y-3">
@@ -514,7 +514,7 @@ export function ProjectPage({ id }: { id: string }) {
             <h1 className="truncate text-2xl font-semibold tracking-tight">{p?.name ?? "…"}</h1>
           </div>
           {p && (
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px] text-muted">
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-muted">
               {editable ? (
                 <Menu
                   label="Project status"
@@ -581,7 +581,7 @@ export function ProjectPage({ id }: { id: string }) {
           )}
           {editable && p && (
             <button onClick={() => setNewOpen("todo")} className={`${btnPrimary} order-first sm:order-none`} title="Shortcut: C">
-              <Plus size={14} /> New task <kbd className="ml-1 hidden rounded border border-bg/30 px-1 text-[10px] opacity-70 sm:inline">C</kbd>
+              <Plus size={14} /> New task <kbd className="ml-1 hidden rounded border border-bg/30 px-1 text-[11px] opacity-70 sm:inline">C</kbd>
             </button>
           )}
         </div>
@@ -589,7 +589,7 @@ export function ProjectPage({ id }: { id: string }) {
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="w-full overflow-x-auto sm:w-auto [scrollbar-width:none]">
-        <div className="flex w-full whitespace-nowrap rounded-lg border border-line bg-surface p-0.5 text-[12.5px] sm:inline-flex sm:w-auto">
+        <div className="flex w-full whitespace-nowrap rounded-lg border border-line bg-surface p-0.5 text-[12px] sm:inline-flex sm:w-auto">
           {(
             [
               ["overview", "Overview", FolderKanban],
@@ -630,7 +630,7 @@ export function ProjectPage({ id }: { id: string }) {
             <div className="min-w-0 space-y-4">
               <div className="rounded-xl border border-line bg-surface p-5">
                 <div className="mb-2 text-[12px] font-medium uppercase tracking-wider text-faint">Description</div>
-                <div className="whitespace-pre-wrap text-[13.5px] leading-relaxed text-muted">{p.description || "No description yet. Click Edit to add the goal and scope."}</div>
+                <div className="whitespace-pre-wrap text-[14px] leading-relaxed text-muted">{p.description || "No description yet. Click Edit to add the goal and scope."}</div>
               </div>
               <DocsCard projectId={p.id} />
               <ReleaseNotesCard projectId={p.id} />
@@ -679,7 +679,7 @@ export function MyIssuesPage() {
         )}
       </PageHead>
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div className="inline-flex rounded-lg border border-line bg-surface p-0.5 text-[12.5px]">
+        <div className="inline-flex rounded-lg border border-line bg-surface p-0.5 text-[12px]">
           {(["me", "all"] as const).map((s) => (
             <button
               key={s}
@@ -692,7 +692,7 @@ export function MyIssuesPage() {
             </button>
           ))}
         </div>
-        <div className="ml-auto inline-flex rounded-lg border border-line bg-surface p-0.5 text-[12.5px]">
+        <div className="ml-auto inline-flex rounded-lg border border-line bg-surface p-0.5 text-[12px]">
           {(["list", "board"] as const).map((v) => (
             <button key={v} onClick={() => setView(v)} className={`h-[28px] rounded-md px-3 capitalize ${view === v ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}>
               {v}
@@ -819,7 +819,7 @@ export function ClientsPage() {
                 <div className="truncate text-[12px] text-muted">{c.contactName ?? c.contactEmail ?? "No contact yet"}</div>
               </div>
               {canEdit(user) && (
-                <button onClick={() => setEdit(c)} className="grid size-8 place-items-center rounded-md text-faint hover:bg-surface-2 hover:text-fg" aria-label={`Edit ${c.name}`}>
+                <button onClick={() => setEdit(c)} className="grid size-[28px] place-items-center rounded-md text-faint hover:bg-surface-2 hover:text-fg" aria-label={`Edit ${c.name}`}>
                   <Pencil size={14} />
                 </button>
               )}
@@ -860,7 +860,7 @@ export function ClientsPage() {
                         </a>
                       )}
                     </div>
-                    {c.leadId && <div className="mt-0.5 pl-9 text-[11.5px] text-faint">Won from a lead</div>}
+                    {c.leadId && <div className="mt-0.5 pl-9 text-[12px] text-faint">Won from a lead</div>}
                   </td>
                   <td className="hidden px-3 py-2.5 text-muted md:table-cell">
                     {c.contactName ?? "—"}
@@ -888,8 +888,8 @@ export function ClientsPage() {
                 <tr>
                   <td colSpan={5} className="px-6 py-14 text-center">
                     <Users size={22} className="mx-auto mb-2 text-faint" />
-                    <div className="text-[13.5px] font-medium">No clients yet</div>
-                    <p className="mt-1 text-[12.5px] text-muted">They’re added automatically when you create a project from a won lead.</p>
+                    <div className="text-[14px] font-medium">No clients yet</div>
+                    <p className="mt-1 text-[13px] text-muted">They’re added automatically when you create a project from a won lead.</p>
                   </td>
                 </tr>
               )}

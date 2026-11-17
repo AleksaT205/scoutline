@@ -78,7 +78,7 @@ export function TierBadge({ tier }: { tier: Tier | null }) {
   const strong = tier === "T1";
   return (
     <span
-      className={`rounded px-1.5 py-px font-mono text-[10.5px] font-medium ring-1 ring-inset ${
+      className={`rounded px-1.5 py-px font-mono text-[11px] font-medium ring-1 ring-inset ${
         strong ? "bg-accent-soft text-accent ring-accent/40" : "text-muted ring-line-2"
       }`}
     >
@@ -89,7 +89,7 @@ export function TierBadge({ tier }: { tier: Tier | null }) {
 
 export function Tag({ children }: { children: React.ReactNode }) {
   return (
-    <span className="whitespace-nowrap rounded-full border border-line bg-surface-2 px-2 py-0.5 text-[11.5px] text-muted">
+    <span className="whitespace-nowrap rounded-full border border-line bg-surface-2 px-2 py-0.5 text-[12px] text-muted">
       {children}
     </span>
   );
@@ -113,7 +113,7 @@ export function TypeBadge({ type }: { type: LeadType | undefined }) {
   if (!type) return null;
   const m = TYPE_META[type];
   return (
-    <span title={m.hint} className={`whitespace-nowrap rounded-full px-1.5 py-px text-[10.5px] font-medium ring-1 ring-inset ${m.cls}`}>
+    <span title={m.hint} className={`whitespace-nowrap rounded-full px-1.5 py-px text-[11px] font-medium ring-1 ring-inset ${m.cls}`}>
       {m.short}
     </span>
   );
@@ -129,5 +129,5 @@ export function DeadlineChip({ deadline }: { deadline: string | null | undefined
   const d = daysLeft(deadline);
   if (d === null) return null;
   const cls = d <= 5 ? "text-danger" : d <= 14 ? "text-warning" : "text-muted";
-  return <span className={`num whitespace-nowrap text-[11.5px] ${cls}`}>{d < 0 ? "Closed" : d === 0 ? "Due today" : `${d}d left`}</span>;
+  return <span className={`num whitespace-nowrap text-[12px] ${cls}`}>{d < 0 ? "Closed" : d === 0 ? "Due today" : `${d}d left`}</span>;
 }

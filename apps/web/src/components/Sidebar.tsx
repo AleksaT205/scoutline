@@ -33,10 +33,10 @@ const workspace = [
 function NavItem({ label, icon: Icon, count, active, href, soon }: { label: string; icon: typeof Search; count?: number; active?: boolean; href?: string; soon?: boolean }) {
   if (soon) {
     return (
-      <span className="flex cursor-default items-center gap-2.5 rounded-md px-2 py-[7px] text-[13.5px] text-faint" title="Coming soon">
+      <span className="flex cursor-default items-center gap-2.5 rounded-md px-2 py-[7px] text-[13px] text-faint" title="Coming soon">
         <Icon size={16} strokeWidth={1.8} />
         {label}
-        <span className="ml-auto text-[10px] uppercase tracking-wider">soon</span>
+        <span className="ml-auto text-[11px] uppercase tracking-wider">soon</span>
       </span>
     );
   }
@@ -46,7 +46,7 @@ function NavItem({ label, icon: Icon, count, active, href, soon }: { label: stri
       onMouseEnter={() => href && prefetchHref(href)}
       onFocus={() => href && prefetchHref(href)}
       onTouchStart={() => href && prefetchHref(href)}
-      className={`flex items-center gap-2.5 rounded-md px-2 py-[7px] text-[13.5px] transition-colors ${
+      className={`flex items-center gap-2.5 rounded-md px-2 py-[7px] text-[13px] transition-colors ${
         active ? "bg-surface-2 text-fg ring-1 ring-line ring-inset" : "text-muted hover:bg-surface-2 hover:text-fg"
       }`}
     >
@@ -102,21 +102,21 @@ export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: {
           </div>
           )}
           <span className="min-w-0 truncate">{org?.name || "Scoutline"}</span>
-          {org?.name ? <span className="ml-auto text-[10.5px] font-normal text-faint max-lg:hidden">Scoutline</span> : <span className="ml-auto rounded border border-line px-1.5 text-[11px] font-normal text-faint">Beta</span>}
+          {org?.name ? <span className="ml-auto text-[11px] font-normal text-faint max-lg:hidden">Scoutline</span> : <span className="ml-auto rounded border border-line px-1.5 text-[11px] font-normal text-faint">Beta</span>}
           <button className="-mr-1.5 ml-auto grid size-[34px] shrink-0 place-items-center rounded-lg text-muted hover:bg-surface-2 lg:hidden" onClick={onClose} aria-label="Close menu">
             <X size={16} />
           </button>
         </div>
         {/* Prostor: prodaja (leadovi) ili isporuka (projekti) — kao timovi u Linear-u */}
         {!only && (
-        <div className="grid grid-cols-2 rounded-lg border border-line bg-surface p-0.5 text-[12.5px]" role="tablist" aria-label="Workspace area">
+        <div className="grid grid-cols-2 rounded-lg border border-line bg-surface p-0.5 text-[13px] lg:text-[12px]" role="tablist" aria-label="Workspace area">
           {(
             [
               ["Sales", "#/", !DELIVERY_PAGES.includes(page)],
               ["Delivery", "#/delivery", DELIVERY_PAGES.includes(page)],
             ] as const
           ).map(([label, href, on]) => (
-            <a key={label} href={href} onMouseEnter={() => prefetchHref(href)} onTouchStart={() => prefetchHref(href)} role="tab" aria-selected={on} className={`rounded-md py-1.5 text-center transition-colors lg:py-1 ${on ? "bg-surface-2 font-medium text-fg ring-1 ring-line ring-inset" : "text-muted hover:text-fg"}`}>
+            <a key={label} href={href} onMouseEnter={() => prefetchHref(href)} onTouchStart={() => prefetchHref(href)} role="tab" aria-selected={on} className={`flex h-[34px] items-center justify-center rounded-md transition-colors lg:h-[28px] ${on ? "bg-surface-2 font-medium text-fg ring-1 ring-line ring-inset" : "text-muted hover:text-fg"}`}>
               {label}
             </a>
           ))}

@@ -89,7 +89,7 @@ export function AttachButton({ onFiles, className }: { onFiles: (f: FileList) =>
           e.target.value = "";
         }}
       />
-      <button type="button" onClick={() => input.current?.click()} className={className ?? "inline-flex h-[34px] items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 text-[12.5px] text-muted hover:text-fg"} title="Add an image from your computer (or paste one with ⌘V)" aria-label="Add image">
+      <button type="button" onClick={() => input.current?.click()} className={className ?? "inline-flex h-[34px] items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 text-[13px] text-muted hover:text-fg"} title="Add an image from your computer (or paste one with ⌘V)" aria-label="Add image">
         <ImagePlus size={14} /> <span className="hidden sm:inline">Image</span>
       </button>
     </>
@@ -109,7 +109,7 @@ export function AttachedThumbs({ items, onRemove }: { items: Attached[]; onRemov
               <Loader2 size={16} className="animate-spin text-white drop-shadow" />
             </span>
           )}
-          {x.error && <span className="absolute inset-x-0 bottom-0 bg-danger/90 px-1 text-[9.5px] leading-tight text-white">{x.error}</span>}
+          {x.error && <span className="absolute inset-x-0 bottom-0 bg-danger/90 px-1 text-[11px] leading-tight text-white">{x.error}</span>}
           <button type="button" onClick={() => onRemove(x.key)} className="absolute right-0.5 top-0.5 grid size-5 place-items-center rounded-full bg-black/60 text-white hover:bg-black/80" aria-label={`Remove ${x.name}`}>
             <X size={11} />
           </button>

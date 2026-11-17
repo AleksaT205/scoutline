@@ -8,10 +8,10 @@ function Card({ label, value, trend, children, glow }: { label: string; value: s
       {glow && (
         <div className="pointer-events-none absolute -top-24 -right-16 size-56 rounded-full bg-[radial-gradient(circle,var(--accent-soft),transparent_65%)]" />
       )}
-      <div className="truncate text-[12px] text-muted sm:text-[12.5px]">{label}</div>
+      <div className="truncate text-[12px] text-muted sm:text-[13px]">{label}</div>
       <div className="flex items-end justify-between gap-2.5">
         <div>
-          <div className="num mt-1 text-[22px] font-semibold leading-tight tracking-tight sm:mt-1.5 sm:text-[30px]">{value}</div>
+          <div className="num mt-1 text-[20px] font-semibold leading-tight tracking-tight sm:mt-1.5 sm:text-[28px]">{value}</div>
           <div className="mt-1 truncate text-[11px] sm:mt-1.5 sm:text-xs">{trend}</div>
         </div>
         <div className="hidden sm:block">{children}</div>

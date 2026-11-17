@@ -35,7 +35,7 @@ Radijusi: 6 px (dugmad, inputi), 10 px (kartice), 14 px (modali).
 ## Tipografija
 
 - **Geist** (ili Inter) za UI, **Geist Mono** za brojeve/ID-jeve/kod.
-- Veličine: 12 (labela) · 13 (tabela) · 14 (tekst) · 16 (naslov sekcije) · 24 (naslov strane) · 32 (KPI).
+- Veličine (samo ove, u px): **11** oznake i brojači · **12** sporedni tekst i kontrole od 28px · **13** osnovni tekst i kontrole od 34px · **14** naslovi kartica, opis stranice, duži tekst · **16** naslovi dijaloga · **20 / 24 / 28** naslovi i velike brojke (KPI: 20 na telefonu, 28 na računaru). Polovične veličine (12.5, 13.5…) se ne koriste.
 - Težine samo 400 / 500 / 600.
 
 ## Komponente i biblioteke

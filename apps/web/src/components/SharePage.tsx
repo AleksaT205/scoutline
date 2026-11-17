@@ -35,7 +35,7 @@ export function SharePage({ token }: { token: string }) {
           </svg>
         </div>
         <span className="font-semibold tracking-tight">Scoutline</span>
-        <span className="ml-2 inline-flex items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[11.5px] text-muted">
+        <span className="ml-2 inline-flex items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[12px] text-muted">
           <Eye size={12} /> View only
         </span>
         <input
@@ -54,7 +54,7 @@ export function SharePage({ token }: { token: string }) {
         ) : (
           <>
             <h1 className="text-2xl font-semibold tracking-tight">{data?.label ?? "Shared leads"}</h1>
-            <p className="mt-0.5 mb-5 text-[13.5px] text-muted">{data ? `${data.items.length} leads, scored and ranked.` : "Loading…"}</p>
+            <p className="mt-0.5 mb-5 text-[14px] text-muted">{data ? `${data.items.length} leads, scored and ranked.` : "Loading…"}</p>
             <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_380px]">
               <LeadsTable leads={items} selectedId={selected?.id} onSelect={setSelectedId} />
               {selected && (
@@ -63,7 +63,7 @@ export function SharePage({ token }: { token: string }) {
                     <ScoreRing score={selected.score} size={56} stroke={5} />
                     <div className="min-w-0">
                       <div className="text-base font-semibold leading-snug tracking-tight">{selected.title}</div>
-                      <div className="mt-1 text-[12.5px] text-muted">
+                      <div className="mt-1 text-[13px] text-muted">
                         {selected.company} · {flag(selected.country)} {selected.city}
                       </div>
                       <div className="text-[12px] text-faint">

@@ -90,7 +90,7 @@ export function TerminalView({ projectId, repo }: { projectId: string; repo: str
     <section className="overflow-hidden rounded-xl border border-line bg-surface">
       <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2.5">
         <TerminalIcon size={15} className="text-accent" />
-        <span className="text-[13.5px] font-medium">Terminal</span>
+        <span className="text-[14px] font-medium">Terminal</span>
         <span className="hidden text-[12px] text-faint sm:inline">runs on a clean Linux machine (GitHub Actions) with this repo and Node 20 · read-only, no secrets</span>
         <span className="ml-auto flex items-center gap-3">
           {entries.length > 0 && (
@@ -109,7 +109,7 @@ export function TerminalView({ projectId, repo }: { projectId: string; repo: str
           </a>
         </span>
       </div>
-      <div className="max-h-[520px] min-h-[200px] space-y-3 overflow-y-auto bg-[#0d0d10] px-4 py-3 font-mono text-[12.5px] leading-relaxed text-[#d7d7db]">
+      <div className="max-h-[520px] min-h-[200px] space-y-3 overflow-y-auto bg-[#0d0d10] px-4 py-3 font-mono text-[13px] leading-relaxed text-[#d7d7db]">
         {ordered.length === 0 && <div className="text-[#7c7c86]">Type a command below — e.g. <span className="text-[#c3b5ff]">npm install && npm run build</span>. Output appears when it finishes (usually 20–60 s).</div>}
         {ordered.map((e) => (
           <div key={e.id}>
@@ -151,7 +151,7 @@ export function TerminalView({ projectId, repo }: { projectId: string; repo: str
           }}
         >
           <div className="flex flex-wrap gap-2">
-            <select value={ref} onChange={(e) => setRef(e.target.value)} className="h-[34px] max-w-[200px] rounded-lg border border-line bg-bg px-2 font-mono text-[12.5px]" aria-label="Branch">
+            <select value={ref} onChange={(e) => setRef(e.target.value)} className="h-[34px] max-w-[200px] rounded-lg border border-line bg-bg px-2 font-mono text-[13px]" aria-label="Branch">
               <option value="">{branches[0] ? `${branches[0]} (default)` : "default branch"}</option>
               {branches.slice(1).map((b) => (
                 <option key={b} value={b}>
@@ -188,7 +188,7 @@ export function TerminalView({ projectId, repo }: { projectId: string; repo: str
           </div>
           <div className="flex flex-wrap gap-1.5">
             {QUICK.map((x) => (
-              <button key={x} type="button" onClick={() => void run(x)} className="rounded-full border border-line bg-bg px-2.5 py-1 font-mono text-[11.5px] text-muted hover:border-accent/50 hover:text-fg">
+              <button key={x} type="button" onClick={() => void run(x)} className="rounded-full border border-line bg-bg px-2.5 py-1 font-mono text-[12px] text-muted hover:border-accent/50 hover:text-fg">
                 {x}
               </button>
             ))}

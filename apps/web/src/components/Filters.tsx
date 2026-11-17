@@ -204,11 +204,11 @@ function useDismiss(open: boolean, ref: React.RefObject<HTMLElement | null>, clo
 
 /** Dugme u traci filtera (34px): neutralno ili istaknuto kad je filter uključen. */
 const toolBtn = (active: boolean) =>
-  `inline-flex h-[34px] items-center gap-1.5 whitespace-nowrap rounded-lg border px-2.5 text-[12.5px] transition-colors ${active ? "border-accent/50 bg-accent-soft text-fg" : "border-line bg-surface text-muted hover:bg-surface-2 hover:text-fg"}`;
+  `inline-flex h-[34px] items-center gap-1.5 whitespace-nowrap rounded-lg border px-2.5 text-[13px] transition-colors ${active ? "border-accent/50 bg-accent-soft text-fg" : "border-line bg-surface text-muted hover:bg-surface-2 hover:text-fg"}`;
 
 function Option({ selected, onClick, children, hint, count }: { selected: boolean; onClick: () => void; children: React.ReactNode; hint?: string; count?: number }) {
   return (
-    <button type="button" role="option" aria-selected={selected} onClick={onClick} title={hint} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[12.5px] text-muted hover:bg-surface-2 hover:text-fg">
+    <button type="button" role="option" aria-selected={selected} onClick={onClick} title={hint} className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-[13px] text-muted hover:bg-surface-2 hover:text-fg">
       <span className={`grid size-4 shrink-0 place-items-center rounded ${selected ? "bg-accent text-white" : "border border-line-2"}`}>{selected && <Check size={11} strokeWidth={3} />}</span>
       <span className="min-w-0 flex-1 truncate">{children}</span>
       {count !== undefined && <span className="num text-[11px] text-faint">{count}</span>}
@@ -224,7 +224,7 @@ export function FilterChip({ on, onClick, title, children, count }: { on: boolea
       onClick={onClick}
       title={title}
       aria-pressed={on}
-      className={`inline-flex h-[28px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 text-[12.5px] transition-colors ${on ? "border-accent/55 bg-accent-soft text-fg" : "border-line bg-surface text-muted hover:bg-surface-2 hover:text-fg"}`}
+      className={`inline-flex h-[28px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md border px-2.5 text-[12px] transition-colors ${on ? "border-accent/55 bg-accent-soft text-fg" : "border-line bg-surface text-muted hover:bg-surface-2 hover:text-fg"}`}
     >
       {children}
       {count !== undefined && <span className="num text-[11px] text-faint">{count}</span>}
@@ -241,7 +241,42 @@ function Group({ label, children, className = "" }: { label: string; children: R
     </div>
   );
 }
-const panelSelect = "h-[34px] w-full rounded-lg border border-line bg-bg px-2 text-[13px] text-fg outline-none focus:border-accent/60";
+/** Padajuća lista u panelu — isti izgled kao meniji Score i Posted (umesto sistemske liste pregledača). */
+function PanelSelect({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: ReadonlyArray<readonly [string, string]> }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  useDismiss(open, ref, () => setOpen(false));
+  const list = useRef<HTMLDivElement>(null);
+  // Na telefonu je panel list koji se skroluje — otvorenu listu dovedi u vidno polje
+  useEffect(() => {
+    if (open) list.current?.scrollIntoView({ block: "nearest" });
+  }, [open]);
+  const current = options.find(([k]) => k === value)?.[1] ?? value;
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`${label}: ${current}`}
+        className={`flex h-[34px] w-full items-center justify-between gap-2 rounded-lg border bg-bg px-2.5 text-left text-[13px] text-fg outline-none transition-colors focus-visible:border-accent/60 ${open ? "border-accent/55" : "border-line hover:bg-surface-2"}`}
+      >
+        <span className="min-w-0 truncate">{current}</span>
+        <ChevronDown size={13} className={`shrink-0 text-faint transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div ref={list} className="absolute inset-x-0 z-40 mt-1 max-h-64 scroll-mb-3 overflow-y-auto rounded-xl border border-line bg-surface p-1 shadow-float" role="listbox" aria-label={label}>
+          {options.map(([k, l]) => (
+            <Option key={k} selected={k === value} onClick={() => (onChange(k), setOpen(false))}>
+              {l}
+            </Option>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 const toggle = <T,>(set: Set<T>, v: T) => {
   const n = new Set(set);
@@ -327,8 +362,8 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
         </div>
         <button type="button" onClick={() => setMoreOpen((o) => !o)} aria-expanded={moreOpen} aria-haspopup="dialog" className={`${toolBtn(panelCount > 0)} flex-1 justify-center sm:flex-none`}>
           <SlidersHorizontal size={13} /> Filters
-          {panelCount > 0 && <span className="num hidden size-[16px] place-items-center rounded-full bg-accent text-[10px] font-semibold text-white sm:grid">{panelCount}</span>}
-          {panelCount + quickCount > 0 && <span className="num grid size-[16px] place-items-center rounded-full bg-accent text-[10px] font-semibold text-white sm:hidden">{panelCount + quickCount}</span>}
+          {panelCount > 0 && <span className="num hidden size-[16px] place-items-center rounded-full bg-accent text-[11px] font-semibold text-white sm:grid">{panelCount}</span>}
+          {panelCount + quickCount > 0 && <span className="num grid size-[16px] place-items-center rounded-full bg-accent text-[11px] font-semibold text-white sm:hidden">{panelCount + quickCount}</span>}
         </button>
         <div className="flex flex-1 sm:hidden">
           <FilterMenu block align="right" label="Sort" value={`${SORTS.find(([k]) => k === value.sortBy)?.[1] ?? "Score"} ${value.sortDir === "desc" ? "↓" : "↑"}`} active={value.sortBy !== "score" || value.sortDir !== "desc"}>
@@ -357,7 +392,7 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
             {TYPE_META[t].label}
           </FilterChip>
         ))}
-        <span className="ml-auto whitespace-nowrap pl-2 pr-1 text-[12.5px] text-faint" aria-live="polite">
+        <span className="ml-auto whitespace-nowrap pl-2 pr-1 text-[13px] text-faint" aria-live="polite">
           <span className="num font-medium text-fg">{shown}</span> of <span className="num">{all.length}</span> leads
         </span>
       </div>
@@ -391,7 +426,7 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
                 <X size={16} />
               </button>
             </div>
-            <div className="grid gap-x-6 gap-y-4 overflow-y-auto p-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-x-6 gap-y-4 p-4 max-sm:overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
               <div className="space-y-4">
               <Group label="Score" className="sm:hidden">
                 <div className="flex flex-wrap gap-1.5">
@@ -419,22 +454,16 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
                     </FilterChip>
                   ))}
                 </div>
-                <label className="mt-2 flex cursor-pointer items-center gap-2 text-[12.5px] text-muted" title="Sakrij oglase koji ne navode budžet">
+                <label className="mt-2 flex cursor-pointer items-center gap-2 text-[13px] text-muted" title="Sakrij oglase koji ne navode budžet">
                   <input type="checkbox" checked={value.budgetKnownOnly} onChange={(e) => set({ budgetKnownOnly: e.target.checked })} className="size-4 accent-[var(--accent)]" />
                   Only with a stated budget
                 </label>
               </Group>
                 <Group label="Status">
-                  <select value={value.status} onChange={(e) => set({ status: e.target.value })} className={panelSelect} aria-label="Status">
-                    {STATUSES.map(([k, l]) => (
-                      <option key={k} value={k}>
-                        {l}
-                      </option>
-                    ))}
-                  </select>
+                  <PanelSelect label="Status" value={value.status} onChange={(v) => set({ status: v })} options={STATUSES} />
                 </Group>
                 <Group label="Work mode">
-                  <label className="flex cursor-pointer items-center gap-2 text-[12.5px] text-muted">
+                  <label className="flex cursor-pointer items-center gap-2 text-[13px] text-muted">
                     <input type="checkbox" checked={value.remoteOnly} onChange={(e) => set({ remoteOnly: e.target.checked })} className="size-4 accent-[var(--accent)]" />
                     Remote-friendly only
                   </label>
@@ -459,33 +488,19 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
                 </div>
               </Group>
               <Group label="Service">
-                <select value={value.category} onChange={(e) => set({ category: e.target.value })} className={panelSelect} aria-label="Service">
-                  <option value="all">All services</option>
-                  {SERVICE_CATEGORIES.filter((c) => c !== "not_relevant").map((c) => (
-                    <option key={c} value={c}>
-                      {CATEGORY_LABEL[c]}
-                    </option>
-                  ))}
-                </select>
+                <PanelSelect label="Service" value={value.category} onChange={(v) => set({ category: v })} options={[["all", "All services"], ...SERVICE_CATEGORIES.filter((c) => c !== "not_relevant").map((c) => [c, CATEGORY_LABEL[c]] as const)]} />
               </Group>
               <Group label="Industry">
-                <select value={value.industry} onChange={(e) => set({ industry: e.target.value })} className={panelSelect} aria-label="Industry">
-                  <option value="all">All industries</option>
-                  {INDUSTRIES.map((i) => (
-                    <option key={i} value={i}>
-                      {cap(i)}
-                    </option>
-                  ))}
-                </select>
+                <PanelSelect label="Industry" value={value.industry} onChange={(v) => set({ industry: v })} options={[["all", "All industries"], ...INDUSTRIES.map((i) => [i, cap(i)] as const)]} />
               </Group>
               </div>
               <div className="space-y-4">
               <Group label={value.sources.size ? `Source · ${value.sources.size} selected` : "Source"}>
                 <div className="rounded-lg border border-line bg-bg">
                   {sources.length > 7 && (
-                    <label className="flex h-[32px] items-center gap-1.5 border-b border-line px-2 text-faint">
+                    <label className="flex h-[34px] items-center gap-1.5 border-b border-line px-2.5 text-faint">
                       <Search size={12} />
-                      <input value={sourceQ} onChange={(e) => setSourceQ(e.target.value)} placeholder="Find a source…" className="w-full bg-transparent text-[12.5px] text-fg outline-none placeholder:text-faint" aria-label="Find a source" />
+                      <input value={sourceQ} onChange={(e) => setSourceQ(e.target.value)} placeholder="Find a source…" className="w-full bg-transparent text-[13px] text-fg outline-none placeholder:text-faint" aria-label="Find a source" />
                     </label>
                   )}
                   <div className="max-h-[196px] overflow-y-auto p-1">
@@ -502,7 +517,7 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
               </div>
             </div>
             <div className="flex items-center gap-2 border-t border-line px-4 py-3">
-              <button type="button" onClick={reset} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg px-2.5 text-[12.5px] text-muted hover:bg-surface-2 hover:text-fg">
+              <button type="button" onClick={reset} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg px-2.5 text-[13px] text-muted hover:bg-surface-2 hover:text-fg">
                 <RotateCcw size={12} /> Reset
               </button>
               <button type="button" onClick={() => setMoreOpen(false)} className="ml-auto inline-flex h-[34px] items-center rounded-lg bg-fg px-3.5 text-[13px] font-medium text-bg hover:opacity-90">

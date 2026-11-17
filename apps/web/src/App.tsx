@@ -229,13 +229,13 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
           </div>
           <button
             onClick={() => setPaletteOpen(true)}
-            className="ml-auto inline-flex h-[34px] items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-[12.5px] text-faint hover:bg-surface-2 hover:text-fg sm:w-56"
+            className="ml-auto inline-flex h-[34px] items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-faint hover:bg-surface-2 hover:text-fg sm:w-56"
             aria-label="Search (⌘K)"
             title="Search and commands (⌘K)"
           >
             <Search size={15} />
             <span className="hidden flex-1 text-left sm:inline">Search…</span>
-            <kbd className="hidden rounded border border-line px-1 text-[10.5px] sm:inline">⌘K</kbd>
+            <kbd className="hidden rounded border border-line px-1 text-[11px] sm:inline">⌘K</kbd>
           </button>
           <button
             onClick={toggleTheme}
@@ -250,7 +250,7 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
             <button
               onClick={() => setUserMenu((v) => !v)}
               aria-expanded={userMenu}
-              className="grid size-[30px] place-items-center rounded-full border border-line-2 bg-gradient-to-br from-zinc-600 to-zinc-800 text-xs font-medium text-white"
+              className="grid size-[34px] place-items-center rounded-full border border-line-2 bg-gradient-to-br from-zinc-600 to-zinc-800 text-xs font-medium text-white"
               aria-label="Account menu"
             >
               {(user?.name ?? "Team").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
@@ -283,7 +283,7 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
 
         <div className="mx-auto max-w-[1480px] px-4 pt-7 pb-10 sm:px-6">
           {needsSetup && (
-            <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-accent/30 bg-accent-soft px-3 py-2 text-[12.5px] text-muted">
+            <div className="mb-4 flex flex-wrap items-center gap-2 rounded-lg border border-accent/30 bg-accent-soft px-3 py-2 text-[13px] text-muted">
               <span className="rounded bg-accent px-1.5 py-px text-[11px] font-medium text-white">Setup</span>
               Create the owner account so your team can sign in with their own email and password.
               <a href="#/setup" className="font-medium text-accent">Create account →</a>
@@ -307,7 +307,7 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
               <ReportsPage />
             ) : (
               <div className="rounded-xl border border-line bg-surface px-6 py-14 text-center">
-                <div className="text-[15px] font-medium">Reports are for the workspace owner</div>
+                <div className="text-[16px] font-medium">Reports are for the workspace owner</div>
                 <p className="mt-1 text-[13px] text-muted">Margins, costs and rates are visible only to the owner.</p>
               </div>
             )
@@ -337,11 +337,11 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
           <div className="mb-5 flex flex-wrap items-end gap-4">
             <div>
               <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
-              <p className="mt-0.5 text-[13.5px] text-muted">Projects for the team — public tenders, marketplace projects, email alerts and growth signals, scored for your services.</p>
+              <p className="mt-0.5 text-[14px] text-muted">Projects for the team — public tenders, marketplace projects, email alerts and growth signals, scored for your services.</p>
               {api.live && api.loadedAt && (
                 <p className="mt-1 inline-flex items-center gap-1.5 text-[12px] text-faint">
                   Updated {Math.max(0, Math.round((Date.now() - api.loadedAt) / 60_000)) || "<1"} min ago · refreshes every minute · sources sync every 30–60 min
-                  <button onClick={api.reload} className="-my-1 inline-flex h-[26px] items-center gap-1 rounded-md px-1.5 text-muted hover:bg-surface-2 hover:text-fg" aria-label="Refresh now">
+                  <button onClick={api.reload} className="-my-1 inline-flex h-[28px] items-center gap-1 rounded-md px-1.5 text-muted hover:bg-surface-2 hover:text-fg" aria-label="Refresh now">
                     <RefreshCw size={11} /> Refresh
                   </button>
                 </p>
@@ -364,7 +364,7 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
           </div>
 
           {!loading && allLeads.length === 0 && (
-            <div className="mb-4 rounded-lg border border-line bg-surface px-3 py-2 text-[12.5px] text-muted">
+            <div className="mb-4 rounded-lg border border-line bg-surface px-3 py-2 text-[13px] text-muted">
               {api.live ? "No leads yet — sources sync every 30–60 minutes (or use Sources → Run now)." : "Can't reach the server right now — retrying automatically."}
             </div>
           )}
@@ -386,7 +386,7 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
               }}
             />
             {!loading && leads.length > PAGE_SIZE && (
-              <nav className="mt-3 flex flex-wrap items-center gap-2 text-[12.5px] text-muted" aria-label="Pagination">
+              <nav className="mt-3 flex flex-wrap items-center gap-2 text-[13px] text-muted" aria-label="Pagination">
                 <span className="num">
                   {Math.min(pageNo, pages - 1) * PAGE_SIZE + 1}–{Math.min(leads.length, (Math.min(pageNo, pages - 1) + 1) * PAGE_SIZE)} of {leads.length}
                 </span>

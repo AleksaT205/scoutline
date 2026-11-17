@@ -15,7 +15,7 @@ interface PrFile {
 
 function Patch({ text }: { text: string }) {
   return (
-    <pre className="num overflow-x-auto border-t border-line bg-bg py-1 text-[11.5px] leading-[1.55]">
+    <pre className="num overflow-x-auto border-t border-line bg-bg py-1 text-[12px] leading-[1.55]">
       {text.split("\n").map((l, i) => (
         <div
           key={i}
@@ -73,15 +73,15 @@ export function PrFiles({ projectId, repo, number, className = "" }: { projectId
                 <button
                   type="button"
                   onClick={() => setShown((s) => (s.has(f.name) ? new Set([...s].filter((x) => x !== f.name)) : new Set([...s, f.name])))}
-                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-[12.5px] hover:bg-surface-2"
+                  className="flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] hover:bg-surface-2"
                 >
                   <ChevronRight size={12} className={`shrink-0 text-faint transition-transform ${on ? "rotate-90" : ""}`} />
                   <FileCode2 size={13} className="shrink-0 text-faint" />
                   <span className="num min-w-0 flex-1 truncate" title={f.previous ? `${f.previous} → ${f.name}` : f.name}>
                     {f.name}
                   </span>
-                  {f.status !== "modified" && <span className="rounded bg-surface-2 px-1.5 text-[10.5px] text-muted">{f.status}</span>}
-                  <span className="num shrink-0 text-[11.5px]">
+                  {f.status !== "modified" && <span className="rounded bg-surface-2 px-1.5 text-[11px] text-muted">{f.status}</span>}
+                  <span className="num shrink-0 text-[12px]">
                     <span className="text-success">+{f.additions}</span> <span className="text-danger">−{f.deletions}</span>
                   </span>
                 </button>

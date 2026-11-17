@@ -53,7 +53,7 @@ function SkillEditor({ open, onClose, initial, onSaved }: { open: boolean; onClo
           <input className={`${field} h-[34px]`} value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} placeholder="Name (e.g. Skill: Next.js conventions)" />
           <input className={`${field} num h-[34px]`} value={f.path} onChange={(e) => setF({ ...f, path: e.target.value })} placeholder=".claude/skills/name/SKILL.md" />
           <input className={`${field} h-[34px] sm:col-span-2`} value={f.description} onChange={(e) => setF({ ...f, description: e.target.value })} placeholder="Short description (shown in the library)" />
-          <textarea className={`${field} num h-72 resize-y py-2 text-[12.5px] leading-relaxed sm:col-span-2`} value={f.content} onChange={(e) => setF({ ...f, content: e.target.value })} />
+          <textarea className={`${field} num h-72 resize-y py-2 text-[13px] leading-relaxed sm:col-span-2`} value={f.content} onChange={(e) => setF({ ...f, content: e.target.value })} />
           <p className="text-[12px] text-faint sm:col-span-2">Claude Code skills live in <code className="num">.claude/skills/&lt;name&gt;/SKILL.md</code> with a name and description at the top. AGENTS.md / CLAUDE.md work for any agent.</p>
           {error && (
             <div className="sm:col-span-2">
@@ -108,10 +108,10 @@ function SkillCatalog({ onLibrary, onInstall, busy, canEdit: editable }: { onLib
           }}
         >
           <span className="text-[12px] text-muted">Source</span>
-          <input value={input} onChange={(e) => setInput(e.target.value)} className={`${field} num h-[28px] w-52 text-[12.5px]`} aria-label="GitHub repo with skills (owner/repo)" />
+          <input value={input} onChange={(e) => setInput(e.target.value)} className={`${field} num h-[28px] w-52 text-[12px]`} aria-label="GitHub repo with skills (owner/repo)" />
           <button className={small}>Load</button>
         </form>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search skills…" className={`${field} h-[28px] w-full text-[12.5px] sm:ml-auto sm:w-56`} aria-label="Search skills" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search skills…" className={`${field} h-[28px] w-full text-[12px] sm:ml-auto sm:w-56`} aria-label="Search skills" />
       </div>
       {err && <ErrorNote>{err}</ErrorNote>}
       {!items && !err && (
@@ -127,7 +127,7 @@ function SkillCatalog({ onLibrary, onInstall, busy, canEdit: editable }: { onLib
             <div key={x.url} className="flex flex-col rounded-xl border border-line bg-surface p-3">
               <div className="flex items-center gap-1.5">
                 <span className="text-[13px] font-medium">{x.name}</span>
-                <span className="rounded-full bg-surface-2 px-1.5 py-px text-[10.5px] text-muted ring-1 ring-inset ring-line">{x.files} file{x.files === 1 ? "" : "s"}</span>
+                <span className="rounded-full bg-surface-2 px-1.5 py-px text-[11px] text-muted ring-1 ring-inset ring-line">{x.files} file{x.files === 1 ? "" : "s"}</span>
                 <a href={x.url} target="_blank" rel="noreferrer" className="ml-auto text-faint hover:text-fg" aria-label={`Open ${x.name} on GitHub`}>
                   <ExternalLink size={12} />
                 </a>
@@ -145,10 +145,10 @@ function SkillCatalog({ onLibrary, onInstall, busy, canEdit: editable }: { onLib
               )}
             </div>
           ))}
-          {shown.length === 0 && <div className="rounded-xl border border-dashed border-line px-6 py-8 text-center text-[12.5px] text-faint md:col-span-2">No skills match.</div>}
+          {shown.length === 0 && <div className="rounded-xl border border-dashed border-line px-6 py-8 text-center text-[13px] text-faint md:col-span-2">No skills match.</div>}
         </div>
       )}
-      <p className="text-[11.5px] text-faint">Skills are folders with a SKILL.md (and sometimes scripts). “Install in repo” copies the whole folder to .claude/skills/ in the project, with its license.</p>
+      <p className="text-[12px] text-faint">Skills are folders with a SKILL.md (and sometimes scripts). “Install in repo” copies the whole folder to .claude/skills/ in the project, with its license.</p>
     </div>
   );
 }
@@ -160,7 +160,7 @@ function SkillImport({ onLibrary, onInstall, busy }: { onLibrary: (url: string) 
     <section className="space-y-2 rounded-xl border border-line bg-surface p-4">
       <div className="text-[13px] font-semibold">Import a skill from GitHub</div>
       <p className="text-[12px] text-muted">Paste a link to a skill folder or its SKILL.md — from any repo your GitHub token can see (public repos always work).</p>
-      <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://github.com/owner/repo/tree/main/skills/my-skill" className={`${field} num h-[34px] text-[12.5px]`} aria-label="GitHub link to a skill" />
+      <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://github.com/owner/repo/tree/main/skills/my-skill" className={`${field} num h-[34px] text-[13px]`} aria-label="GitHub link to a skill" />
       <div className="flex flex-wrap gap-2">
         <button disabled={!ok || !!busy} onClick={() => onInstall(url.trim())} className={btnPrimary}>
           {busy === `install:${url.trim()}` ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Install in repo
@@ -249,7 +249,7 @@ export function SkillsView({ projectId, repo }: { projectId: string; repo: strin
     </div>
   );
   const banner = msg && (
-    <div className={`rounded-lg border px-3 py-2 text-[12.5px] ${msg.ok ? "border-success/40 bg-success-soft text-success" : "border-danger/40 bg-danger/10 text-danger"}`}>
+    <div className={`rounded-lg border px-3 py-2 text-[13px] ${msg.ok ? "border-success/40 bg-success-soft text-success" : "border-danger/40 bg-danger/10 text-danger"}`}>
       {msg.text}{" "}
       {msg.url && (
         <a href={msg.url} target="_blank" rel="noreferrer" className="font-medium underline">
@@ -271,7 +271,7 @@ export function SkillsView({ projectId, repo }: { projectId: string; repo: strin
     <div className="space-y-3">
       {tabs}
       <div className="flex flex-wrap items-center gap-2">
-        <p className="text-[12.5px] text-muted">Rules and skills for Claude Code, Codex and other agents. Picked files are added to <b className="text-fg">{repo}</b> through a pull request.</p>
+        <p className="text-[13px] text-muted">Rules and skills for Claude Code, Codex and other agents. Picked files are added to <b className="text-fg">{repo}</b> through a pull request.</p>
         {canEdit(user) && (
           <div className="flex gap-1.5 sm:ml-auto">
             <button
@@ -300,7 +300,7 @@ export function SkillsView({ projectId, repo }: { projectId: string; repo: strin
         )}
       </div>
       {msg && (
-        <div className={`rounded-lg border px-3 py-2 text-[12.5px] ${msg.ok ? "border-success/40 bg-success-soft text-success" : "border-danger/40 bg-danger/10 text-danger"}`}>
+        <div className={`rounded-lg border px-3 py-2 text-[13px] ${msg.ok ? "border-success/40 bg-success-soft text-success" : "border-danger/40 bg-danger/10 text-danger"}`}>
           {msg.text}{" "}
           {msg.url && (
             <a href={msg.url} target="_blank" rel="noreferrer" className="font-medium underline">
@@ -317,7 +317,7 @@ export function SkillsView({ projectId, repo }: { projectId: string; repo: strin
               <X size={14} />
             </button>
           </div>
-          <textarea className={`${field} num h-72 resize-y py-2 text-[12.5px] leading-relaxed`} value={draft} onChange={(e) => setDraft(e.target.value)} />
+          <textarea className={`${field} num h-72 resize-y py-2 text-[13px] leading-relaxed`} value={draft} onChange={(e) => setDraft(e.target.value)} />
           <div className="mt-2 flex justify-end">
             <button disabled={!!busy} onClick={() => void install({ files: [{ path: "AGENTS.md", content: draft, name: "AGENTS.md (AI draft)" }] })} className={btnPrimary}>
               {busy === "install" ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Open PR with AGENTS.md
@@ -346,8 +346,8 @@ export function SkillsView({ projectId, repo }: { projectId: string; repo: strin
               <span className="min-w-0 flex-1">
                 <span className="flex flex-wrap items-center gap-1.5">
                   <span className="text-[13px] font-medium">{s.name}</span>
-                  {has && <span className="rounded-full bg-success-soft px-1.5 py-px text-[10.5px] text-success ring-1 ring-inset ring-success/30">in repo</span>}
-                  {!s.builtin && <span className="rounded-full bg-surface-2 px-1.5 py-px text-[10.5px] text-muted ring-1 ring-inset ring-line">team</span>}
+                  {has && <span className="rounded-full bg-success-soft px-1.5 py-px text-[11px] text-success ring-1 ring-inset ring-success/30">in repo</span>}
+                  {!s.builtin && <span className="rounded-full bg-surface-2 px-1.5 py-px text-[11px] text-muted ring-1 ring-inset ring-line">team</span>}
                 </span>
                 <span className="mt-0.5 block text-[12px] text-muted">{s.description}</span>
                 <span className="num mt-1 block truncate text-[11px] text-faint">{s.path}</span>
@@ -414,10 +414,10 @@ function BrowserPreview({ projectId, repo }: { projectId: string; repo: string }
         <span className="text-[13px] font-semibold">Run in browser</span>
         <span className="text-[12px] text-faint">the website from {repo}, straight from GitHub — nothing to install</span>
         <div className="ml-auto flex flex-wrap gap-2">
-          <button onClick={() => void show()} disabled={busy} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[12.5px] font-medium text-bg hover:opacity-90 disabled:opacity-50">
+          <button onClick={() => void show()} disabled={busy} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[13px] font-medium text-bg hover:opacity-90 disabled:opacity-50">
             {busy ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />} {url ? "Reload" : "Run here"}
           </button>
-          <PreviewButton projectId={projectId} repo={repo} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[12.5px] font-medium hover:bg-surface-2 disabled:opacity-50">
+          <PreviewButton projectId={projectId} repo={repo} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2 disabled:opacity-50">
             Open in new tab
           </PreviewButton>
         </div>
@@ -428,7 +428,7 @@ function BrowserPreview({ projectId, repo }: { projectId: string; repo: string }
           <iframe key={url} src={url} title="Website preview" className="h-[520px] w-full" sandbox="allow-scripts allow-forms allow-popups allow-modals" />
         </div>
       )}
-      <p className="mt-2 text-[11.5px] text-faint">Works for plain websites (HTML, CSS, JS). Apps with a build step (React, Next, Vue…) run in StackBlitz or Codespaces below, or on your computer with the command.</p>
+      <p className="mt-2 text-[12px] text-faint">Works for plain websites (HTML, CSS, JS). Apps with a build step (React, Next, Vue…) run in StackBlitz or Codespaces below, or on your computer with the command.</p>
     </section>
   );
 }
@@ -460,8 +460,8 @@ function ProjectRunCommand({ projectId }: { projectId: string }) {
       </div>
       <ul className="mb-3 space-y-1">
         {d.parts.map((x) => (
-          <li key={x.repo} className="flex flex-wrap items-center gap-2 text-[12.5px]">
-            <span className="rounded-full border border-line px-2 py-px text-[11.5px]">{x.label}</span>
+          <li key={x.repo} className="flex flex-wrap items-center gap-2 text-[13px]">
+            <span className="rounded-full border border-line px-2 py-px text-[12px]">{x.label}</span>
             <span className="num text-muted">{x.repo}</span>
             <span className="text-faint">· {x.stack}</span>
             {x.url && x.start && (
@@ -469,7 +469,7 @@ function ProjectRunCommand({ projectId }: { projectId: string }) {
                 {x.url.replace("http://", "")} <ExternalLink size={11} />
               </a>
             )}
-            {!x.start && <span className="ml-auto text-[11.5px] text-faint">{x.stack === "Empty repo" ? "nothing to run yet" : "no start command found"}</span>}
+            {!x.start && <span className="ml-auto text-[12px] text-faint">{x.stack === "Empty repo" ? "nothing to run yet" : "no start command found"}</span>}
           </li>
         ))}
       </ul>
@@ -483,20 +483,20 @@ function ProjectRunCommand({ projectId }: { projectId: string }) {
                 setCopied(true);
                 setTimeout(() => setCopied(false), 1500);
               }}
-              className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[12.5px] font-medium text-bg hover:opacity-90"
+              className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[13px] font-medium text-bg hover:opacity-90"
             >
               {copied ? <Check size={13} /> : <Copy size={13} />} {copied ? "Copied" : "Copy command"}
             </button>
-            <button onClick={download} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[12.5px] font-medium hover:bg-surface-2">
+            <button onClick={download} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2">
               Download run.sh
             </button>
-            <span className="text-[11.5px] text-faint">
+            <span className="text-[12px] text-faint">
               Paste into Terminal (or <code className="num">bash run.sh</code>). Code goes to <code className="num">{d.folder.replace("$HOME", "~")}</code>; stop with Ctrl+C. Needs Git and Node.js; private repos need GitHub sign-in in Git (<code className="num">gh auth login</code>).
             </span>
           </div>
         </>
       ) : (
-        <p className="text-[12.5px] text-muted">Nothing to run yet — once there's code (hand a task to Claude), the command appears here.</p>
+        <p className="text-[13px] text-muted">Nothing to run yet — once there's code (hand a task to Claude), the command appears here.</p>
       )}
     </section>
   );
@@ -532,7 +532,7 @@ export function RunLocallyView({ projectId, repo }: { projectId: string; repo: s
           <ExternalLink size={13} className="text-faint" />
           <span className="min-w-0 flex-1">
             <span className="block text-[13px] font-medium">Run in StackBlitz</span>
-            <span className="block text-[11.5px] text-faint">Node apps right in the browser · private repos ask you to sign in with GitHub once</span>
+            <span className="block text-[12px] text-faint">Node apps right in the browser · private repos ask you to sign in with GitHub once</span>
           </span>
         </a>
         {[
@@ -543,7 +543,7 @@ export function RunLocallyView({ projectId, repo }: { projectId: string; repo: s
             <ExternalLink size={13} className="text-faint" />
             <span className="min-w-0 flex-1">
               <span className="block text-[13px] font-medium">{label}</span>
-              <span className="block text-[11.5px] text-faint">{hint}</span>
+              <span className="block text-[12px] text-faint">{hint}</span>
             </span>
           </a>
         ))}
@@ -557,7 +557,7 @@ export function RunLocallyView({ projectId, repo }: { projectId: string; repo: s
             <ExternalLink size={13} className="text-faint" />
             <span className="min-w-0 flex-1">
               <span className="block text-[13px] font-medium">{label}</span>
-              <span className="block text-[11.5px] text-faint">{hint}</span>
+              <span className="block text-[12px] text-faint">{hint}</span>
             </span>
           </a>
         ))}
@@ -572,11 +572,11 @@ export function RunLocallyView({ projectId, repo }: { projectId: string; repo: s
         <ol className="mt-2 space-y-2">
           {d.steps.map((s, i) => (
             <li key={i}>
-              <div className="mb-0.5 text-[11.5px] text-faint">
+              <div className="mb-0.5 text-[12px] text-faint">
                 {i + 1}. {s.label}
               </div>
               <div className="flex items-center gap-2 rounded-lg border border-line bg-bg px-3 py-2">
-                <code className="num min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-[12.5px] text-fg">{s.cmd}</code>
+                <code className="num min-w-0 flex-1 overflow-x-auto whitespace-nowrap text-[13px] text-fg">{s.cmd}</code>
                 <button onClick={() => void copy(String(i), s.cmd)} className="text-faint hover:text-fg" aria-label={`Copy ${s.label}`}>
                   {copied === String(i) ? <Check size={13} className="text-success" /> : <Copy size={13} />}
                 </button>
@@ -584,10 +584,10 @@ export function RunLocallyView({ projectId, repo }: { projectId: string; repo: s
             </li>
           ))}
         </ol>
-        {d.note && <p className="mt-2 rounded-lg border border-line bg-bg px-3 py-2 text-[12.5px] text-muted">{d.note}</p>}
+        {d.note && <p className="mt-2 rounded-lg border border-line bg-bg px-3 py-2 text-[13px] text-muted">{d.note}</p>}
         {d.localUrl && (
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <a href={d.localUrl} target="_blank" rel="noreferrer" className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[12.5px] font-medium text-bg hover:opacity-90">
+            <a href={d.localUrl} target="_blank" rel="noreferrer" className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[13px] font-medium text-bg hover:opacity-90">
               <ExternalLink size={13} /> Open {d.localUrl.replace("http://", "")}
             </a>
             <span className="text-[12px] text-faint">after the last command is running in your terminal</span>
@@ -617,7 +617,7 @@ function FigmaThumb({ id }: { id: string }) {
       .catch(() => setSrc(null));
   }, [id]);
   if (src === undefined) return <div className="h-28 animate-pulse rounded-lg bg-surface-2" />;
-  if (!src) return <div className="grid h-20 place-items-center rounded-lg border border-dashed border-line px-3 text-center text-[11.5px] text-faint">{reason ?? "Preview unavailable"}</div>;
+  if (!src) return <div className="grid h-20 place-items-center rounded-lg border border-dashed border-line px-3 text-center text-[12px] text-faint">{reason ?? "Preview unavailable"}</div>;
   return <img src={src} alt="Figma design preview" className="max-h-64 w-full rounded-lg border border-line bg-white object-contain" loading="lazy" />;
 }
 
@@ -633,10 +633,10 @@ export function FigmaBox({ issueId, links, onChanged }: { issueId: string; links
   const open = figma.length > 0 || adding;
   return (
     <div className={`mt-3 rounded-xl border border-line bg-bg ${open ? "p-3" : "px-3 py-2"}`}>
-      <div className="flex items-center gap-2 text-[12.5px]">
+      <div className="flex items-center gap-2 text-[13px]">
         <PenTool size={14} className="text-accent" />
         <span className="font-medium">Design</span>
-        {figma.length > 0 && <span className="text-[11.5px] text-faint">{figma.length} Figma frame{figma.length > 1 ? "s" : ""}</span>}
+        {figma.length > 0 && <span className="text-[12px] text-faint">{figma.length} Figma frame{figma.length > 1 ? "s" : ""}</span>}
         {!open && (
           <button onClick={() => setAdding(true)} className="ml-auto inline-flex items-center gap-1 text-[12px] text-muted hover:text-fg">
             <Plus size={12} /> Link Figma frame
@@ -685,7 +685,7 @@ export function FigmaBox({ issueId, links, onChanged }: { issueId: string; links
             }
           }}
         >
-          <input autoFocus={adding && !figma.length} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Paste a Figma link (right-click a frame → Copy link)" className="h-[28px] min-w-0 flex-1 rounded-md border border-line bg-surface px-2 text-[12.5px] outline-none placeholder:text-faint focus:border-accent/60" />
+          <input autoFocus={adding && !figma.length} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Paste a Figma link (right-click a frame → Copy link)" className="h-[28px] min-w-0 flex-1 rounded-md border border-line bg-surface px-2 text-[12px] outline-none placeholder:text-faint focus:border-accent/60" />
           <button disabled={busy || !url.trim()} className={small}>
             {busy ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Add
           </button>

@@ -34,7 +34,7 @@ export function TimeBox({ issueId }: { issueId: string }) {
 
   return (
     <div className="mt-3 rounded-xl border border-line bg-bg p-3">
-      <div className="flex items-center gap-2 text-[12.5px]">
+      <div className="flex items-center gap-2 text-[13px]">
         <Clock size={14} className="text-accent" />
         <span className="font-medium">Time</span>
         {total ? <span className="num text-muted">{fmtMinutes(total)}</span> : <span className="text-faint">nothing logged yet</span>}
@@ -59,9 +59,9 @@ export function TimeBox({ issueId }: { issueId: string }) {
             }
           }}
         >
-          <input value={text} onChange={(e) => setText(e.target.value)} placeholder="1h 30m" aria-label="Time spent" className={`num h-[28px] w-24 rounded-md border bg-surface px-2 text-[12.5px] outline-none placeholder:text-faint ${text && !minutes ? "border-danger/60" : "border-line focus:border-accent/60"}`} />
-          <input type="date" value={day} onChange={(e) => setDay(e.target.value)} aria-label="Date" className="h-[28px] rounded-md border border-line bg-surface px-2 text-[12.5px] outline-none focus:border-accent/60" />
-          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="What did you do? (optional)" aria-label="Note" className="h-[28px] min-w-[140px] flex-1 rounded-md border border-line bg-surface px-2 text-[12.5px] outline-none placeholder:text-faint focus:border-accent/60" />
+          <input value={text} onChange={(e) => setText(e.target.value)} placeholder="1h 30m" aria-label="Time spent" className={`num h-[28px] w-24 rounded-md border bg-surface px-2 text-[12px] outline-none placeholder:text-faint ${text && !minutes ? "border-danger/60" : "border-line focus:border-accent/60"}`} />
+          <input type="date" value={day} onChange={(e) => setDay(e.target.value)} aria-label="Date" className="h-[28px] rounded-md border border-line bg-surface px-2 text-[12px] outline-none focus:border-accent/60" />
+          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="What did you do? (optional)" aria-label="Note" className="h-[28px] min-w-[140px] flex-1 rounded-md border border-line bg-surface px-2 text-[12px] outline-none placeholder:text-faint focus:border-accent/60" />
           <label className="inline-flex items-center gap-1 text-[12px] text-muted" title="Counts toward client billing on hourly projects">
             <input type="checkbox" checked={billable} onChange={(e) => setBillable(e.target.checked)} className="accent-[var(--accent)]" /> Billable
           </label>
@@ -74,12 +74,12 @@ export function TimeBox({ issueId }: { issueId: string }) {
       {(entries ?? []).length > 0 && (
         <ul className="mt-2 space-y-1">
           {entries!.map((e) => (
-            <li key={e.id} className="group flex items-center gap-2 text-[12.5px]">
+            <li key={e.id} className="group flex items-center gap-2 text-[13px]">
               <span className="num w-14 shrink-0 font-medium">{fmtMinutes(e.minutes)}</span>
               <span className="shrink-0 text-muted">{e.userName}</span>
               <span className="min-w-0 flex-1 truncate text-faint">{e.note}</span>
               {!e.billable && <span className="text-[11px] text-faint">non-billable</span>}
-              <span className="num shrink-0 text-[11.5px] text-faint">{fmtDate(e.spentOn)}</span>
+              <span className="num shrink-0 text-[12px] text-faint">{fmtDate(e.spentOn)}</span>
               {editable && (user?.role === "owner" || e.userId === user?.id) && (
                 <button
                   onClick={async () => {

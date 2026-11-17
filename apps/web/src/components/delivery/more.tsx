@@ -46,7 +46,7 @@ export function InboxPage() {
     <>
       <div className="mb-5">
         <h1 className="text-2xl font-semibold tracking-tight">Inbox</h1>
-        <p className="mt-0.5 text-[13.5px] text-muted">New requests from client portals and GitHub wait here. Accept them into the plan or decline.</p>
+        <p className="mt-0.5 text-[14px] text-muted">New requests from client portals and GitHub wait here. Accept them into the plan or decline.</p>
       </div>
       {(error || issues.error) && (
         <div className="mb-3">
@@ -58,8 +58,8 @@ export function InboxPage() {
       ) : items.length === 0 ? (
         <div className="grid place-items-center rounded-xl border border-dashed border-line px-6 py-16 text-center">
           <Inbox size={24} className="mb-2 text-faint" />
-          <div className="text-[13.5px] font-medium">Inbox zero</div>
-          <p className="mt-1 max-w-md text-[12.5px] text-muted">Requests arrive here from the client portal (project → Client portal) and from GitHub issues when import is on for a project.</p>
+          <div className="text-[14px] font-medium">Inbox zero</div>
+          <p className="mt-1 max-w-md text-[13px] text-muted">Requests arrive here from the client portal (project → Client portal) and from GitHub issues when import is on for a project.</p>
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-line bg-surface">
@@ -67,7 +67,7 @@ export function InboxPage() {
             <div key={i.id} className="flex flex-wrap items-center gap-x-3 gap-y-2.5 border-b border-line px-4 py-3 last:border-0">
               <StatusIcon status="triage" />
               <button onClick={() => setSelected(i.id)} className="min-w-0 flex-1 basis-[calc(100%-2rem)] text-left sm:basis-0">
-                <div className="truncate text-[13.5px] font-medium hover:underline">{i.title}</div>
+                <div className="truncate text-[14px] font-medium hover:underline">{i.title}</div>
                 <div className="mt-0.5 truncate text-[12px] text-muted">
                   <span className="num">{i.key}</span> · {i.projectName} · {i.createdBy === "Client: Client" ? "Client portal" : (i.createdBy ?? "team")} · {ago(i.createdAt)}
                 </div>
@@ -80,7 +80,7 @@ export function InboxPage() {
                   <button disabled={busy === i.id} onClick={() => void decide(i, "backlog")} className="h-[34px] flex-1 rounded-md border border-line bg-surface px-2.5 text-[12px] font-medium hover:bg-surface-2 disabled:opacity-50 sm:h-[28px] sm:flex-none" title="Accept for later">
                     Backlog
                   </button>
-                  <button disabled={busy === i.id} onClick={() => void decide(i, "canceled")} className="grid size-[34px] shrink-0 place-items-center rounded-md border border-line text-muted sm:size-[30px] hover:bg-surface-2 hover:text-danger disabled:opacity-50" aria-label="Decline" title="Decline">
+                  <button disabled={busy === i.id} onClick={() => void decide(i, "canceled")} className="grid size-[34px] shrink-0 place-items-center rounded-md border border-line text-muted sm:size-[28px] hover:bg-surface-2 hover:text-danger disabled:opacity-50" aria-label="Decline" title="Decline">
                     <X size={13} />
                   </button>
                 </div>
@@ -150,7 +150,7 @@ function CycleLength({ onChanged }: { onChanged: () => void }) {
   if (days === null) return null;
   const owner = user?.role === "owner" || !user;
   return (
-    <label className="inline-flex items-center gap-2 text-[12.5px] text-muted" title="Applies to cycles that haven't started yet">
+    <label className="inline-flex items-center gap-2 text-[13px] text-muted" title="Applies to cycles that haven't started yet">
       Cycle length
       <select
         disabled={!owner || busy}
@@ -166,7 +166,7 @@ function CycleLength({ onChanged }: { onChanged: () => void }) {
             setBusy(false);
           }
         }}
-        className="h-[28px] rounded-lg border border-line bg-surface px-2 text-[12.5px] text-fg outline-none disabled:opacity-60"
+        className="h-[28px] rounded-lg border border-line bg-surface px-2 text-[12px] text-fg outline-none disabled:opacity-60"
       >
         {[7, 14, 21, 28].map((d) => (
           <option key={d} value={d}>
@@ -198,7 +198,7 @@ export function CyclesPage() {
       <div className="mb-5 flex flex-wrap items-end gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Cycles</h1>
-          <p className="mt-0.5 text-[13.5px] text-muted">Sprints for the whole team. Unfinished tasks move to the next cycle automatically.</p>
+          <p className="mt-0.5 text-[14px] text-muted">Sprints for the whole team. Unfinished tasks move to the next cycle automatically.</p>
         </div>
         <div className="sm:ml-auto">
           <CycleLength onChanged={cycles.reload} />
@@ -210,9 +210,9 @@ export function CyclesPage() {
           <div className="rounded-xl border border-line bg-surface p-5">
             <div className="flex flex-wrap items-center gap-2">
               <RefreshCcw size={15} className="text-accent" />
-              <h2 className="text-[15px] font-semibold">{cycleLabel(current)}</h2>
+              <h2 className="text-[14px] font-semibold">{cycleLabel(current)}</h2>
               <span className="rounded-full bg-accent-soft px-2 py-px text-[11px] text-accent">Current</span>
-              <span className="text-[12.5px] text-muted">
+              <span className="text-[13px] text-muted">
                 {fmtDate(current.startsAt)} – {fmtDate(new Date(Date.parse(current.endsAt) - 1).toISOString())} · {daysLeft} days left
               </span>
             </div>
@@ -228,8 +228,8 @@ export function CyclesPage() {
               ["Completed", `${pct}%`],
             ].map(([l, v]) => (
               <div key={String(l)} className="rounded-xl border border-line bg-surface px-4 py-4">
-                <div className="text-[12.5px] text-muted">{l}</div>
-                <div className="num mt-1.5 text-[24px] font-semibold leading-tight tracking-tight">{v}</div>
+                <div className="text-[13px] text-muted">{l}</div>
+                <div className="num mt-1.5 text-[20px] font-semibold leading-tight tracking-tight sm:text-[28px]">{v}</div>
               </div>
             ))}
           </div>
@@ -250,7 +250,7 @@ export function CyclesPage() {
                   <td className="px-4 py-2.5 font-medium">
                     {cycleLabel(c)}
                     {c.state === "current" && <span className="ml-2 rounded-full bg-accent-soft px-2 py-px text-[11px] text-accent">Current</span>}
-                    {c.state === "upcoming" && <span className="ml-2 text-[11.5px] text-faint">Upcoming</span>}
+                    {c.state === "upcoming" && <span className="ml-2 text-[12px] text-faint">Upcoming</span>}
                   </td>
                   <td className="px-4 py-2.5 text-muted">
                     {fmtDate(c.startsAt)} – {fmtDate(new Date(Date.parse(c.endsAt) - 1).toISOString())}
@@ -313,7 +313,7 @@ export function PortalDialog({ open, onClose, projectId, projectName }: { open: 
         </p>
         {created ? (
           <div className="rounded-xl border border-success/40 bg-success-soft p-3">
-            <div className="mb-1.5 text-[12.5px] font-medium text-success">Link created — copy it now, it’s shown only once.</div>
+            <div className="mb-1.5 text-[13px] font-medium text-success">Link created — copy it now, it’s shown only once.</div>
             <div className="flex gap-2">
               <input readOnly value={linkFor(created)} className={`${field} h-[34px] num text-[12px]`} onFocus={(e) => e.target.select()} />
               <button
@@ -350,7 +350,7 @@ export function PortalDialog({ open, onClose, projectId, projectName }: { open: 
               <span className="mb-1 block text-[12px] text-muted">Name (only you see it)</span>
               <input className={`${field} h-[34px]`} value={label} onChange={(e) => setLabel(e.target.value)} />
             </label>
-            <label className="inline-flex h-[34px] items-center gap-1.5 text-[12.5px] text-muted">
+            <label className="inline-flex h-[34px] items-center gap-1.5 text-[13px] text-muted">
               <input type="checkbox" checked={allowRequests} onChange={(e) => setAllowRequests(e.target.checked)} className="accent-[var(--accent)]" /> Allow requests
             </label>
             <button disabled={busy || !label.trim()} className={btnPrimary}>
@@ -361,7 +361,7 @@ export function PortalDialog({ open, onClose, projectId, projectName }: { open: 
         {error && <ErrorNote>{error}</ErrorNote>}
         <div className="rounded-xl border border-line">
           {(portals ?? []).map((p) => (
-            <div key={p.id} className="flex items-center gap-2 border-b border-line px-3 py-2 text-[12.5px] last:border-0">
+            <div key={p.id} className="flex items-center gap-2 border-b border-line px-3 py-2 text-[13px] last:border-0">
               <Link2 size={13} className="text-faint" />
               <span className="min-w-0 flex-1 truncate">{p.label}</span>
               <span className="text-faint">{p.allowRequests ? "requests on" : "view only"}</span>
@@ -379,7 +379,7 @@ export function PortalDialog({ open, onClose, projectId, projectName }: { open: 
               </button>
             </div>
           ))}
-          {portals?.length === 0 && <div className="px-3 py-3 text-[12.5px] text-faint">No active links yet.</div>}
+          {portals?.length === 0 && <div className="px-3 py-3 text-[13px] text-faint">No active links yet.</div>}
         </div>
       </div>
     </Dialog>

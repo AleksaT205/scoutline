@@ -9,7 +9,7 @@ function SortTh({ k, label, sort, onSort, className = "" }: { k: SortKey; label:
     <th className={`px-2.5 py-2.5 font-medium ${className}`} aria-sort={on ? (sort!.dir === "asc" ? "ascending" : "descending") : "none"}>
       <button onClick={() => onSort?.(k)} className={`inline-flex items-center gap-1 hover:text-fg ${on ? "text-fg" : ""}`} title={`Sort by ${label.toLowerCase()}`}>
         {label}
-        <span className="text-[10px]">{on ? (sort!.dir === "desc" ? "▼" : "▲") : "↕"}</span>
+        <span className="text-[11px]">{on ? (sort!.dir === "desc" ? "▼" : "▲") : "↕"}</span>
       </button>
     </th>
   );
@@ -20,7 +20,7 @@ function SortButton({ k, label, sort, onSort }: { k: SortKey; label: string; sor
   return (
     <button onClick={() => onSort?.(k)} className={`inline-flex items-center gap-1 font-medium hover:text-fg ${on ? "text-fg" : ""}`} title={`Sort by ${label.toLowerCase()}`}>
       {label}
-      <span className="text-[10px]">{on ? (sort!.dir === "desc" ? "▼" : "▲") : "↕"}</span>
+      <span className="text-[11px]">{on ? (sort!.dir === "desc" ? "▼" : "▲") : "↕"}</span>
     </button>
   );
 }
@@ -61,7 +61,7 @@ export function LeadsTable({ leads, selectedId, onSelect, sort, onSort, loading 
                   {l.deadline && <DeadlineChip deadline={l.deadline} />}
                 </div>
                 <div className="line-clamp-2 text-[14px] font-medium leading-snug">{l.title}</div>
-                <div className="mt-0.5 truncate text-[12.5px] text-muted">{l.company}</div>
+                <div className="mt-0.5 truncate text-[13px] text-muted">{l.company}</div>
               </div>
             </div>
             <div className="mt-2.5 flex items-center gap-2 border-t border-line pt-2 text-[12px] text-muted">
@@ -146,7 +146,7 @@ export function LeadsTable({ leads, selectedId, onSelect, sort, onSort, loading 
                   <td className="hidden px-2.5 py-2.5 2xl:table-cell">
                     <Tag>{CATEGORY_LABEL[l.category]}</Tag>
                   </td>
-                  <td className="num whitespace-nowrap px-2.5 py-2.5 text-[12.5px]">{l.budgetLabel}</td>
+                  <td className="num whitespace-nowrap px-2.5 py-2.5 text-[13px]">{l.budgetLabel}</td>
                   <td className="px-2.5 py-2.5 text-xs text-muted">
                     <div className="truncate" title={l.source}>{l.source}</div>
                     <div className="text-faint">{timeAgo(l.postedMinutesAgo)}</div>

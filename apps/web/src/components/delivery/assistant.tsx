@@ -82,7 +82,7 @@ export function Md({ text }: { text: string }) {
     .replace(/^\s*[-*] (.+)$/gm, '<div class="flex gap-2"><span class="text-faint">•</span><span>$1</span></div>')
     .replace(/\n{2,}/g, '<div class="h-2"></div>')
     .replace(/\n/g, "<br/>");
-  return <div className="text-[13.5px] leading-relaxed text-muted" dangerouslySetInnerHTML={{ __html: html }} />;
+  return <div className="text-[14px] leading-relaxed text-muted" dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
 const SUGGESTIONS = ["Where is the login handled and how does it work?", "Which tasks are blocked or overdue?", "How is this project deployed?", "What should we work on next?"];
@@ -100,7 +100,7 @@ function AskUsage({ refreshKey }: { refreshKey: number }) {
   const sum = (k: "mine" | "mineN" | "total" | "n", p?: string) => rows.filter((r) => !p || r.provider === p).reduce((a, r) => a + (r[k] ?? 0), 0);
   const k = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 10_000 ? 0 : 1)}k` : String(n));
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 border-b border-line bg-bg px-4 py-1.5 text-[11.5px] text-muted">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 border-b border-line bg-bg px-4 py-1.5 text-[12px] text-muted">
       <span className="font-medium text-fg">This month</span>
       <span>
         You: <span className="num text-fg">{sum("mineN")}</span> questions · <span className="num text-fg">{k(sum("mine"))}</span> tokens
@@ -164,7 +164,7 @@ export function AskPanel({ projectId, hasRepo }: { projectId?: string; hasRepo?:
     <div className="flex min-h-[420px] flex-col rounded-xl border border-line bg-surface">
       <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2.5">
         <MessagesSquare size={15} className="text-accent" />
-        <span className="text-[13.5px] font-medium">Ask the project</span>
+        <span className="text-[14px] font-medium">Ask the project</span>
         <span className="hidden text-[12px] text-faint sm:inline">{projectId ? (hasRepo ? "answers from the repo code + tasks" : "answers from tasks (add a GitHub repo for code answers)") : "general questions"}</span>
         <span className="ml-auto flex items-center gap-2">
           {turns.length > 0 && (
@@ -186,11 +186,11 @@ export function AskPanel({ projectId, hasRepo }: { projectId?: string; hasRepo?:
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4" style={{ maxHeight: 560 }}>
         {turns.length === 0 && (
           <div className="py-6 text-center">
-            <div className="text-[13.5px] font-medium">Ask anything about this project</div>
-            <p className="mt-1 text-[12.5px] text-muted">Where something is in the code, how it works, what's blocked, what to do next.</p>
+            <div className="text-[14px] font-medium">Ask anything about this project</div>
+            <p className="mt-1 text-[13px] text-muted">Where something is in the code, how it works, what's blocked, what to do next.</p>
             <div className="mt-4 flex flex-wrap justify-center gap-2">
               {SUGGESTIONS.map((s) => (
-                <button key={s} onClick={() => void ask(s)} className="rounded-full border border-line bg-bg px-3 py-1.5 text-[12.5px] text-muted hover:border-accent/50 hover:text-fg">
+                <button key={s} onClick={() => void ask(s)} className="min-h-[28px] rounded-md border border-line bg-surface px-2.5 py-1 text-left text-[12px] text-muted hover:bg-surface-2 hover:text-fg">
                   {s}
                 </button>
               ))}
@@ -199,7 +199,7 @@ export function AskPanel({ projectId, hasRepo }: { projectId?: string; hasRepo?:
         )}
         {turns.map((t, i) =>
           t.role === "user" ? (
-            <div key={i} className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-accent-soft px-3.5 py-2 text-[13.5px] text-fg">
+            <div key={i} className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-accent-soft px-3.5 py-2 text-[14px] text-fg">
               {t.content}
             </div>
           ) : (
@@ -208,7 +208,7 @@ export function AskPanel({ projectId, hasRepo }: { projectId?: string; hasRepo?:
               {t.meta?.sources && t.meta.sources.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   {t.meta.sources.map((s) => (
-                    <a key={s.path} href={s.url} target="_blank" rel="noreferrer" className="inline-flex max-w-[260px] items-center gap-1 truncate rounded-md border border-line bg-bg px-2 py-0.5 text-[11.5px] text-muted hover:text-fg">
+                    <a key={s.path} href={s.url} target="_blank" rel="noreferrer" className="inline-flex max-w-[260px] items-center gap-1 truncate rounded-md border border-line bg-bg px-2 py-0.5 text-[12px] text-muted hover:text-fg">
                       <FileCode2 size={11} /> <span className="truncate">{s.path}</span>
                     </a>
                   ))}
@@ -225,7 +225,7 @@ export function AskPanel({ projectId, hasRepo }: { projectId?: string; hasRepo?:
           ),
         )}
         {busy && (
-          <div className="inline-flex items-center gap-2 text-[12.5px] text-muted">
+          <div className="inline-flex items-center gap-2 text-[13px] text-muted">
             <Loader2 size={13} className="animate-spin" /> Reading the project…
           </div>
         )}
@@ -243,7 +243,7 @@ export function AskPanel({ projectId, hasRepo }: { projectId?: string; hasRepo?:
           void ask(q);
         }}
       >
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask a question… (e.g. where is the payment logic?)" className="h-[38px] min-w-0 flex-1 rounded-lg border border-line bg-bg px-3 text-[13.5px] outline-none placeholder:text-faint focus:border-accent/60" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask a question… (e.g. where is the payment logic?)" className="h-[34px] min-w-0 flex-1 rounded-lg border border-line bg-bg px-3 text-[13px] outline-none placeholder:text-faint focus:border-accent/60" />
         <VoiceButton value={q} onChange={setQ} className="self-center" />
         <button disabled={busy || !q.trim()} className={btnPrimary} aria-label="Send">
           {busy ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
@@ -312,7 +312,7 @@ export function StatusDialog({ open, onClose, projectId }: { open: boolean; onCl
             <div className="mt-2 text-[11px] text-faint">{meta}</div>
           </div>
         ) : (
-          <p className="text-[12.5px] text-muted">Summarizes what was done, what's in progress, what's overdue and what's next. The client version hides task keys, names and tasks labeled “internal”.</p>
+          <p className="text-[13px] text-muted">Summarizes what was done, what's in progress, what's overdue and what's next. The client version hides task keys, names and tasks labeled “internal”.</p>
         )}
         {error && <ErrorNote>{error}</ErrorNote>}
         <div className="flex justify-end gap-2">
@@ -350,7 +350,7 @@ export function AssistantPage() {
       <div className="mb-5 flex flex-wrap items-end gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Assistant</h1>
-          <p className="mt-0.5 text-[13.5px] text-muted">Ask where something is and how it works — answers come from the project's code and tasks.</p>
+          <p className="mt-0.5 text-[14px] text-muted">Ask where something is and how it works — answers come from the project's code and tasks.</p>
         </div>
         <div className="sm:ml-auto">
           <Menu label="Project" value={pid} onChange={setPid} options={[{ value: "", label: "No project (general)" }, ...(projects.data ?? []).map((x) => ({ value: x.id, label: x.name, hint: x.key }))]} className="h-[34px] border border-line px-2.5">

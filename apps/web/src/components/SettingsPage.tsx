@@ -23,7 +23,7 @@ function CopyBox({ value }: { value: string }) {
   const [done, setDone] = useState(false);
   return (
     <div className="flex items-center gap-2 rounded-lg border border-line bg-bg px-3 py-2">
-      <code className="num min-w-0 flex-1 truncate text-[12.5px]">{value}</code>
+      <code className="num min-w-0 flex-1 truncate text-[13px]">{value}</code>
       <button
         type="button"
         onClick={async () => {
@@ -44,7 +44,7 @@ function Card({ title, sub, children }: { title: string; sub?: string; children:
     <section className="rounded-xl border border-line bg-surface p-5">
       <div className="mb-4">
         <div className="text-[14px] font-medium">{title}</div>
-        {sub && <div className="text-[12.5px] text-muted">{sub}</div>}
+        {sub && <div className="text-[13px] text-muted">{sub}</div>}
       </div>
       {children}
     </section>
@@ -52,7 +52,7 @@ function Card({ title, sub, children }: { title: string; sub?: string; children:
 }
 
 function Msg({ msg }: { msg: { ok: boolean; text: string } | null }) {
-  return msg ? <div className={`mt-3 rounded-lg border px-3 py-2 text-[12.5px] ${msg.ok ? "border-success/40 bg-success-soft text-success" : "border-danger/40 bg-danger/10 text-danger"}`}>{msg.text}</div> : null;
+  return msg ? <div className={`mt-3 rounded-lg border px-3 py-2 text-[13px] ${msg.ok ? "border-success/40 bg-success-soft text-success" : "border-danger/40 bg-danger/10 text-danger"}`}>{msg.text}</div> : null;
 }
 
 function Profile() {
@@ -129,14 +129,14 @@ function Team() {
             <li key={u.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5">
               <div className="grid size-8 shrink-0 place-items-center rounded-full bg-accent-soft text-[12px] font-semibold text-accent">{u.name.slice(0, 2).toUpperCase()}</div>
               <div className={`min-w-0 flex-1 ${isOwner && u.id !== me?.id ? "basis-[calc(100%-6rem)] sm:basis-0" : ""}`}>
-                <div className="text-[13.5px] font-medium">
-                  {u.name} {u.id === me?.id && <span className="text-[11.5px] font-normal text-faint">(you)</span>}
+                <div className="text-[14px] font-medium">
+                  {u.name} {u.id === me?.id && <span className="text-[12px] font-normal text-faint">(you)</span>}
                 </div>
                 <div className="truncate text-[12px] text-muted">{u.email}</div>
               </div>
               {isOwner && u.id !== me?.id ? (
                 <div className="flex w-full items-center gap-2 sm:w-auto">
-                  <select value={u.role} onChange={(e) => act(() => teamFetch(`/team/users/${u.id}`, { method: "PATCH", body: JSON.stringify({ role: e.target.value }) }))} className="h-[34px] w-[96px] shrink-0 rounded-lg border border-line bg-bg px-2 text-[12.5px] sm:h-[28px] sm:w-auto">
+                  <select value={u.role} onChange={(e) => act(() => teamFetch(`/team/users/${u.id}`, { method: "PATCH", body: JSON.stringify({ role: e.target.value }) }))} className="h-[34px] w-[96px] shrink-0 rounded-lg border border-line bg-bg px-2 text-[12px] sm:h-[28px] sm:w-auto">
                     <option value="owner">Owner</option>
                     <option value="member">Member</option>
                     <option value="viewer">Viewer</option>
@@ -145,7 +145,7 @@ function Team() {
                     <select
                       value={(u as { access?: string }).access ?? "all"}
                       onChange={(e) => act(() => teamFetch(`/team/users/${u.id}`, { method: "PATCH", body: JSON.stringify({ access: e.target.value }) }))}
-                      className="h-[34px] min-w-0 flex-1 rounded-lg border border-line bg-bg px-2 text-[12.5px] sm:h-[28px] sm:flex-none"
+                      className="h-[34px] min-w-0 flex-1 rounded-lg border border-line bg-bg px-2 text-[12px] sm:h-[28px] sm:flex-none"
                       title="Which part of the app this person can use"
                       aria-label={`${u.name} access`}
                     >
@@ -154,12 +154,12 @@ function Team() {
                       <option value="delivery">Delivery only</option>
                     </select>
                   )}
-                  <button onClick={async () => (await askConfirm(`Remove ${u.name} from the team?`)) && act(() => teamFetch(`/team/users/${u.id}`, { method: "DELETE" }))} className="grid size-[34px] shrink-0 place-items-center rounded-lg text-faint hover:bg-surface-2 hover:text-danger sm:size-[30px]" aria-label={`Remove ${u.name}`}>
+                  <button onClick={async () => (await askConfirm(`Remove ${u.name} from the team?`)) && act(() => teamFetch(`/team/users/${u.id}`, { method: "DELETE" }))} className="grid size-[34px] shrink-0 place-items-center rounded-lg text-faint hover:bg-surface-2 hover:text-danger sm:size-[28px]" aria-label={`Remove ${u.name}`}>
                     <Trash2 size={14} />
                   </button>
                 </div>
               ) : (
-                <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11.5px] capitalize text-muted ring-1 ring-line ring-inset">{u.role}</span>
+                <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[12px] capitalize text-muted ring-1 ring-line ring-inset">{u.role}</span>
               )}
             </li>
           ))}
@@ -182,16 +182,16 @@ function Team() {
             >
               <UserPlus size={14} /> {hasDemo ? "New demo password" : "Create demo login"}
             </button>
-            {hasDemo && !demo && <span className="text-[12.5px] text-muted">Demo account exists. Remove it in the list above when you're done.</span>}
+            {hasDemo && !demo && <span className="text-[13px] text-muted">Demo account exists. Remove it in the list above when you're done.</span>}
           </div>
           {demo && (
             <div className="mt-3 space-y-2">
               <div className="grid gap-2 sm:grid-cols-[110px_1fr] sm:items-center">
-                <span className="text-[12.5px] text-muted">App</span>
+                <span className="text-[13px] text-muted">App</span>
                 <CopyBox value={base()} />
-                <span className="text-[12.5px] text-muted">Email</span>
+                <span className="text-[13px] text-muted">Email</span>
                 <CopyBox value={demo.email} />
-                <span className="text-[12.5px] text-muted">Password</span>
+                <span className="text-[13px] text-muted">Password</span>
                 <CopyBox value={demo.password} />
               </div>
               <p className="text-[12px] text-faint">Shown once — copy it now. Tip: open Projects → “Sample project” to give the demo a started project.</p>
@@ -229,7 +229,7 @@ function Team() {
             </div>
           )}
           {!!data?.invites.length && (
-            <ul className="mt-4 space-y-1 text-[12.5px] text-muted">
+            <ul className="mt-4 space-y-1 text-[13px] text-muted">
               {data.invites.map((i) => (
                 <li key={i.id} className="flex items-center gap-2">
                   Pending: {i.email ?? "anyone with the link"} · {i.role} · expires {new Date(i.expiresAt).toLocaleDateString()}
@@ -260,7 +260,7 @@ function Shares() {
     <Card title="View-only links" sub="Share leads with anyone — no account needed. They see scores and posts, not your notes, emails or pipeline.">
       <div className="flex flex-wrap items-center gap-2">
         <input className={`${field} max-w-[220px]`} placeholder="Label (e.g. For Marko)" value={label} onChange={(e) => setLabel(e.target.value)} />
-        <label className="inline-flex items-center gap-1.5 text-[12.5px] text-muted">
+        <label className="inline-flex items-center gap-1.5 text-[13px] text-muted">
           Min score
           <input className="h-[34px] w-16 rounded-lg border border-line bg-bg px-2 text-[13px]" type="number" min={0} max={100} value={minScore} onChange={(e) => setMinScore(e.target.value)} />
         </label>
@@ -308,13 +308,13 @@ function Shares() {
                 await teamFetch(`/team/shares/${s.id}`, { method: "DELETE" });
                 await load();
               }}
-              className="text-[12.5px] text-faint hover:text-danger"
+              className="text-[13px] text-faint hover:text-danger"
             >
               Revoke
             </button>
           </li>
         ))}
-        {shares?.length === 0 && <li className="px-3 py-4 text-center text-[12.5px] text-faint">No active links.</li>}
+        {shares?.length === 0 && <li className="px-3 py-4 text-center text-[13px] text-faint">No active links.</li>}
       </ul>
     </Card>
   );
@@ -341,9 +341,9 @@ export function SettingsPage({ initialTab = "profile", onOpenAlerts }: { initial
     <>
       <div className="mb-5">
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="mt-0.5 text-[13.5px] text-muted">Your profile, team access, integrations and sharing.</p>
+        <p className="mt-0.5 text-[14px] text-muted">Your profile, team access, integrations and sharing.</p>
       </div>
-      <div className="mb-4 flex max-w-full overflow-x-auto"><div className="inline-flex shrink-0 rounded-lg border border-line bg-surface p-0.5 text-[13px]">
+      <div className="mb-4 flex max-w-full overflow-x-auto"><div className="inline-flex shrink-0 rounded-lg border border-line bg-surface p-0.5 text-[12px]">
         {tabs.map(([k, label]) => (
           <button key={k} onClick={() => setTab(k)} className={`h-[28px] whitespace-nowrap rounded-md px-3 ${tab === k ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}>
             {label}

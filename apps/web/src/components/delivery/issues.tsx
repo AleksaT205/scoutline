@@ -133,8 +133,8 @@ export function NewIssueDialog({
               <span className="max-w-[260px] truncate text-fg">{project?.name ?? "Pick a project"}</span>
             </Menu>
           )}
-          <input autoFocus className="w-full bg-transparent py-1 text-[17px] font-medium outline-none placeholder:text-faint" placeholder="Task title" value={title} onChange={(e) => setTitle(e.target.value)} />
-          <textarea className="h-28 w-full resize-none bg-transparent text-[13.5px] leading-relaxed text-muted outline-none placeholder:text-faint" placeholder="Add description… (what needs to be done, how we know it's done)" value={description} onChange={(e) => setDescription(e.target.value)} />
+          <input autoFocus className="w-full bg-transparent py-1 text-[16px] font-medium outline-none placeholder:text-faint" placeholder="Task title" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <textarea className="h-28 w-full resize-none bg-transparent text-[14px] leading-relaxed text-muted outline-none placeholder:text-faint" placeholder="Add description… (what needs to be done, how we know it's done)" value={description} onChange={(e) => setDescription(e.target.value)} />
           <div className="flex flex-wrap items-center gap-1.5 pb-3">
             <div className="rounded-md border border-line">
               <StatusMenu value={st} onChange={setSt} />
@@ -150,14 +150,14 @@ export function NewIssueDialog({
         </div>
         <div className="flex flex-col gap-3 border-t border-line px-4 py-3 sm:flex-row sm:items-center sm:gap-2">
           <div className="flex items-center gap-4 sm:gap-2">
-            <label className="inline-flex items-center gap-1.5 whitespace-nowrap text-[12.5px] text-muted">
+            <label className="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] text-muted">
               <input type="checkbox" checked={more} onChange={(e) => setMore(e.target.checked)} className="accent-[var(--accent)]" /> Create more
             </label>
-            <label className="inline-flex items-center gap-1.5 whitespace-nowrap text-[12.5px] text-muted">
+            <label className="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] text-muted">
               <input type="checkbox" checked={inCycle} onChange={(e) => setInCycle(e.target.checked)} className="accent-[var(--accent)]" /> Current cycle
             </label>
           </div>
-          <span className="ml-auto hidden text-[11.5px] text-faint sm:inline">⌘ Enter to create</span>
+          <span className="ml-auto hidden text-[12px] text-faint sm:inline">⌘ Enter to create</span>
           <div className="grid grid-cols-2 gap-2 sm:flex">
             <button type="button" onClick={onClose} className={btnSecondary}>
               Cancel
@@ -186,7 +186,7 @@ function Card({ issue, onOpen, onDragStart, dragging, editable, onChange }: { is
       onClick={onOpen}
       className={`group cursor-pointer rounded-lg border border-line bg-surface p-2.5 shadow-sm transition-all hover:border-line-2 hover:shadow-float ${dragging ? "opacity-40" : ""}`}
     >
-      <div className="flex items-center gap-1.5 text-[11.5px] text-faint">
+      <div className="flex items-center gap-1.5 text-[12px] text-faint">
         <span className="num">{issue.key}</span>
         <span className="ml-auto">
           <AssigneeMenu value={issue.assigneeId} name={issue.assigneeName} onChange={(assigneeId) => onChange({ assigneeId })} disabled={!editable} showLabel={false} />
@@ -200,7 +200,7 @@ function Card({ issue, onOpen, onDragStart, dragging, editable, onChange }: { is
       </div>
       {/* Red sa oznakama samo kad ima šta da pokaže (bez praznog „no priority“) */}
       {(issue.priority > 0 || issue.labels.length > 0 || !!issue.estimate || !!issue.dueDate) && (
-      <div className="mt-2 flex flex-wrap items-center gap-1 text-[11.5px] text-muted">
+      <div className="mt-2 flex flex-wrap items-center gap-1 text-[12px] text-muted">
         {issue.priority > 0 && (
           <span className="rounded border border-line">
             <PriorityMenu value={issue.priority} onChange={(priority) => onChange({ priority })} disabled={!editable} showLabel={false} />
@@ -291,12 +291,12 @@ export function IssueBoard({ issues, setIssues, onOpen, onNew, showProject }: { 
                 }}
                 className={`flex min-h-[460px] flex-col rounded-xl border p-2 transition-colors ${over?.status === status ? "border-accent/50 bg-accent-soft" : "border-line bg-bg"}`}
               >
-                <div className="mb-2 flex items-center gap-2 px-1 text-[12.5px]">
+                <div className="mb-2 flex items-center gap-2 px-1 text-[13px]">
                   <StatusIcon status={status} />
                   <span className="font-medium">{ISSUE_STATUS_META[status].label}</span>
                   <span className="num text-faint">{items.length}</span>
                   {onNew && editable && (
-                    <button onClick={() => onNew(status)} className="ml-auto grid size-6 place-items-center rounded-md text-faint hover:bg-surface-2 hover:text-fg" aria-label={`New task in ${ISSUE_STATUS_META[status].label}`}>
+                    <button onClick={() => onNew(status)} className="ml-auto grid size-[28px] place-items-center rounded-md text-faint hover:bg-surface-2 hover:text-fg" aria-label={`New task in ${ISSUE_STATUS_META[status].label}`}>
                       <Plus size={14} />
                     </button>
                   )}
@@ -344,7 +344,7 @@ export function IssueList({ issues, onOpen, showProject, empty = "No tasks yet."
     <div className="overflow-hidden rounded-xl border border-line bg-surface">
       {groups.map((g) => (
         <div key={g.status}>
-          <div className="flex items-center gap-2 border-b border-line bg-bg px-4 py-2 text-[12.5px]">
+          <div className="flex items-center gap-2 border-b border-line bg-bg px-4 py-2 text-[13px]">
             <StatusIcon status={g.status} />
             <span className="font-medium">{ISSUE_STATUS_META[g.status].label}</span>
             <span className="num text-faint">{g.items.length}</span>
@@ -355,7 +355,7 @@ export function IssueList({ issues, onOpen, showProject, empty = "No tasks yet."
               <span className={i.priority > 0 ? "" : "hidden sm:inline-flex"}>
                 <PriorityIcon priority={i.priority} />
               </span>
-              <span className="num w-[52px] shrink-0 text-[11.5px] text-faint sm:w-[72px] sm:text-[12px]">{i.key}</span>
+              <span className="num w-[52px] shrink-0 text-[12px] text-faint sm:w-[72px] sm:text-[12px]">{i.key}</span>
               <span className="hidden sm:inline-flex">
                 <StatusIcon status={i.status} />
               </span>
@@ -543,7 +543,7 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
   return (
     <div className="fixed inset-0 z-40 flex justify-end bg-black/30 backdrop-blur-[2px]" onMouseDown={onClose}>
       <aside onMouseDown={(e) => e.stopPropagation()} className="flex h-full w-full max-w-[640px] flex-col border-l border-line bg-surface shadow-float" aria-label={`Issue ${issue.key}`}>
-        <div className="flex items-center gap-2 border-b border-line px-5 py-3 text-[12.5px] text-muted">
+        <div className="flex items-center gap-2 border-b border-line px-5 py-3 text-[13px] text-muted">
           <a href={`#/delivery/projects/${issue.projectId}`} onClick={onClose} className="truncate hover:text-fg">
             {issue.projectName}
           </a>
@@ -590,12 +590,12 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
             onChange={(e) => setDescription(e.target.value)}
             onBlur={() => description !== (issue.description ?? "") && void save({ description })}
             placeholder={editable ? "Add description…" : "No description"}
-            className="mt-2 min-h-[120px] w-full resize-y bg-transparent text-[13.5px] leading-relaxed text-muted outline-none placeholder:text-faint"
+            className="mt-2 min-h-[120px] w-full resize-y bg-transparent text-[14px] leading-relaxed text-muted outline-none placeholder:text-faint"
             aria-label="Description"
           />
 
           {/* Svojstva */}
-          <div className="mt-3 grid grid-cols-[96px_1fr] items-center gap-x-3 gap-y-1.5 rounded-xl border border-line bg-bg p-3 text-[12.5px]">
+          <div className="mt-3 grid grid-cols-[96px_1fr] items-center gap-x-3 gap-y-1.5 rounded-xl border border-line bg-bg p-3 text-[13px]">
             <span className="text-faint">Status</span>
             <div>
               <StatusMenu value={issue.status} onChange={(status) => void save({ status })} disabled={!editable} />
@@ -632,7 +632,7 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
             <span className="text-faint">Labels</span>
             <div className="flex flex-wrap items-center gap-1">
               {issue.labels.map((l) => (
-                <span key={l} className="inline-flex h-[24px] items-center gap-1 rounded-full border border-line px-2 text-[11.5px]">
+                <span key={l} className="inline-flex h-[24px] items-center gap-1 rounded-full border border-line px-2 text-[12px]">
                   <span className="size-1.5 rounded-full bg-accent" /> {l}
                   {editable && (
                     <button onClick={() => void save({ labels: issue.labels.filter((x) => x !== l) })} className="text-faint hover:text-fg" aria-label={`Remove label ${l}`}>
@@ -664,7 +664,7 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
           {/* AI agent i GitHub — samo kad projekat ima repo (bez repoa je to samo šum) */}
           {(repoUrl || issue.agent || links.some((l) => l.kind !== "figma")) && (
           <div className="mt-3 rounded-xl border border-line bg-bg p-3">
-            <div className="flex flex-wrap items-center gap-2 text-[12.5px]">
+            <div className="flex flex-wrap items-center gap-2 text-[13px]">
               <Bot size={14} className="text-accent" />
               <span className="font-medium">AI agent</span>
               {issue.agent && <span className="rounded-full bg-accent-soft px-2 py-px text-[11px] text-accent">Working: {issue.agent === "codex" ? "Codex" : "Claude"}</span>}
@@ -719,7 +719,7 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
             {links.some((l) => l.kind !== "figma") && (
               <ul className="mt-2 space-y-1">
                 {links.filter((l) => l.kind !== "figma").map((l) => (
-                  <li key={l.id} className="flex items-center gap-2 text-[12.5px]">
+                  <li key={l.id} className="flex items-center gap-2 text-[13px]">
                     {l.kind === "pr" ? (
                       l.state === "merged" ? (
                         <GitMerge size={13} className="text-accent" />
@@ -808,7 +808,7 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
               </div>
             </form>
           )}
-          <div className="mt-4 text-[11.5px] text-faint">
+          <div className="mt-4 text-[12px] text-faint">
             Created by {issue.createdBy ?? "team"} · {fmtDate(issue.createdAt)}
             {issue.completedAt && ` · completed ${fmtDate(issue.completedAt)}`}
           </div>

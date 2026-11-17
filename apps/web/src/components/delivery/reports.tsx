@@ -54,8 +54,8 @@ const marginCls = (pct: number | null) => (pct === null ? "text-muted" : pct < 0
 function Kpi({ label, value, sub, cls = "" }: { label: string; value: string; sub?: string; cls?: string }) {
   return (
     <div className="rounded-xl border border-line bg-surface px-4 py-4">
-      <div className="text-[12.5px] text-muted">{label}</div>
-      <div className={`num mt-1.5 text-[24px] font-semibold leading-tight tracking-tight ${cls}`}>{value}</div>
+      <div className="text-[13px] text-muted">{label}</div>
+      <div className={`num mt-1.5 text-[20px] font-semibold leading-tight tracking-tight sm:text-[28px] ${cls}`}>{value}</div>
       {sub && <div className="mt-0.5 text-[12px] text-faint">{sub}</div>}
     </div>
   );
@@ -121,7 +121,7 @@ function RatesDialog({ open, onClose, report, onSaved }: { open: boolean; onClos
         }}
       >
         <div className="space-y-3 px-4 py-4">
-          <p className="text-[12.5px] text-muted">What an hour of work costs the company (salary, taxes, overhead). Used to calculate project cost and margin. Leave a person empty to use the default.</p>
+          <p className="text-[13px] text-muted">What an hour of work costs the company (salary, taxes, overhead). Used to calculate project cost and margin. Leave a person empty to use the default.</p>
           <label className="block">
             <span className="mb-1 block text-[12px] text-muted">Default (€ / hour)</span>
             <input className={`${field} num h-[34px] w-32`} inputMode="decimal" value={def} onChange={(e) => setDef(e.target.value)} />
@@ -184,10 +184,10 @@ export function ReportsPage() {
       <div className="mb-5 flex flex-wrap items-end gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Reports</h1>
-          <p className="mt-0.5 text-[13.5px] text-muted">Profit per project, where the time goes, and what AI saves you.</p>
+          <p className="mt-0.5 text-[14px] text-muted">Profit per project, where the time goes, and what AI saves you.</p>
         </div>
         <div className="flex flex-wrap gap-2 sm:ml-auto">
-          <div className="inline-flex rounded-lg border border-line bg-surface p-0.5 text-[12.5px]">
+          <div className="inline-flex rounded-lg border border-line bg-surface p-0.5 text-[12px]">
             {PERIODS.map(([d, l]) => (
               <button key={d} onClick={() => setDays(d)} className={`h-[28px] rounded-md px-2.5 ${days === d ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}>
                 {l}
@@ -224,7 +224,7 @@ export function ReportsPage() {
           <li key={p.id}>
             <a href={`#/delivery/projects/${p.id}`} className="block rounded-xl border border-line bg-surface p-3">
               <div className="flex items-center gap-1.5">
-                <span className="num rounded bg-surface-2 px-1.5 py-px text-[10.5px] text-muted ring-1 ring-line">{p.key}</span>
+                <span className="num rounded bg-surface-2 px-1.5 py-px text-[11px] text-muted ring-1 ring-line">{p.key}</span>
                 <span className="truncate text-[14px] font-medium">{p.name}</span>
               </div>
               <div className="mt-2 grid grid-cols-3 gap-2 text-center">
@@ -275,7 +275,7 @@ export function ReportsPage() {
                       <span className="truncate">{p.name}</span>
                     </a>
                     <div className="mt-0.5 flex flex-wrap items-center gap-1.5 pl-0.5 text-xs text-muted">
-                      <span className={`rounded-full px-1.5 py-px text-[10.5px] ring-1 ring-inset ${PROJECT_STATUS_META[p.status].cls}`}>{PROJECT_STATUS_META[p.status].label}</span>
+                      <span className={`rounded-full px-1.5 py-px text-[11px] ring-1 ring-inset ${PROJECT_STATUS_META[p.status].cls}`}>{PROJECT_STATUS_META[p.status].label}</span>
                       {p.customerName ?? "No client"} · {p.billing === "hourly" ? `hourly €${p.hourlyRateEur ?? 0}` : "fixed"}
                       {p.issues.agentDone > 0 && (
                         <span className="inline-flex items-center gap-0.5 text-accent" title="Tasks completed by AI agents">
@@ -332,7 +332,7 @@ export function ReportsPage() {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
         <section className="rounded-xl border border-line bg-surface p-4">
           <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="text-[13.5px] font-semibold">Hours per week</h2>
+            <h2 className="text-[14px] font-semibold">Hours per week</h2>
             <span className="text-[12px] text-faint">all projects</span>
           </div>
           {data ? <WeekChart weeks={data.weeks} /> : <div className="h-[150px] animate-pulse rounded bg-surface-2" />}
@@ -340,13 +340,13 @@ export function ReportsPage() {
 
         <section className="rounded-xl border border-line bg-surface p-4">
           <div className="mb-3 flex items-baseline justify-between">
-            <h2 className="text-[13.5px] font-semibold">Time by person</h2>
+            <h2 className="text-[14px] font-semibold">Time by person</h2>
             <span className="text-[12px] text-faint">this period</span>
           </div>
           <ul className="space-y-2.5">
             {(data?.people ?? []).map((p) => (
               <li key={p.name}>
-                <div className="mb-1 flex items-baseline justify-between text-[12.5px]">
+                <div className="mb-1 flex items-baseline justify-between text-[13px]">
                   <span>{p.name}</span>
                   <span className="num text-muted">
                     {p.hours} h · {eur2(p.cost)}
@@ -357,7 +357,7 @@ export function ReportsPage() {
                 </div>
               </li>
             ))}
-            {data && data.people.length === 0 && <li className="text-[12.5px] text-faint">No time logged in this period. Open a task and use “Log”.</li>}
+            {data && data.people.length === 0 && <li className="text-[13px] text-faint">No time logged in this period. Open a task and use “Log”.</li>}
           </ul>
         </section>
       </div>
@@ -365,7 +365,7 @@ export function ReportsPage() {
       <section className="mt-4 rounded-xl border border-line bg-surface p-4">
         <div className="mb-3 flex items-center gap-2">
           <Bot size={15} className="text-accent" />
-          <h2 className="text-[13.5px] font-semibold">AI this period</h2>
+          <h2 className="text-[14px] font-semibold">AI this period</h2>
         </div>
         <div className="grid grid-cols-2 gap-3">
           {[
@@ -375,7 +375,7 @@ export function ReportsPage() {
             <div key={l} className="rounded-lg border border-line bg-bg px-3 py-3">
               <div className="text-[12px] text-muted">{l}</div>
               <div className="num mt-1 text-[20px] font-semibold">{v}</div>
-              <div className="text-[11.5px] text-faint">{s}</div>
+              <div className="text-[12px] text-faint">{s}</div>
             </div>
           ))}
         </div>

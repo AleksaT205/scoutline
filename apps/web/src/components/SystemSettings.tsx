@@ -46,11 +46,11 @@ function AutoDeploy() {
       <div className="flex flex-wrap items-start gap-3">
         <Rocket size={16} className="mt-0.5 text-accent" />
         <div className="min-w-0 flex-1">
-          <h2 className="flex flex-wrap items-center gap-2 text-[15px] font-semibold">
+          <h2 className="flex flex-wrap items-center gap-2 text-[14px] font-semibold">
             Auto-deploy
             {d && <span className={`rounded-full px-2 py-px text-[11px] font-normal ${d.enabled ? "bg-success-soft text-success" : "bg-surface-2 text-muted"}`}>{d.enabled ? "On" : "Off"}</span>}
           </h2>
-          <p className="mt-0.5 text-[12.5px] text-muted">When a commit on main passes CI (tests + build), the server redeploys itself in Coolify. If CI fails, nothing is deployed and Telegram tells you.</p>
+          <p className="mt-0.5 text-[13px] text-muted">When a commit on main passes CI (tests + build), the server redeploys itself in Coolify. If CI fails, nothing is deployed and Telegram tells you.</p>
         </div>
         {d?.enabled && (
           <button
@@ -70,9 +70,9 @@ function AutoDeploy() {
           </button>
         )}
       </div>
-      {q.error && <p className="mt-3 text-[12.5px] text-danger">{q.error}</p>}
+      {q.error && <p className="mt-3 text-[13px] text-danger">{q.error}</p>}
       {d?.enabled && (
-        <dl className="mt-3 grid gap-x-4 gap-y-1 text-[12.5px] sm:grid-cols-[auto_1fr]">
+        <dl className="mt-3 grid gap-x-4 gap-y-1 text-[13px] sm:grid-cols-[auto_1fr]">
           <dt className="text-faint">Watching</dt>
           <dd className="num">
             {d.repo} · {d.branch}
@@ -87,7 +87,7 @@ function AutoDeploy() {
         </dl>
       )}
       {d && !d.enabled && (
-        <ol className="mt-3 list-decimal space-y-1 pl-5 text-[12.5px] text-muted">
+        <ol className="mt-3 list-decimal space-y-1 pl-5 text-[13px] text-muted">
           <li>
             Coolify → <b className="text-fg">Keys &amp; Tokens → API tokens</b> → create one with the <b className="text-fg">deploy</b> permission.
           </li>
@@ -133,8 +133,8 @@ function ErrorsCard() {
     <section className="rounded-xl border border-line bg-surface p-4 sm:p-5">
       <div className="flex flex-wrap items-start gap-3">
         <div className="min-w-0 flex-1">
-          <h2 className="text-[15px] font-semibold">Errors</h2>
-          <p className="mt-0.5 text-[12.5px] text-muted">Crashes in the app and on the server. A new one is also sent to Telegram (at most once an hour).</p>
+          <h2 className="text-[14px] font-semibold">Errors</h2>
+          <p className="mt-0.5 text-[13px] text-muted">Crashes in the app and on the server. A new one is also sent to Telegram (at most once an hour).</p>
         </div>
         <div className="inline-flex rounded-lg border border-line bg-bg p-0.5">
           <button onClick={() => setShow("open")} className={seg(show === "open")}>
@@ -145,7 +145,7 @@ function ErrorsCard() {
           </button>
         </div>
       </div>
-      {q.error && <p className="mt-3 text-[12.5px] text-danger">{q.error}</p>}
+      {q.error && <p className="mt-3 text-[13px] text-danger">{q.error}</p>}
       {!q.data && !q.error && <div className="mt-4 h-20 animate-pulse rounded-lg bg-surface-2" />}
       {q.data && list.length === 0 && (
         <div className="mt-4 grid place-items-center rounded-lg border border-dashed border-line px-6 py-10 text-center">
@@ -163,8 +163,8 @@ function ErrorsCard() {
                   <AlertTriangle size={14} className={`mt-0.5 shrink-0 ${show === "open" ? "text-danger" : "text-faint"}`} />
                   <button onClick={() => setOpenId(openId === e.id ? null : e.id)} className="min-w-0 flex-1 text-left">
                     <div className="break-words text-[13px] font-medium leading-snug">{e.message}</div>
-                    <div className="mt-0.5 flex flex-wrap gap-x-2 text-[11.5px] text-faint">
-                      <span className="rounded bg-surface-2 px-1.5 font-mono text-[10.5px] uppercase text-muted">{e.source}</span>
+                    <div className="mt-0.5 flex flex-wrap gap-x-2 text-[12px] text-faint">
+                      <span className="rounded bg-surface-2 px-1.5 font-mono text-[11px] uppercase text-muted">{e.source}</span>
                       <span className="num">{e.count}×</span>
                       <span>last {ago(e.lastSeen)}</span>
                       {e.userName && <span>· {e.userName}</span>}
@@ -179,10 +179,10 @@ function ErrorsCard() {
                   )}
                 </div>
                 {openId === e.id && (
-                  <div className="mt-2 space-y-1.5 pl-6 text-[11.5px] text-muted">
+                  <div className="mt-2 space-y-1.5 pl-6 text-[12px] text-muted">
                     {e.url && <div className="break-all">Where: <span className="text-fg">{e.url}</span></div>}
                     <div>First seen {new Date(e.firstSeen).toLocaleString("en-GB")} · last {new Date(e.lastSeen).toLocaleString("en-GB")}</div>
-                    {e.stack && <pre className="num max-h-56 overflow-auto whitespace-pre-wrap rounded-md bg-bg p-2 text-[10.5px] leading-relaxed text-faint">{e.stack}</pre>}
+                    {e.stack && <pre className="num max-h-56 overflow-auto whitespace-pre-wrap rounded-md bg-bg p-2 text-[11px] leading-relaxed text-faint">{e.stack}</pre>}
                   </div>
                 )}
               </li>

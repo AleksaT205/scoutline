@@ -28,7 +28,7 @@ function Chip({ on, onClick, children }: { on: boolean; onClick: () => void; chi
     <button
       type="button"
       onClick={onClick}
-      className={`inline-flex h-[28px] items-center gap-1 rounded-full border px-2.5 text-[12.5px] transition-colors ${
+      className={`inline-flex h-[28px] items-center gap-1 rounded-full border px-2.5 text-[12px] transition-colors ${
         on ? "border-accent/55 bg-accent-soft text-fg" : "border-line bg-surface text-muted hover:text-fg"
       }`}
     >
@@ -103,7 +103,7 @@ export function AlertsDialog({ open, onClose }: { open: boolean; onClose: () => 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Team password"
-              className="h-[34px] flex-1 rounded-lg border border-line bg-bg px-3 text-[13.5px] outline-none placeholder:text-faint focus:border-accent/60"
+              className="h-[34px] flex-1 rounded-lg border border-line bg-bg px-3 text-[13px] outline-none placeholder:text-faint focus:border-accent/60"
             />
             <button disabled={!password} className="h-[34px] rounded-lg bg-fg px-3.5 text-[13px] font-medium text-bg disabled:opacity-40">
               Unlock
@@ -116,7 +116,7 @@ export function AlertsDialog({ open, onClose }: { open: boolean; onClose: () => 
         ) : (
           <div className="space-y-4">
             {!telegram && (
-              <div className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-[12.5px] text-warning">
+              <div className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-[13px] text-warning">
                 Telegram isn’t connected yet — the owner can add the bot in Settings → Integrations.
               </div>
             )}
@@ -177,7 +177,7 @@ export function AlertsDialog({ open, onClose }: { open: boolean; onClose: () => 
             </div>
 
             {msg && (
-              <div className={`rounded-lg border px-3 py-2 text-[12.5px] ${msg.kind === "ok" ? "border-success/40 bg-success-soft text-success" : "border-danger/40 bg-danger/10 text-danger"}`}>{msg.text}</div>
+              <div className={`rounded-lg border px-3 py-2 text-[13px] ${msg.kind === "ok" ? "border-success/40 bg-success-soft text-success" : "border-danger/40 bg-danger/10 text-danger"}`}>{msg.text}</div>
             )}
 
             <div className="flex items-center gap-2 pt-1">

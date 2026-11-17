@@ -54,8 +54,8 @@ function Kpi({ label, value, hint, accent }: { label: string; value: string; hin
   return (
     <div className="relative overflow-hidden rounded-xl border border-line bg-surface px-4 py-4">
       {accent && <div className="pointer-events-none absolute -top-24 -right-16 size-56 rounded-full bg-[radial-gradient(circle,var(--accent-soft),transparent_65%)]" />}
-      <div className="text-[12.5px] text-muted">{label}</div>
-      <div className="num mt-1.5 text-[28px] font-semibold leading-tight tracking-tight">{value}</div>
+      <div className="text-[13px] text-muted">{label}</div>
+      <div className="num mt-1.5 text-[20px] font-semibold leading-tight tracking-tight sm:text-[28px]">{value}</div>
       {hint && <div className="mt-1 text-xs text-faint">{hint}</div>}
     </div>
   );
@@ -96,9 +96,9 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
         value={token}
         onChange={(e) => setToken(e.target.value)}
         placeholder="Team password"
-        className="h-[34px] w-full rounded-lg border border-line bg-bg px-3 text-[13.5px] outline-none placeholder:text-faint focus:border-accent/60"
+        className="h-[34px] w-full rounded-lg border border-line bg-bg px-3 text-[13px] outline-none placeholder:text-faint focus:border-accent/60"
       />
-      {error && <div className="mt-2 text-[12.5px] text-danger">{error}</div>}
+      {error && <div className="mt-2 text-[13px] text-danger">{error}</div>}
       <button disabled={busy || !token} className="mt-3 inline-flex h-[34px] w-full items-center justify-center gap-1.5 rounded-lg bg-fg text-[13px] font-medium text-bg disabled:opacity-40">
         {busy && <Loader2 size={14} className="animate-spin" />} Unlock
       </button>
@@ -145,7 +145,7 @@ function NewClientDialog({ open, onClose, onCreated }: { open: boolean; onClose:
             <p className="text-[13px] text-muted">
               Send these to <b className="text-fg">{created.name}</b>. Works with any OpenAI- or Anthropic-compatible SDK — just change the base URL and key.
             </p>
-            <div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-[12.5px] text-warning">
+            <div className="flex items-start gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-[13px] text-warning">
               <AlertTriangle size={14} className="mt-0.5 shrink-0" /> The API key is shown only once. Copy it now and share it securely.
             </div>
             {[
@@ -154,9 +154,9 @@ function NewClientDialog({ open, onClose, onCreated }: { open: boolean; onClose:
               ["Model", "auto"],
             ].map(([label, value]) => (
               <div key={label}>
-                <div className="mb-1 text-[11.5px] uppercase tracking-wider text-faint">{label}</div>
+                <div className="mb-1 text-[12px] uppercase tracking-wider text-faint">{label}</div>
                 <div className="flex items-center gap-2 rounded-lg border border-line bg-bg px-3 py-2">
-                  <code className="num min-w-0 flex-1 truncate text-[12.5px]">{value}</code>
+                  <code className="num min-w-0 flex-1 truncate text-[13px]">{value}</code>
                   <CopyButton text={value!} />
                 </div>
               </div>
@@ -194,7 +194,7 @@ function NewClientDialog({ open, onClose, onCreated }: { open: boolean; onClose:
               <span className="w-40 text-[13px] text-muted">Monthly budget (USD)</span>
               <input className={field} type="number" min={1} max={10000} step={1} value={budget} onChange={(e) => setBudget(e.target.value)} />
             </label>
-            {error && <div className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[12.5px] text-danger">{error}</div>}
+            {error && <div className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[13px] text-danger">{error}</div>}
             <div className="flex justify-end gap-2 pt-2">
               <button type="button" onClick={close} className="h-[34px] rounded-lg border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2">
                 Cancel
@@ -252,7 +252,7 @@ function ClientDetail({ client, onChanged }: { client: Client; onChanged: () => 
         <div className="grid size-10 shrink-0 place-items-center rounded-lg bg-accent-soft text-sm font-semibold text-accent">{client.name.slice(0, 2).toUpperCase()}</div>
         <div className="min-w-0">
           <div className="text-base font-semibold tracking-tight">{client.name}</div>
-          <div className="mt-0.5 text-[12.5px] text-muted">
+          <div className="mt-0.5 text-[13px] text-muted">
             {client.email ?? "No email"} · <span className="num">{client.keyPreview}</span>
           </div>
         </div>
@@ -261,23 +261,23 @@ function ClientDetail({ client, onChanged }: { client: Client; onChanged: () => 
 
       <div className="mt-4 grid grid-cols-3 gap-2">
         <div className="rounded-lg border border-line bg-bg px-2.5 py-2">
-          <div className="text-[11.5px] text-faint">Spent (month)</div>
+          <div className="text-[12px] text-faint">Spent (month)</div>
           <div className="num text-[13px] font-medium">{usd(client.spendUsd)}</div>
         </div>
         <div className="rounded-lg border border-line bg-bg px-2.5 py-2">
-          <div className="text-[11.5px] text-faint">Saved</div>
+          <div className="text-[12px] text-faint">Saved</div>
           <div className="num text-[13px] font-medium text-success">
             {usd(client.savingsUsd)} {savedPct > 0 && <span className="text-[11px]">({savedPct}%)</span>}
           </div>
         </div>
         <div className="rounded-lg border border-line bg-bg px-2.5 py-2">
-          <div className="text-[11.5px] text-faint">Requests</div>
+          <div className="text-[12px] text-faint">Requests</div>
           <div className="num text-[13px] font-medium">{client.requests.toLocaleString()}</div>
         </div>
       </div>
 
       <div className="mt-4">
-        <div className="mb-2 flex items-center justify-between text-[11.5px] uppercase tracking-wider text-faint">
+        <div className="mb-2 flex items-center justify-between text-[12px] uppercase tracking-wider text-faint">
           Last 30 days
           <span className="flex items-center gap-2 normal-case tracking-normal">
             <span className="inline-flex items-center gap-1">
@@ -292,7 +292,7 @@ function ClientDetail({ client, onChanged }: { client: Client; onChanged: () => 
       </div>
 
       <div className="mt-4">
-        <div className="mb-2 text-[11.5px] uppercase tracking-wider text-faint">Monthly budget</div>
+        <div className="mb-2 text-[12px] uppercase tracking-wider text-faint">Monthly budget</div>
         <div className="mb-2 h-1.5 overflow-hidden rounded-full bg-surface-2">
           <div className={`h-full rounded-full ${pct > 90 ? "bg-danger" : pct > 70 ? "bg-warning" : "bg-accent"}`} style={{ width: `${pct}%` }} />
         </div>
@@ -320,7 +320,7 @@ function ClientDetail({ client, onChanged }: { client: Client; onChanged: () => 
                 setBusy(null);
               }
             }}
-            className="inline-flex h-[34px] items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[12.5px] font-medium hover:bg-surface-2 disabled:opacity-40"
+            className="inline-flex h-[34px] items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2 disabled:opacity-40"
           >
             {busy === "budget" && <Loader2 size={12} className="animate-spin" />} Save
           </button>
@@ -329,12 +329,12 @@ function ClientDetail({ client, onChanged }: { client: Client; onChanged: () => 
       </div>
 
       <div className="mt-4">
-        <div className="mb-2 text-[11.5px] uppercase tracking-wider text-faint">Recent requests</div>
+        <div className="mb-2 text-[12px] uppercase tracking-wider text-faint">Recent requests</div>
         {usage?.recent.length ? (
-          <ul className="divide-y divide-line rounded-lg border border-line bg-bg text-[12.5px]">
+          <ul className="divide-y divide-line rounded-lg border border-line bg-bg text-[13px]">
             {usage.recent.slice(0, 6).map((r, i) => (
               <li key={i} className="flex items-center gap-2 px-2.5 py-1.5">
-                <span className={`rounded px-1.5 py-px font-mono text-[10.5px] ${r.mode === "smart" ? "bg-accent-soft text-accent" : "bg-success-soft text-success"}`}>{r.mode}</span>
+                <span className={`rounded px-1.5 py-px font-mono text-[11px] ${r.mode === "smart" ? "bg-accent-soft text-accent" : "bg-success-soft text-success"}`}>{r.mode}</span>
                 <span className="min-w-0 flex-1 truncate text-muted">{r.model}</span>
                 <span className="num text-faint">{r.tokens.toLocaleString()} tok</span>
                 <span className="num w-16 text-right">{usd(r.spendUsd)}</span>
@@ -342,11 +342,11 @@ function ClientDetail({ client, onChanged }: { client: Client; onChanged: () => 
             ))}
           </ul>
         ) : (
-          <div className="rounded-lg border border-dashed border-line px-3 py-4 text-center text-[12.5px] text-muted">{usage ? "No requests yet." : "Loading…"}</div>
+          <div className="rounded-lg border border-dashed border-line px-3 py-4 text-center text-[13px] text-muted">{usage ? "No requests yet." : "Loading…"}</div>
         )}
       </div>
 
-      {error && <div className="mt-3 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[12.5px] text-danger">{error}</div>}
+      {error && <div className="mt-3 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[13px] text-danger">{error}</div>}
 
       {client.status === "active" && (
         <button
@@ -364,7 +364,7 @@ function ClientDetail({ client, onChanged }: { client: Client; onChanged: () => 
               setBusy(null);
             }
           }}
-          className="mt-4 inline-flex h-[34px] w-full items-center justify-center gap-1.5 rounded-lg border border-danger/40 text-[12.5px] font-medium text-danger hover:bg-danger/10 disabled:opacity-40"
+          className="mt-4 inline-flex h-[34px] w-full items-center justify-center gap-1.5 rounded-lg border border-danger/40 text-[13px] font-medium text-danger hover:bg-danger/10 disabled:opacity-40"
         >
           {busy === "revoke" ? <Loader2 size={12} className="animate-spin" /> : <ShieldOff size={13} />} Revoke key
         </button>
@@ -434,14 +434,14 @@ export function RouterPage() {
       <div className="mb-5 flex flex-wrap items-end gap-4">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">AI Router</h1>
-          <p className="mt-0.5 text-[13.5px] text-muted">One endpoint for your clients' apps. Simple requests go to fast models, complex ones to smart models — with spend tracked per client.</p>
+          <p className="mt-0.5 text-[14px] text-muted">One endpoint for your clients' apps. Simple requests go to fast models, complex ones to smart models — with spend tracked per client.</p>
         </div>
         <button onClick={() => setNewOpen(true)} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[13px] font-medium text-bg hover:opacity-90 sm:ml-auto">
           <Plus size={14} /> New client
         </button>
       </div>
 
-      {error && <div className="mb-4 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[12.5px] text-danger">{error}</div>}
+      {error && <div className="mb-4 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[13px] text-danger">{error}</div>}
 
       <section className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
         <Kpi label="Spent this month" value={t ? usd(t.spendUsd) : "—"} hint="Across all clients" />
@@ -453,14 +453,14 @@ export function RouterPage() {
       <section className="mb-5 rounded-xl border border-line bg-surface p-4">
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <Route size={15} className="text-accent" />
-          <span className="text-[13.5px] font-medium">Endpoint</span>
-          <code className="num ml-1 min-w-0 truncate rounded-md bg-bg px-2 py-1 text-[12.5px] ring-1 ring-line">{BASE_URL}</code>
+          <span className="text-[14px] font-medium">Endpoint</span>
+          <code className="num ml-1 min-w-0 truncate rounded-md bg-bg px-2 py-1 text-[13px] ring-1 ring-line">{BASE_URL}</code>
           <CopyButton text={BASE_URL} />
           <span className="ml-auto inline-flex items-center gap-1 text-[12px] text-faint">
             <Zap size={12} /> model <code className="num text-fg">auto</code> · <code className="num text-fg">fast</code> · <code className="num text-fg">smart</code>
           </span>
         </div>
-        <div className="mb-2 inline-flex rounded-lg border border-line bg-bg p-0.5 text-[12.5px]">
+        <div className="mb-2 inline-flex rounded-lg border border-line bg-bg p-0.5 text-[12px]">
           {Object.keys(SNIPPETS).map((k) => (
             <button key={k} onClick={() => setTab(k)} className={`h-[28px] rounded-md px-2.5 ${tab === k ? "bg-surface text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}>
               {k}

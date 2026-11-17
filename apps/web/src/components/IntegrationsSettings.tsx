@@ -42,7 +42,7 @@ function SourcePill({ source }: { source: Source }) {
 
 function Note({ msg }: { msg: { ok: boolean; text: string } | null }) {
   if (!msg) return null;
-  return <div className={`mt-3 rounded-lg border px-3 py-2 text-[12.5px] ${msg.ok ? "border-success/40 bg-success-soft text-success" : "border-danger/40 bg-danger/10 text-danger"}`}>{msg.text}</div>;
+  return <div className={`mt-3 rounded-lg border px-3 py-2 text-[13px] ${msg.ok ? "border-success/40 bg-success-soft text-success" : "border-danger/40 bg-danger/10 text-danger"}`}>{msg.text}</div>;
 }
 
 interface Field {
@@ -108,7 +108,7 @@ function IntegrationCard({
             <span className="text-[14px] font-medium">{title}</span>
             <SourcePill source={source} />
           </div>
-          <div className="text-[12.5px] text-muted">{desc}</div>
+          <div className="text-[13px] text-muted">{desc}</div>
         </div>
       </div>
       <form autoComplete="off"
@@ -139,7 +139,7 @@ function IntegrationCard({
         {help && <div className="text-[12px] leading-relaxed text-faint sm:col-span-2">{help}</div>}
         {canEdit && (
           <div className="flex flex-wrap gap-2 sm:col-span-2">
-            <button disabled={!!busy} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[12.5px] font-medium text-bg disabled:opacity-50">
+            <button disabled={!!busy} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[13px] font-medium text-bg disabled:opacity-50">
               {busy === "save" ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />} Save
             </button>
             {test && (
@@ -158,7 +158,7 @@ function IntegrationCard({
                     setBusy(null);
                   }
                 }}
-                className="inline-flex h-[34px] items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[12.5px] font-medium hover:bg-surface-2 disabled:opacity-50"
+                className="inline-flex h-[34px] items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2 disabled:opacity-50"
               >
                 {busy === "test" ? <Loader2 size={13} className="animate-spin" /> : <Plug size={13} />} Test connection
               </button>
@@ -168,7 +168,7 @@ function IntegrationCard({
                 type="button"
                 disabled={!!busy}
                 onClick={async () => (await askConfirm(`Remove ${title} settings saved in the app?`)) && void save(Object.fromEntries(fields.filter((f) => f.secret).map((f) => [f.key, null])), "remove")}
-                className="ml-auto h-[34px] rounded-lg px-2 text-[12.5px] text-muted hover:text-danger"
+                className="ml-auto h-[34px] rounded-lg px-2 text-[13px] text-muted hover:text-danger"
               >
                 Remove
               </button>
@@ -223,7 +223,7 @@ function MyIntegrations() {
             <span className="text-[14px] font-medium">Your GitHub</span>
             {me.github?.set ? <span className="rounded-full bg-success-soft px-2 py-0.5 text-[11px] font-medium text-success ring-1 ring-inset ring-success/30">Connected as {me.github.login ?? "?"}</span> : <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-faint ring-1 ring-inset ring-line">Not connected</span>}
           </div>
-          <div className="text-[12.5px] text-muted">Issues you create and tasks you hand to Claude/Codex are opened under your name, in your repos. Without it, the workspace token is used.</div>
+          <div className="text-[13px] text-muted">Issues you create and tasks you hand to Claude/Codex are opened under your name, in your repos. Without it, the workspace token is used.</div>
         </div>
       </div>
       <form autoComplete="off"
@@ -234,11 +234,11 @@ function MyIntegrations() {
         }}
       >
         <input className={`${input} num min-w-[240px] flex-1`} type="password" {...NO_AUTOFILL} name="integration-personal-github" value={token} onChange={(e) => setToken(e.target.value)} placeholder={me.github?.set ? `Saved ${me.github.hint ?? ""} · paste a new token to replace` : "github_pat_…"} />
-        <button disabled={busy || !token.trim()} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[12.5px] font-medium text-bg disabled:opacity-50">
+        <button disabled={busy || !token.trim()} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[13px] font-medium text-bg disabled:opacity-50">
           {busy ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />} Connect
         </button>
         {me.github?.set && (
-          <button type="button" disabled={busy} onClick={() => void put({ githubToken: null }, "Disconnected.")} className="h-[34px] rounded-lg px-2 text-[12.5px] text-muted hover:text-danger">
+          <button type="button" disabled={busy} onClick={() => void put({ githubToken: null }, "Disconnected.")} className="h-[34px] rounded-lg px-2 text-[13px] text-muted hover:text-danger">
             Disconnect
           </button>
         )}
@@ -249,7 +249,7 @@ function MyIntegrations() {
       <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-line pt-4">
         <Bot size={15} className="text-accent" />
         <span className="text-[13px]">Default AI agent</span>
-        <div className="inline-flex rounded-lg border border-line bg-bg p-0.5 text-[12.5px]">
+        <div className="inline-flex rounded-lg border border-line bg-bg p-0.5 text-[12px]">
           {(["claude", "codex"] as const).map((a) => (
             <button key={a} type="button" disabled={busy} onClick={() => me.agent !== a && void put({ agent: a }, `Default agent: ${a === "claude" ? "Claude" : "Codex"}.`)} className={`h-[28px] rounded-md px-3 ${me.agent === a ? "bg-surface text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}>
               {a === "claude" ? "Claude (Anthropic)" : "Codex (OpenAI)"}
@@ -304,11 +304,11 @@ function ClaudeKeyForm({ saved, busy, onSave, placeholder = "sk-ant-…" }: { sa
       }}
     >
       <input className={`${input} num min-w-[240px] flex-1`} type="password" {...NO_AUTOFILL} name="integration-personal-key" value={k} onChange={(e) => setK(e.target.value)} placeholder={saved ? "Saved · paste a new key to replace" : placeholder} />
-      <button disabled={busy || !k.trim()} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[12.5px] font-medium text-bg disabled:opacity-50">
+      <button disabled={busy || !k.trim()} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[13px] font-medium text-bg disabled:opacity-50">
         <Check size={13} /> Save
       </button>
       {saved && (
-        <button type="button" disabled={busy} onClick={() => onSave(null)} className="h-[34px] rounded-lg px-2 text-[12.5px] text-muted hover:text-danger">
+        <button type="button" disabled={busy} onClick={() => onSave(null)} className="h-[34px] rounded-lg px-2 text-[13px] text-muted hover:text-danger">
           Remove
         </button>
       )}
@@ -340,7 +340,7 @@ export function IntegrationsSettings() {
             Workspace
             {w && !w.canEdit && <span className="normal-case tracking-normal text-faint">· only the owner can change these</span>}
           </div>
-          {error && <div className="mb-3 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[12.5px] text-danger">{error}</div>}
+          {error && <div className="mb-3 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[13px] text-danger">{error}</div>}
           {!w ? (
             <div className="h-40 animate-pulse rounded-xl bg-surface-2" />
           ) : (

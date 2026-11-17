@@ -79,9 +79,9 @@ export function DocsCard({ projectId }: { projectId: string }) {
       {edit ? (
         <div className="space-y-2">
           <input className={input} value={edit.title} onChange={(e) => setEdit({ ...edit, title: e.target.value })} placeholder="Page title, e.g. “How to run locally”" autoFocus />
-          <textarea className={`${field} min-h-[220px] py-2 font-mono text-[12.5px]`} value={edit.body} onChange={(e) => setEdit({ ...edit, body: e.target.value })} placeholder={"Markdown — e.g.\n## Setup\n1. pnpm install\n2. pnpm dev"} />
+          <textarea className={`${field} min-h-[220px] py-2 font-mono text-[13px]`} value={edit.body} onChange={(e) => setEdit({ ...edit, body: e.target.value })} placeholder={"Markdown — e.g.\n## Setup\n1. pnpm install\n2. pnpm dev"} />
           <div className="flex flex-wrap items-center gap-2">
-            <label className="inline-flex items-center gap-1.5 text-[12.5px] text-muted">
+            <label className="inline-flex items-center gap-1.5 text-[13px] text-muted">
               <input type="checkbox" checked={edit.shareWithAi} onChange={(e) => setEdit({ ...edit, shareWithAi: e.target.checked })} className="accent-[var(--accent)]" /> Give to Claude as context
             </label>
             <span className="ml-auto" />
@@ -94,7 +94,7 @@ export function DocsCard({ projectId }: { projectId: string }) {
           </div>
         </div>
       ) : list.length === 0 ? (
-        <p className="text-[12.5px] text-faint">{docs.data ? "No pages yet." : "Loading…"}</p>
+        <p className="text-[13px] text-faint">{docs.data ? "No pages yet." : "Loading…"}</p>
       ) : (
         <div className="grid gap-3 md:grid-cols-[200px_minmax(0,1fr)]">
           <ul className="flex gap-1 overflow-x-auto md:block md:space-y-0.5">
@@ -102,7 +102,7 @@ export function DocsCard({ projectId }: { projectId: string }) {
               <li key={d.id} className="shrink-0">
                 <button onClick={() => setOpen(d.id)} className={`flex w-full items-center gap-1.5 rounded-md px-2 py-1.5 text-left text-[13px] ${(cur?.id ?? list[0]!.id) === d.id ? "bg-surface-2 text-fg" : "text-muted hover:text-fg"}`}>
                   <span className="truncate">{d.title}</span>
-                  {d.shareWithAi && <span className="ml-auto rounded bg-accent-soft px-1 text-[10px] text-accent">AI</span>}
+                  {d.shareWithAi && <span className="ml-auto rounded bg-accent-soft px-1 text-[11px] text-accent">AI</span>}
                 </button>
               </li>
             ))}
@@ -113,7 +113,7 @@ export function DocsCard({ projectId }: { projectId: string }) {
               <article className="min-w-0 rounded-lg border border-line bg-bg p-3">
                 <div className="mb-2 flex flex-wrap items-center gap-2">
                   <h4 className="text-[14px] font-semibold">{d.title}</h4>
-                  <span className="text-[11.5px] text-faint">
+                  <span className="text-[12px] text-faint">
                     {d.updatedBy ?? "—"} · {ago(d.updatedAt)}
                   </span>
                   {canEdit(user) && (
@@ -169,7 +169,7 @@ export function ReleaseNotesCard({ projectId }: { projectId: string }) {
       {!data.data ? (
         <div className="h-16 animate-pulse rounded-lg bg-surface-2" />
       ) : empty ? (
-        <p className="text-[12.5px] text-faint">Nothing merged or finished in this period.</p>
+        <p className="text-[13px] text-faint">Nothing merged or finished in this period.</p>
       ) : (
         <>
           <div className={`rounded-lg border border-line bg-bg p-3 text-[13px] text-muted ${busy ? "opacity-50" : ""}`}>{polished ? <Md text={polished} /> : <Md text={plain} />}</div>
@@ -256,7 +256,7 @@ export function SiteHealthCard({ projectId, onEdit }: { projectId: string; onEdi
       {!d ? (
         <div className="h-12 animate-pulse rounded-lg bg-surface-2" />
       ) : !d.url ? (
-        <div className="flex flex-wrap items-center gap-2 text-[12.5px] text-faint">
+        <div className="flex flex-wrap items-center gap-2 text-[13px] text-faint">
           No site address yet.
           {canEdit(user) && (
             <button onClick={onEdit} className="text-accent hover:underline">
@@ -273,7 +273,7 @@ export function SiteHealthCard({ projectId, onEdit }: { projectId: string; onEdi
             {d.last ? <Badge tone={d.last.ok ? "success" : "danger"}>{d.last.ok ? "Up" : "Down"}</Badge> : <Badge>Waiting for the first check</Badge>}
             {d.last?.ok && d.last.ms !== null && <span className="num text-muted">{d.last.ms} ms</span>}
             {d.uptime !== null && <span className="text-muted">Uptime 7 days: <b className="num text-fg">{d.uptime}%</b></span>}
-            {d.last && <span className="text-[11.5px] text-faint">checked {ago(d.last.at)}</span>}
+            {d.last && <span className="text-[12px] text-faint">checked {ago(d.last.at)}</span>}
           </div>
           {d.last && !d.last.ok && d.last.error && <p className="mt-1.5 text-[12px] text-danger">{d.last.error}</p>}
           {d.recent.length > 1 && (
@@ -373,7 +373,7 @@ export function InvoicesCard({ projectId }: { projectId: string }) {
           </button>
           <textarea className={`${field} min-h-[56px] py-2 text-[13px]`} value={draft.notes} onChange={(e) => setDraft({ ...draft, notes: e.target.value })} placeholder="Note on the invoice (optional)" />
           <div className="flex flex-wrap items-center gap-2">
-            <label className="inline-flex items-center gap-1.5 text-[12.5px] text-muted">
+            <label className="inline-flex items-center gap-1.5 text-[13px] text-muted">
               Due in
               <input className={`${input} num w-16`} inputMode="numeric" value={draft.dueDays} onChange={(e) => setDraft({ ...draft, dueDays: Number(e.target.value) || 0 })} />
               days
@@ -390,7 +390,7 @@ export function InvoicesCard({ projectId }: { projectId: string }) {
         </div>
       )}
       {list.length === 0 && !draft ? (
-        <p className="text-[12.5px] text-faint">{q.data ? "No invoices yet." : q.error ?? "Loading…"}</p>
+        <p className="text-[13px] text-faint">{q.data ? "No invoices yet." : q.error ?? "Loading…"}</p>
       ) : (
         <ul className="divide-y divide-line">
           {list.map((inv) => (
@@ -471,7 +471,7 @@ function InvoicePrint({ id, onClose }: { id: string; onClose: () => void }) {
                 <div className="text-[12px] text-zinc-500">{[d.organization.website, d.organization.email].filter(Boolean).join(" · ")}</div>
               </div>
               <div className="text-right">
-                <div className="text-[22px] font-semibold tracking-tight text-zinc-900">Invoice</div>
+                <div className="text-[20px] font-semibold tracking-tight text-zinc-900">Invoice</div>
                 <div className="num mt-1 text-zinc-600">#{d.invoice.number}</div>
                 <div className="mt-2 text-[12px] text-zinc-500">Issued {fmtDay(d.invoice.issuedAt)}</div>
                 <div className="text-[12px] text-zinc-500">Due {fmtDay(d.invoice.dueAt)}</div>

@@ -71,7 +71,7 @@ export function NotificationsBell() {
         aria-expanded={open}
       >
         <Bell size={15} />
-        {unread > 0 && <span className="num absolute -right-1 -top-1 grid h-[16px] min-w-[16px] place-items-center rounded-full bg-accent px-1 text-[10px] font-medium text-white">{unread > 9 ? "9+" : unread}</span>}
+        {unread > 0 && <span className="num absolute -right-1 -top-1 grid h-[16px] min-w-[16px] place-items-center rounded-full bg-accent px-1 text-[11px] font-medium text-white">{unread > 9 ? "9+" : unread}</span>}
       </button>
       {open && (
         <div className="fixed inset-x-3 top-14 z-40 rounded-xl border border-line bg-surface shadow-float sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-[380px]">
@@ -101,7 +101,7 @@ export function NotificationsBell() {
                 </a>
               </li>
             ))}
-            {items.length === 0 && <li className="px-3 py-8 text-center text-[12.5px] text-faint">You're all caught up.</li>}
+            {items.length === 0 && <li className="px-3 py-8 text-center text-[13px] text-faint">You're all caught up.</li>}
           </ul>
         </div>
       )}

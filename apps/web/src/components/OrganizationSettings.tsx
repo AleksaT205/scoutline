@@ -20,7 +20,7 @@ export function OrganizationSettings() {
     <section className="rounded-xl border border-line bg-surface p-5">
       <div className="mb-4">
         <div className="text-[14px] font-medium">Organization</div>
-        <div className="text-[12.5px] text-muted">Your company name and logo — shown in the menu, on client portals and in client status updates.</div>
+        <div className="text-[13px] text-muted">Your company name and logo — shown in the menu, on client portals and in client status updates.</div>
       </div>
       <form
         className="grid gap-3 sm:grid-cols-2"
@@ -83,7 +83,7 @@ export function OrganizationSettings() {
             </button>
           )}
         </div>
-        {msg && <div className={`rounded-lg border px-3 py-2 text-[12.5px] sm:col-span-2 ${msg.ok ? "border-success/40 bg-success-soft text-success" : "border-danger/40 bg-danger/10 text-danger"}`}>{msg.text}</div>}
+        {msg && <div className={`rounded-lg border px-3 py-2 text-[13px] sm:col-span-2 ${msg.ok ? "border-success/40 bg-success-soft text-success" : "border-danger/40 bg-danger/10 text-danger"}`}>{msg.text}</div>}
         {!owner && <p className="text-[12px] text-faint sm:col-span-2">Only the owner can change the organization profile.</p>}
       </form>
     </section>

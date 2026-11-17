@@ -43,12 +43,12 @@ function Section({ title, icon, items, empty }: { title: string; icon: React.Rea
                 <StatusIcon status={i.status} size={13} />
               </span>
               <span className="min-w-0 flex-1">{i.title}</span>
-              {i.completedAt && <span className="num shrink-0 text-[11.5px] text-faint">{fmtDate(i.completedAt)}</span>}
+              {i.completedAt && <span className="num shrink-0 text-[12px] text-faint">{fmtDate(i.completedAt)}</span>}
             </li>
           ))}
         </ul>
       ) : (
-        <p className="text-[12.5px] text-faint">{empty}</p>
+        <p className="text-[13px] text-faint">{empty}</p>
       )}
     </section>
   );
@@ -77,7 +77,7 @@ export function PortalPage({ token }: { token: string }) {
   }, [token]);
 
   const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setForm({ ...form, [k]: e.target.value });
-  const field = "w-full rounded-lg border border-line bg-bg px-3 text-[13.5px] outline-none placeholder:text-faint focus:border-accent/60";
+  const field = "w-full rounded-lg border border-line bg-bg px-3 text-[13px] outline-none placeholder:text-faint focus:border-accent/60";
 
   return (
     <div className="min-h-screen bg-bg">
@@ -104,7 +104,7 @@ export function PortalPage({ token }: { token: string }) {
         </div>
         {error ? (
           <div className="rounded-xl border border-line bg-surface p-8 text-center">
-            <div className="text-[15px] font-medium">Link unavailable</div>
+            <div className="text-[16px] font-medium">Link unavailable</div>
             <p className="mt-1 text-[13px] text-muted">{error}</p>
           </div>
         ) : !data ? (
@@ -112,13 +112,13 @@ export function PortalPage({ token }: { token: string }) {
         ) : (
           <>
             <header className="mb-5 rounded-2xl border border-line bg-surface p-5 sm:p-6">
-              <div className="text-[12.5px] text-muted">{data.project.customerName ?? "Your project"}</div>
-              <h1 className="mt-0.5 text-[26px] font-semibold tracking-tight">{data.project.name}</h1>
+              <div className="text-[13px] text-muted">{data.project.customerName ?? "Your project"}</div>
+              <h1 className="mt-0.5 text-[24px] font-semibold tracking-tight">{data.project.name}</h1>
               <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3">
                 <div className="flex items-center gap-3">
                   <ProgressRing value={data.progress} size={44} />
                   <div>
-                    <div className="num text-[22px] font-semibold leading-none">{data.progress}%</div>
+                    <div className="num text-[20px] font-semibold leading-none">{data.progress}%</div>
                     <div className="text-[12px] text-muted">
                       {data.counts.done} of {data.counts.total} tasks done
                     </div>
@@ -151,7 +151,7 @@ export function PortalPage({ token }: { token: string }) {
 
             {data.allowRequests && (
               <section className="mt-5 rounded-2xl border border-line bg-surface p-5">
-                <h2 className="text-[15px] font-semibold">Send a request</h2>
+                <h2 className="text-[14px] font-semibold">Send a request</h2>
                 <p className="mt-0.5 text-[13px] text-muted">A change, a bug or a new idea — the team reviews every request and replies.</p>
                 {sent ? (
                   <div className="mt-3 rounded-lg border border-success/40 bg-success-soft px-3 py-2.5 text-[13px] text-success">
@@ -187,7 +187,7 @@ export function PortalPage({ token }: { token: string }) {
                     <textarea className={`${field} h-28 resize-none py-2 sm:col-span-2`} placeholder="Details (what, where, why it matters)" value={form.details} onChange={set("details")} />
                     {/* Zamka za botove — ljudi ne vide ovo polje */}
                     <input className="hidden" tabIndex={-1} autoComplete="off" value={form.website} onChange={set("website")} aria-hidden="true" />
-                    {formError && <div className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[12.5px] text-danger sm:col-span-2">{formError}</div>}
+                    {formError && <div className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[13px] text-danger sm:col-span-2">{formError}</div>}
                     <div className="sm:col-span-2">
                       <button disabled={busy || !form.title.trim()} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-4 text-[13px] font-medium text-bg disabled:opacity-40">
                         {busy ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Send request
@@ -211,7 +211,7 @@ export function PortalPage({ token }: { token: string }) {
                 )}
               </section>
             )}
-            <p className="mt-6 text-center text-[11.5px] text-faint">Private link · shared by {org?.name || "your project team"}{org?.email ? ` · ${org.email}` : ""}</p>
+            <p className="mt-6 text-center text-[12px] text-faint">Private link · shared by {org?.name || "your project team"}{org?.email ? ` · ${org.email}` : ""}</p>
           </>
         )}
       </div>

@@ -27,10 +27,10 @@ function Shell({ title, sub, children }: { title: string; sub: string; children:
               <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
             </svg>
           </div>
-          <span className="text-lg">Scoutline</span>
+          <span className="text-base">Scoutline</span>
         </div>
         <div className="rounded-[14px] border border-line bg-surface p-6 shadow-float">
-          <h1 className="text-lg font-semibold tracking-tight">{title}</h1>
+          <h1 className="text-base font-semibold tracking-tight">{title}</h1>
           <p className="mt-1 mb-5 text-[13px] text-muted">{sub}</p>
           {children}
         </div>
@@ -39,11 +39,11 @@ function Shell({ title, sub, children }: { title: string; sub: string; children:
   );
 }
 
-const field = "h-[38px] w-full rounded-lg border border-line bg-bg px-3 text-[13.5px] outline-none placeholder:text-faint focus:border-accent/60";
+const field = "h-[34px] w-full rounded-lg border border-line bg-bg px-3 text-[13px] outline-none placeholder:text-faint focus:border-accent/60";
 
 function Submit({ busy, label, disabled }: { busy: boolean; label: string; disabled?: boolean }) {
   return (
-    <button disabled={busy || disabled} className="mt-1 inline-flex h-[38px] w-full items-center justify-center gap-1.5 rounded-[8px] bg-fg text-[13.5px] font-medium text-bg hover:opacity-90 disabled:opacity-40">
+    <button disabled={busy || disabled} className="mt-1 inline-flex h-[34px] w-full items-center justify-center gap-1.5 rounded-[8px] bg-fg text-[13px] font-medium text-bg hover:opacity-90 disabled:opacity-40">
       {busy && <Loader2 size={14} className="animate-spin" />} {label}
     </button>
   );
@@ -67,7 +67,7 @@ function useForm() {
 }
 
 const ErrorBox = ({ error }: { error: string | null }) =>
-  error ? <div className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[12.5px] text-danger">{error}</div> : null;
+  error ? <div className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[13px] text-danger">{error}</div> : null;
 
 export function LoginPage() {
   const [email, setEmail] = useState("");

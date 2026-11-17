@@ -32,7 +32,7 @@ export function CreateTasksButton({ projectId, text, className }: { projectId: s
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className={className ?? "inline-flex items-center gap-1 text-[11.5px] text-muted hover:text-fg"} title="Turn the suggestions in this answer into tasks on the board">
+      <button type="button" onClick={() => setOpen(true)} className={className ?? "inline-flex items-center gap-1 text-[12px] text-muted hover:text-fg"} title="Turn the suggestions in this answer into tasks on the board">
         <ListPlus size={12} /> Create tasks
       </button>
       {open && <CreateTasksDialog projectId={projectId} text={text} onClose={() => setOpen(false)} />}
@@ -75,7 +75,7 @@ function CreateTasksDialog({ projectId, text, onClose }: { projectId: string; te
           </div>
         ) : (
           <>
-            <p className="text-[12.5px] text-muted">Found {rows.length} item{rows.length === 1 ? "" : "s"}. Untick what you don't need and edit titles before adding.</p>
+            <p className="text-[13px] text-muted">Found {rows.length} item{rows.length === 1 ? "" : "s"}. Untick what you don't need and edit titles before adding.</p>
             <ul className="max-h-[360px] space-y-1.5 overflow-y-auto">
               {rows.map((r, i) => (
                 <li key={i} className="flex items-center gap-2">
@@ -97,7 +97,7 @@ function CreateTasksDialog({ projectId, text, onClose }: { projectId: string; te
       </div>
       <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line px-4 py-3">
         {done === null && (
-          <select value={status} onChange={(e) => setStatus(e.target.value as "todo" | "backlog")} className="mr-auto h-[34px] rounded-md border border-line bg-surface px-2 text-[12.5px]" aria-label="Column">
+          <select value={status} onChange={(e) => setStatus(e.target.value as "todo" | "backlog")} className="mr-auto h-[34px] rounded-md border border-line bg-surface px-2 text-[13px]" aria-label="Column">
             <option value="todo">Add to Todo</option>
             <option value="backlog">Add to Backlog</option>
           </select>

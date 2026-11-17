@@ -131,9 +131,9 @@ export function CommandPalette({ open, onClose, onToggleTheme }: { open: boolean
               else if (e.key === "Escape") (e.preventDefault(), onClose());
             }}
             placeholder="Search tasks, projects, leads… or type a command"
-            className="h-[52px] w-full bg-transparent text-[14.5px] outline-none placeholder:text-faint"
+            className="h-[52px] w-full bg-transparent text-[14px] outline-none placeholder:text-faint"
           />
-          <kbd className="hidden rounded border border-line px-1.5 py-0.5 text-[10.5px] text-faint sm:inline">Esc</kbd>
+          <kbd className="hidden rounded border border-line px-1.5 py-0.5 text-[11px] text-faint sm:inline">Esc</kbd>
         </div>
         <div ref={list} className="max-h-[56vh] overflow-y-auto overflow-x-hidden p-1.5">
           {items.length === 0 && <div className="px-3 py-8 text-center text-[13px] text-faint">{q.trim().length < 2 ? "Type to search" : "Nothing found"}</div>}
@@ -146,11 +146,11 @@ export function CommandPalette({ open, onClose, onToggleTheme }: { open: boolean
                   data-i={i}
                   onMouseMove={() => setActive(i)}
                   onClick={() => choose(it)}
-                  className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13.5px] ${i === active ? "bg-surface-2 text-fg" : "text-muted"}`}
+                  className={`flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-left text-[13px] ${i === active ? "bg-surface-2 text-fg" : "text-muted"}`}
                 >
                   <span className="shrink-0 text-faint">{it.icon}</span>
                   <span className="min-w-0 flex-1 truncate text-fg">{it.label}</span>
-                  {it.hint && <span className="num max-w-[40%] truncate text-[11.5px] text-faint">{it.hint}</span>}
+                  {it.hint && <span className="num max-w-[40%] truncate text-[12px] text-faint">{it.hint}</span>}
                   {i === active && <ArrowRight size={13} className="shrink-0 text-faint" />}
                 </button>
               </div>

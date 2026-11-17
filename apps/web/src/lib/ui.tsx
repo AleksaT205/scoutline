@@ -4,6 +4,9 @@ import type { ReactNode } from "react";
  * Zajednički izgled kontrola — jedno mesto za sve stranice.
  * Dve veličine: md = 34px (glavna dugmad, polja, padajući meniji), sm = 28px (dugmad u redovima, čipovi, tabovi).
  * Zaobljenje: md → rounded-lg, sm → rounded-md. Boje samo iz tokena (index.css).
+ *
+ * Veličine slova (samo ove): 11 oznake i brojači · 12 sporedni tekst i kontrole od 28px · 13 osnovni tekst i kontrole od 34px ·
+ * 14 naslovi kartica, opis stranice i duži tekst · 16 naslovi dijaloga · 20 / 24 / 28 naslovi i velike brojke.
  */
 export const btnPrimary = "inline-flex h-[34px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-fg px-3.5 text-[13px] font-medium text-bg hover:opacity-90 disabled:opacity-40";
 export const btnSecondary = "inline-flex h-[34px] shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2 disabled:opacity-50";
@@ -15,13 +18,13 @@ export const btnSmPrimary = "inline-flex h-[28px] shrink-0 items-center justify-
 export const btnIcon = "inline-grid size-[34px] shrink-0 place-items-center rounded-lg border border-line bg-surface text-muted hover:bg-surface-2 hover:text-fg disabled:opacity-50";
 
 /** Polje bez visine (za textarea); `input` je polje od 34px. */
-export const field = "w-full rounded-lg border border-line bg-bg px-3 text-[13.5px] outline-none placeholder:text-faint focus:border-accent/60 disabled:opacity-60";
+export const field = "w-full rounded-lg border border-line bg-bg px-3 text-[13px] outline-none placeholder:text-faint focus:border-accent/60 disabled:opacity-60";
 export const input = `h-[34px] ${field}`;
 export const select = "h-[34px] rounded-lg border border-line bg-bg px-2 text-[13px] outline-none focus:border-accent/60 disabled:opacity-60";
 
 /** Prekidač (tabovi u okviru): okvir + dugme po stanju. */
 export const segWrap = "inline-flex rounded-lg border border-line bg-surface p-0.5";
-export const segItem = (on: boolean) => `inline-flex h-[28px] items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 text-[12.5px] ${on ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`;
+export const segItem = (on: boolean) => `inline-flex h-[28px] items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 text-[12px] ${on ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`;
 
 export function Segmented<T extends string>({ value, onChange, options, full, className = "" }: { value: T; onChange: (v: T) => void; options: ReadonlyArray<readonly [T, ReactNode]>; full?: boolean; className?: string }) {
   return (
@@ -43,7 +46,7 @@ export function Card({ title, sub, actions, children, className = "" }: { title?
         <div className="mb-4 flex flex-wrap items-start gap-3">
           <div className="min-w-0 flex-1">
             {title && <h2 className="text-[14px] font-semibold">{title}</h2>}
-            {sub && <p className="mt-0.5 text-[12.5px] text-muted">{sub}</p>}
+            {sub && <p className="mt-0.5 text-[13px] text-muted">{sub}</p>}
           </div>
           {actions}
         </div>
@@ -58,8 +61,8 @@ export function EmptyState({ icon, title, text, action }: { icon?: ReactNode; ti
   return (
     <div className="grid place-items-center rounded-xl border border-dashed border-line px-6 py-12 text-center">
       {icon && <div className="mb-2 text-faint">{icon}</div>}
-      <div className="text-[13.5px] font-medium">{title}</div>
-      {text && <p className="mt-1 max-w-md text-[12.5px] text-muted">{text}</p>}
+      <div className="text-[14px] font-medium">{title}</div>
+      {text && <p className="mt-1 max-w-md text-[13px] text-muted">{text}</p>}
       {action && <div className="mt-4">{action}</div>}
     </div>
   );

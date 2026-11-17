@@ -90,7 +90,7 @@ export function AddLeadDialog({ open, onClose, onAdded }: { open: boolean; onClo
         </div>
         <p className="mb-4 text-[13px] text-muted">From any site — Infostud, Halo oglasi, LinkedIn, an email. AI scores it right away.</p>
 
-        <div className="mb-3 inline-flex rounded-lg border border-line bg-bg p-0.5 text-[13px]">
+        <div className="mb-3 inline-flex rounded-lg border border-line bg-bg p-0.5 text-[12px]">
           {(
             [
               ["link", "Link", Link2],
@@ -122,7 +122,7 @@ export function AddLeadDialog({ open, onClose, onAdded }: { open: boolean; onClo
           ) : (
             <textarea
               ref={firstField as React.RefObject<HTMLTextAreaElement>}
-              className="h-36 w-full resize-none rounded-lg border border-line bg-bg px-3 py-2 text-[13.5px] leading-relaxed outline-none placeholder:text-faint focus:border-accent/60"
+              className="h-36 w-full resize-none rounded-lg border border-line bg-bg px-3 py-2 text-[14px] leading-relaxed outline-none placeholder:text-faint focus:border-accent/60"
               placeholder="Paste the job post or project description…"
               value={text}
               onChange={(e) => setText(e.target.value)}
@@ -141,7 +141,7 @@ export function AddLeadDialog({ open, onClose, onAdded }: { open: boolean; onClo
           )}
         </div>
 
-        {error && <div className="mt-3 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[12.5px] text-danger">{error}</div>}
+        {error && <div className="mt-3 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[13px] text-danger">{error}</div>}
 
         <div className="mt-4 flex items-center justify-end gap-2">
           <button type="button" onClick={onClose} disabled={busy} className="h-[34px] rounded-lg border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2">
