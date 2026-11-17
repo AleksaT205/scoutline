@@ -8,6 +8,7 @@ import { CreateTasksButton } from "./tasks-from-text";
 import { useHashParam } from "../../lib/hashParams";
 import { AttachButton, AttachedThumbs, MessageImages, splitImages, useImageAttachments } from "./attachments";
 import { askConfirm } from "../../lib/confirm";
+import { VoiceButton } from "../../lib/voice";
 import { AskPanel, Md } from "./assistant";
 
 /**
@@ -567,14 +568,17 @@ function BuildPanel({ projectId }: { projectId: string }) {
             }}
             {...att.dropProps}
           >
-            <textarea
-              value={prompt}
-              onPaste={att.onPaste}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && (e.metaKey || e.ctrlKey) && (e.preventDefault(), void start())}
-              placeholder="What should Claude build or fix? e.g. “Add a contact page with a map and opening hours, mobile friendly.” — paste a screenshot with ⌘V"
-              className="h-24 w-full resize-none rounded-lg border border-line bg-bg px-3 py-2 text-[13.5px] outline-none placeholder:text-faint focus:border-accent/60"
-            />
+            <div className="relative">
+              <textarea
+                value={prompt}
+                onPaste={att.onPaste}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && (e.metaKey || e.ctrlKey) && (e.preventDefault(), void start())}
+                placeholder="What should Claude build or fix? e.g. “Add a contact page with a map and opening hours, mobile friendly.” — paste a screenshot with ⌘V, or talk"
+                className="h-24 w-full resize-none rounded-lg border border-line bg-bg px-3 pb-10 pt-2 text-[13.5px] outline-none placeholder:text-faint focus:border-accent/60"
+              />
+              <VoiceButton value={prompt} onChange={setPrompt} size="sm" className="absolute bottom-2 right-2" />
+            </div>
             {att.items.length > 0 && (
               <div className="mt-2">
                 <AttachedThumbs items={att.items} onRemove={att.remove} />
@@ -823,7 +827,10 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
               <AttachedThumbs items={att.items} onRemove={att.remove} />
             </div>
           )}
-          <input value={reply} onPaste={att.onPaste} onChange={(e) => setReply(e.target.value)} placeholder={pr?.state === "open" ? "Ask Claude to change something in this PR…" : "Reply to Claude — e.g. “go ahead and build it”"} className="h-[38px] w-full min-w-0 rounded-lg border border-line bg-surface px-3 text-[13px] outline-none placeholder:text-faint focus:border-accent/60 sm:w-auto sm:flex-1" />
+          <div className="relative w-full min-w-0 sm:w-auto sm:flex-1">
+            <input value={reply} onPaste={att.onPaste} onChange={(e) => setReply(e.target.value)} placeholder={pr?.state === "open" ? "Ask Claude to change something in this PR…" : "Reply to Claude — e.g. “go ahead and build it”"} className="h-[38px] w-full min-w-0 rounded-lg border border-line bg-surface pl-3 pr-[72px] text-[13px] outline-none placeholder:text-faint focus:border-accent/60" />
+            <VoiceButton value={reply} onChange={setReply} size="sm" className="absolute right-1 top-1/2 -translate-y-1/2" />
+          </div>
           <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
             <AttachButton onFiles={att.add} className={iconBtn} />
             <ModelSelect value={model ?? t.data?.issue.model ?? ""} onChange={setModel} className="flex-1 sm:flex-none" />

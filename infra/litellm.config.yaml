@@ -27,6 +27,14 @@ model_list:
       model: groq/openai/gpt-oss-20b
       api_key: os.environ/GROQ_API_KEY
 
+  # Glas → tekst (mikrofon u AI chatu, kad pregledač nema svoje prepoznavanje) — Groq Whisper, besplatan nivo
+  - model_name: stt
+    model_info:
+      mode: audio_transcription
+    litellm_params:
+      model: groq/whisper-large-v3-turbo
+      api_key: os.environ/GROQ_API_KEY
+
   # ── AI Router za klijente (Faza 2) ─────────────────────────────────────────
   # "fast" = brzi/jeftini, "smart" = jači model. Klijent šalje model "auto" i mi biramo.
   # Za sada besplatni modeli; za produkciju dodati plaćene (npr. OpenAI/Anthropic ključ) u iste grupe.

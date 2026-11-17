@@ -5,6 +5,7 @@ import { teamFetch } from "../../lib/team";
 import { useProjects } from "../../lib/delivery";
 import { CreateTasksButton } from "./tasks-from-text";
 import { askConfirm } from "../../lib/confirm";
+import { VoiceButton } from "../../lib/voice";
 import { Dialog, ErrorNote, Menu, btnPrimary } from "./parts";
 
 /** Faza 13: AI asistent — „pitaj projekat“ i brzi status izveštaj. */
@@ -242,6 +243,7 @@ export function AskPanel({ projectId, hasRepo }: { projectId?: string; hasRepo?:
         }}
       >
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Ask a question… (e.g. where is the payment logic?)" className="h-[38px] min-w-0 flex-1 rounded-lg border border-line bg-bg px-3 text-[13.5px] outline-none placeholder:text-faint focus:border-accent/60" />
+        <VoiceButton value={q} onChange={setQ} className="self-center" />
         <button disabled={busy || !q.trim()} className={btnPrimary} aria-label="Send">
           {busy ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
         </button>

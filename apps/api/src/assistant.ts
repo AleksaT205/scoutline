@@ -250,6 +250,35 @@ export function assistantRoutes(getDb: () => Db, g: Guards) {
   });
 
   // GET /assistant/history?projectId= — moja poslednja pitanja
+  // ── Glas → tekst (rezerva kad pregledač nema prepoznavanje govora): snimak → Groq Whisper preko LiteLLM-a ──
+  app.post("/transcribe", member, async (c) => {
+    const b = (await c.req.json().catch(() => ({}))) as { audio?: string; mime?: string; lang?: string };
+    const m = /^data:([\w/+.-]+)(?:;[^,]*)?;base64,(.+)$/.exec(b.audio ?? "");
+    if (!m) return c.json({ error: "No recording." }, 400);
+    const bytes = Buffer.from(m[2]!, "base64");
+    if (bytes.length < 800) return c.json({ text: "" });
+    if (bytes.length > 8 * 1024 * 1024) return c.json({ error: "Recording is too long — keep it under 2 minutes." }, 413);
+    const url = process.env.LITELLM_URL ?? "http://localhost:4000";
+    const key = process.env.LITELLM_KEY ?? "";
+    if (!key) return c.json({ error: "Voice input isn't set up on the server (LiteLLM + GROQ_API_KEY)." }, 503);
+    const mime = (b.mime ?? m[1]!).split(";")[0]!;
+    const ext = mime.includes("mp4") || mime.includes("m4a") ? "m4a" : mime.includes("ogg") ? "ogg" : mime.includes("wav") ? "wav" : "webm";
+    const form = new FormData();
+    form.append("model", "stt");
+    form.append("file", new Blob([bytes], { type: mime }), `voice.${ext}`);
+    if (b.lang === "sr" || b.lang === "en") form.append("language", b.lang);
+    // Telo sa tačnom dužinom (bez „chunked“) — radi sa svakim proksijem
+    const packed = new Request("http://local/", { method: "POST", body: form });
+    const body = await packed.arrayBuffer();
+    const res = await fetch(`${url}/v1/audio/transcriptions`, { method: "POST", headers: { Authorization: `Bearer ${key}`, "Content-Type": packed.headers.get("content-type") ?? "multipart/form-data" }, body, signal: AbortSignal.timeout(60_000) }).catch(() => null);
+    if (!res?.ok) {
+      console.warn(`[transcribe] HTTP ${res?.status ?? 0}: ${res ? (await res.text()).slice(0, 200) : "unreachable"}`);
+      return c.json({ error: "Couldn't turn the recording into text. Try again, or type it." }, 502);
+    }
+    const d = (await res.json().catch(() => ({}))) as { text?: string };
+    return c.json({ text: (d.text ?? "").trim() });
+  });
+
   app.get("/history", member, async (c) => {
     const a = actor(c);
     const pid = c.req.query("projectId");
