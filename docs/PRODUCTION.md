@@ -91,6 +91,8 @@ Netlify na besplatnom planu dodaje oznaku na sajt i ona ne može da se isključi
 
 Zaglavlja (uklj. dozvolu za mikrofon) su u `apps/web/public/_headers`; Cloudflare sam vraća `index.html` za sve putanje (SPA).
 
+Ako Cloudflare ponudi noviji tok (Workers: polja „Deploy command“ / „Preview command“ umesto „Build output directory“): ostavi `npx wrangler deploy`, Path `/` — šta se objavljuje piše u `wrangler.jsonc` u korenu repoa. Promenljive (`NODE_VERSION`, `PNPM_VERSION`, `VITE_API_URL`) se upisuju u Advanced settings → Variable name. Adresa je tada `https://scoutline.<nalog>.workers.dev`.
+
 ## 5. Plaćeni AI modeli za klijente (AI Router)
 
 Kad klijenti počnu da koriste router u produkciji, besplatni modeli nisu dovoljno pouzdani. U `infra/litellm.config.yaml`, u grupe `fast` i `smart`, dodaj plaćene modele (svoj OpenAI / Anthropic / Google ključ kao env promenljivu u Coolify-ju). Klijentima ništa ne menjaš — i dalje šalju `model: "auto"`. Budžet po klijentu već postoji (AI Router → klijent → Monthly budget).

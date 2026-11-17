@@ -1,0 +1,11 @@
+// Cloudflare (Workers sa statičkim fajlovima): web deo aplikacije. Backend ostaje na našem serveru.
+// Build: `pnpm --filter @radar/web build` → apps/web/dist; deploy: `npx wrangler deploy`.
+{
+  "name": "scoutline",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./apps/web/dist",
+    // Jednostranična aplikacija: sve putanje vraćaju index.html
+    "not_found_handling": "single-page-application"
+  }
+}
