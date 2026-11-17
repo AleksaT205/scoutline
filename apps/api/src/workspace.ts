@@ -24,8 +24,9 @@ export interface Organization {
   accent: string;
   website: string;
   email: string;
+  invoiceDetails: string; // adresa, PIB, matični broj, račun — na fakturi
 }
-const DEFAULT_ORG: Organization = { name: "", logoUrl: "", accent: "#5b4bff", website: "", email: "" };
+const DEFAULT_ORG: Organization = { name: "", logoUrl: "", accent: "#5b4bff", website: "", email: "", invoiceDetails: "" };
 export async function loadOrganization(db: Db): Promise<Organization> {
   const [row] = await db.select().from(settings).where(eq(settings.key, "organization")).limit(1);
   return { ...DEFAULT_ORG, ...((row?.value as Partial<Organization>) ?? {}) };
@@ -222,6 +223,7 @@ export function workspaceRoutes(getDb: () => Db, g: Guards) {
       accent: /^#[0-9a-f]{6}$/i.test(accent) ? accent : DEFAULT_ORG.accent,
       website: str(b.website, 200),
       email: str(b.email, 200),
+      invoiceDetails: str(b.invoiceDetails, 1000),
     };
     await getDb().insert(settings).values({ key: "organization", value: org }).onConflictDoUpdate({ target: settings.key, set: { value: org, updatedAt: new Date() } });
     return c.json({ organization: org });

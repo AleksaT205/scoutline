@@ -7,6 +7,7 @@ import { branchName } from "@radar/shared";
 import { issueEvents } from "@radar/db";
 import { claudeCodeTokenFor, customers, ghFetch, issues as tasks, projectRepoNames, projects, userGithubToken, users, type Db } from "@radar/db";
 import { runtime } from "./runtime.js";
+import { docsForAi } from "./project-extras.js";
 import { attachmentUrl, publicBase } from "./preview.js";
 import { agentMessages, agentRuns, attachments } from "@radar/db";
 import { inArray } from "drizzle-orm";
@@ -448,6 +449,7 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
       `Project **${p.name}** (${p.key}) · status ${p.status}${cust?.name ? ` · client ${cust.name}` : ""}${p.dueDate ? ` · target ${p.dueDate.toISOString().slice(0, 10)}` : ""}${p.budgetEur ? ` · budget €${p.budgetEur}` : ""}`,
       p.description ? `\n${p.description.slice(0, 1500)}\n` : "",
       groups.length ? `Tasks in Scoutline (the team's plan — task keys like ${p.key}-1):\n\n${groups.join("\n\n")}` : "No tasks in Scoutline yet.",
+      await docsForAi(db, p.id).then((d) => (d ? `\nProject docs from Scoutline:\n\n${d}` : "")),
       "",
       "</details>",
     ].join("\n");

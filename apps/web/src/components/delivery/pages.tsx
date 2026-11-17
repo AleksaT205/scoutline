@@ -13,6 +13,7 @@ import { StatusDialog } from "./assistant";
 import { ProjectAI } from "./agent";
 import { useHashParam, useOptionalHashParam } from "../../lib/hashParams";
 import { askConfirm } from "../../lib/confirm";
+import { DocsCard, InvoicesCard, ReleaseNotesCard, SiteHealthCard } from "./project-extras";
 import { CodeTab } from "./code";
 
 function PageHead({ title, sub, children }: { title: React.ReactNode; sub?: React.ReactNode; children?: React.ReactNode }) {
@@ -52,7 +53,7 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
   const me = useSessionUser();
   const customers = useCustomers();
   const members = useMembers();
-  const [f, setF] = useState({ name: "", customerId: "", customerName: "", status: "planned" as ProjectStatus, budgetEur: "", dueDate: "", ownerId: "", repoUrl: "", description: "", githubImport: false, githubSync: false, billing: "fixed" as "fixed" | "hourly", hourlyRateEur: "", aiClientId: "" });
+  const [f, setF] = useState({ name: "", customerId: "", customerName: "", status: "planned" as ProjectStatus, budgetEur: "", dueDate: "", ownerId: "", repoUrl: "", description: "", githubImport: false, githubSync: false, billing: "fixed" as "fixed" | "hourly", hourlyRateEur: "", aiClientId: "", siteUrl: "" });
   const [aiClients] = useState<Array<{ id: string; name: string; projectId: string | null }>>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,6 +74,7 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
       githubSync: project?.githubSync ?? false,
       billing: project?.billing ?? "fixed",
       hourlyRateEur: project?.hourlyRateEur ? String(project.hourlyRateEur) : "",
+      siteUrl: project?.siteUrl ?? "",
       aiClientId: "",
     });
     // AI Router je izbačen iz menija — polje za njegov ključ se više ne prikazuje (aiClients ostaje prazno)
@@ -100,6 +102,7 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
               githubSync: f.githubSync,
               billing: f.billing,
               hourlyRateEur: f.hourlyRateEur ? Number(f.hourlyRateEur) : null,
+              siteUrl: f.siteUrl,
               description: f.description,
             };
             const { project: saved } = await teamFetch<{ project: Project }>(project ? `/delivery/projects/${project.id}` : "/delivery/projects", { method: project ? "PATCH" : "POST", body: JSON.stringify(body) });
@@ -184,6 +187,10 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
           <label>
             <span className={label}>GitHub repo (optional)</span>
             <input className={`${field} h-[34px]`} value={f.repoUrl} onChange={set("repoUrl")} placeholder="https://github.com/…" />
+          </label>
+          <label>
+            <span className={label}>Live site (checked every 5 min)</span>
+            <input className={`${field} h-[34px]`} value={f.siteUrl} onChange={set("siteUrl")} placeholder="https://client-site.com" />
           </label>
           {aiClients.length > 0 && (
             <label className="sm:col-span-2">
@@ -620,13 +627,21 @@ export function ProjectPage({ id }: { id: string }) {
       ) : (
         p && (
           <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_300px]">
-            <div className="rounded-xl border border-line bg-surface p-5">
-              <div className="mb-2 text-[12px] font-medium uppercase tracking-wider text-faint">Description</div>
-              <div className="whitespace-pre-wrap text-[13.5px] leading-relaxed text-muted">{p.description || "No description yet. Click Edit to add the goal and scope."}</div>
+            <div className="min-w-0 space-y-4">
+              <div className="rounded-xl border border-line bg-surface p-5">
+                <div className="mb-2 text-[12px] font-medium uppercase tracking-wider text-faint">Description</div>
+                <div className="whitespace-pre-wrap text-[13.5px] leading-relaxed text-muted">{p.description || "No description yet. Click Edit to add the goal and scope."}</div>
+              </div>
+              <DocsCard projectId={p.id} />
+              <ReleaseNotesCard projectId={p.id} />
             </div>
-            <div className="space-y-2 rounded-xl border border-line bg-surface p-4 text-[13px]">
-              <ProjectFacts project={p} issues={issues.data ?? []} done={live?.done ?? 0} />
-              <div className="border-t border-line pt-2 text-[12px] text-faint">Started {fmtDate(p.startDate ?? p.createdAt)}</div>
+            <div className="min-w-0 space-y-4">
+              <div className="space-y-2 rounded-xl border border-line bg-surface p-4 text-[13px]">
+                <ProjectFacts project={p} issues={issues.data ?? []} done={live?.done ?? 0} />
+                <div className="border-t border-line pt-2 text-[12px] text-faint">Started {fmtDate(p.startDate ?? p.createdAt)}</div>
+              </div>
+              <SiteHealthCard projectId={p.id} onEdit={() => setEditOpen(true)} />
+              {user?.role === "owner" && <InvoicesCard projectId={p.id} />}
             </div>
           </div>
         )

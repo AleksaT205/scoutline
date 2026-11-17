@@ -8,6 +8,7 @@ export interface Organization {
   accent: string;
   website: string;
   email: string;
+  invoiceDetails?: string;
 }
 let cache: Promise<Organization | null> | null = null;
 const listeners = new Set<(o: Organization | null) => void>();

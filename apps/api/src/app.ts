@@ -22,6 +22,7 @@ import { assistantRoutes } from "./assistant.js";
 import { errorRoutes, recordError } from "./errors.js";
 import { salesRoutes } from "./sales.js";
 import { searchRoutes } from "./search.js";
+import { projectExtrasRoutes } from "./project-extras.js";
 import { githubFlowRoutes } from "./github-flow.js";
 import { agentRoutes } from "./agents.js";
 import { previewRoutes } from "./preview.js";
@@ -247,6 +248,7 @@ export function createApp(getDb: () => Db) {
   app.route("/delivery", githubFlowRoutes(getDb, a));
   // Faza 16: Claude Code iz aplikacije (setup repoa, sesije, odgovori, potrošnja)
   app.route("/delivery", agentRoutes(getDb, a));
+  app.route("/delivery", projectExtrasRoutes(getDb, a));
   // „Run in browser“: pregled sajta iz repoa (potpisan link)
   app.route("/", previewRoutes(getDb, a));
   // Faza 15: organizacija, skills, Figma, pokreni lokalno

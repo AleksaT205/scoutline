@@ -168,5 +168,7 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 
 - **Delivery 2.0:** ⌘K / Ctrl+K paleta (taskovi i po ključu PZS-12, projekti, klijenti, leadovi, brze radnje; dugme za pretragu gore za telefon), pregled izmena u PR-u u aplikaciji (fajlovi, +/−, diff u boji) u Code → Pull requests i u razgovoru sa Claude-om.
 
+- **Projekat → Overview:** Docs (markdown stranice, „AI“ ide Claude-u kao kontekst), Release notes (spojeni PR-ovi + završeni taskovi, „Polish with AI“ EN/SR), Site health (provera sajta klijenta na 5 min, uptime 7 dana, Telegram kad padne / se vrati; adrese iz kućne mreže blokirane), Invoices (vlasnik: iz sati ili budžeta, broj 2026-001, status draft/sent/paid, stranica za štampu / PDF; podaci firme u Settings → Organization → Invoice details).
+
 ## Otvoreno
 - Konačan naziv (predlog: Scoutline)

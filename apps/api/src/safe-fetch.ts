@@ -25,7 +25,7 @@ function isPrivate(ip: string): boolean {
   return v6 === "::1" || v6 === "::" || v6.startsWith("fc") || v6.startsWith("fd") || v6.startsWith("fe80");
 }
 
-async function assertPublic(url: URL) {
+export async function assertPublic(url: URL) {
   if (url.protocol !== "http:" && url.protocol !== "https:") throw new Error("Only http/https links are allowed");
   if (url.username || url.password) throw new Error("Links with credentials are not allowed");
   const addrs = isIP(url.hostname) ? [{ address: url.hostname }] : await lookup(url.hostname, { all: true });

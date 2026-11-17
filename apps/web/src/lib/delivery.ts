@@ -44,6 +44,7 @@ export interface Project {
   githubSync: boolean;
   billing: "fixed" | "hourly";
   hourlyRateEur: number | null;
+  siteUrl?: string | null;
   issues: { total: number; done: number; inProgress: number; todo: number };
   progress: number;
   createdAt: string;

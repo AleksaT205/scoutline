@@ -154,6 +154,10 @@ export function deliveryRoutes(getDb: () => Db, g: Guards) {
     if (b.githubSync !== undefined) f.githubSync = b.githubSync === true;
     if (b.billing === "fixed" || b.billing === "hourly") f.billing = b.billing;
     if (b.hourlyRateEur !== undefined) f.hourlyRateEur = int(b.hourlyRateEur, 0, 10_000);
+    if (b.siteUrl !== undefined) {
+      const u = str(b.siteUrl, 300);
+      f.siteUrl = u ? (/^https?:\/\//i.test(u) ? u : `https://${u}`) : null;
+    }
     return f;
   };
 

@@ -214,6 +214,7 @@ export const projects = pgTable(
     deployHooks: jsonb("deploy_hooks"), // [{ id, name, url: Secret }] — Coolify / Netlify build hook
     billing: text("billing").default("fixed").notNull(), // fixed = budžet je cena · hourly = sati × satnica
     hourlyRateEur: integer("hourly_rate_eur"), // satnica za klijenta (hourly)
+    siteUrl: text("site_url"), // sajt klijenta koji pratimo (zdravlje sajta)
     githubSyncedAt: timestamp("github_synced_at", { withTimezone: true }),
     issueSeq: integer("issue_seq").default(0).notNull(), // poslednji broj taska
     ...timestamps,
@@ -469,4 +470,65 @@ export const appErrors = pgTable(
     lastSeen: timestamp("last_seen", { withTimezone: true }).defaultNow().notNull(),
   },
   (t) => [uniqueIndex("app_errors_fingerprint_idx").on(t.fingerprint), index("app_errors_last_idx").on(t.lastSeen)],
+);
+
+
+/** Dokumentacija projekta (markdown): kako se pokreće, odluke, kontakti. shareWithAi → ide Claude-u kao kontekst. */
+export const projectDocs = pgTable(
+  "project_docs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
+    title: text("title").notNull(),
+    body: text("body").notNull().default(""),
+    shareWithAi: boolean("share_with_ai").notNull().default(true),
+    updatedBy: text("updated_by"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("project_docs_project_idx").on(t.projectId)],
+);
+
+/** Faktura: stavke (opis × količina × cena), broj po godini (2026-001), status draft → sent → paid. */
+export const invoices = pgTable(
+  "invoices",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    number: text("number").notNull(),
+    projectId: uuid("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
+    customerId: uuid("customer_id").references(() => customers.id, { onDelete: "set null" }),
+    issuedAt: timestamp("issued_at", { withTimezone: true }).notNull(),
+    dueAt: timestamp("due_at", { withTimezone: true }).notNull(),
+    periodFrom: timestamp("period_from", { withTimezone: true }),
+    periodTo: timestamp("period_to", { withTimezone: true }),
+    items: jsonb("items").$type<Array<{ description: string; qty: number; unit: string; unitPrice: number }>>().notNull(),
+    totalEur: doublePrecision("total_eur").notNull(),
+    status: text("status").notNull().default("draft"), // draft | sent | paid
+    notes: text("notes"),
+    createdBy: text("created_by"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("invoices_number_idx").on(t.number), index("invoices_project_idx").on(t.projectId)],
+);
+
+/** Provere sajta klijenta (na 5 minuta, čuva se 14 dana). */
+export const siteChecks = pgTable(
+  "site_checks",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
+    ok: boolean("ok").notNull(),
+    status: integer("status"),
+    ms: integer("ms"),
+    error: text("error"),
+    at: timestamp("at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("site_checks_project_idx").on(t.projectId, t.at)],
 );

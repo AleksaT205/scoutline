@@ -62,6 +62,16 @@ export function OrganizationSettings() {
           <span className="mb-1 block text-[12px] text-muted">Contact email (shown to clients)</span>
           <input className={input} disabled={!owner} value={f.email} onChange={set("email")} placeholder="hello@acme.studio" />
         </label>
+        <label className="sm:col-span-2">
+          <span className="mb-1 block text-[12px] text-muted">Invoice details (address, company ID, VAT number, bank account — printed on invoices)</span>
+          <textarea
+            className="min-h-[84px] w-full rounded-lg border border-line bg-bg px-3 py-2 text-[13px] outline-none placeholder:text-faint focus:border-accent/60 disabled:opacity-60"
+            disabled={!owner}
+            value={f.invoiceDetails ?? ""}
+            onChange={(e) => setF({ ...f, invoiceDetails: e.target.value })}
+            placeholder={"Acme Studio d.o.o.\nBulevar 1, 11000 Beograd\nPIB 123456789 · MB 12345678\nRačun 160-0000000000000-00"}
+          />
+        </label>
         <div className="flex items-center gap-3 sm:col-span-2">
           {f.logoUrl && <img src={f.logoUrl} alt="" className="size-9 rounded-lg border border-line object-cover" />}
           <span className="text-[13px] font-medium" style={{ color: f.accent }}>
