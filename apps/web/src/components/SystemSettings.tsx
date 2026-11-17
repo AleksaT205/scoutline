@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AlertTriangle, Check, ChevronDown, Loader2, RefreshCw, Rocket } from "lucide-react";
 import { useCached } from "../lib/cache";
 import { teamFetch } from "../lib/team";
+import { segItem } from "../lib/ui";
 import { askConfirm } from "../lib/confirm";
 
 /** Settings → System (vlasnik): greške iz aplikacije i sa servera. Nova greška stiže i na Telegram. */
@@ -63,7 +64,7 @@ function AutoDeploy() {
               }
             }}
             disabled={busy}
-            className="inline-flex h-[30px] items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 text-[12px] hover:bg-surface-2 disabled:opacity-50"
+            className="inline-flex h-[28px] items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 text-[12px] hover:bg-surface-2 disabled:opacity-50"
           >
             {busy ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />} Check now
           </button>
@@ -127,7 +128,7 @@ function ErrorsCard() {
     }
   };
   const list = q.data?.errors ?? [];
-  const seg = (on: boolean) => `h-[28px] rounded-md px-3 text-[12.5px] ${on ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`;
+  const seg = segItem;
   return (
     <section className="rounded-xl border border-line bg-surface p-4 sm:p-5">
       <div className="flex flex-wrap items-start gap-3">

@@ -90,9 +90,9 @@ export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: {
       >
         <div className="flex items-center gap-2.5 px-2 font-semibold tracking-tight">
           {org?.logoUrl ? (
-            <img src={org.logoUrl} alt="" className="size-[26px] shrink-0 rounded-[7px] object-cover" />
+            <img src={org.logoUrl} alt="" className="size-[26px] shrink-0 rounded-lg object-cover" />
           ) : (
-          <div className="grid size-[26px] place-items-center rounded-[7px] bg-gradient-to-br from-accent to-[#b4a9ff] shadow-[0_6px_18px_-6px_var(--accent)]">
+          <div className="grid size-[26px] place-items-center rounded-lg bg-gradient-to-br from-accent to-[#b4a9ff] shadow-[0_6px_18px_-6px_var(--accent)]">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round">
               <circle cx="12" cy="12" r="3" />
               <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />

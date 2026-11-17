@@ -69,3 +69,10 @@ Radijusi: 6 px (dugmad, inputi), 10 px (kartice), 14 px (modali).
 - Hover na redu → pojave se brze akcije (email, status, sakrij).
 - Prazno stanje sa ilustracijom u liniji i jednim dugmetom.
 - Prvi utisak: login/landing sa jakim naslovom i čistim screenshot-om proizvoda.
+
+
+## Komponente (apps/web/src/lib/ui.tsx)
+- Dve veličine kontrola: **md = 34px** (glavna dugmad, polja, padajući meniji, `rounded-lg`) i **sm = 28px** (dugmad u redovima, čipovi, tabovi, `rounded-md`). Druge visine se ne koriste.
+- Dugmad: `btnPrimary`, `btnSecondary`, `btnGhost`, `btnDanger`, `btnSm`, `btnSmPrimary`, `btnIcon`. Polja: `input` (34px), `field` (bez visine, za textarea), `select`.
+- Prekidač: `Segmented` (ili `segWrap` + `segItem`). Kartica: `Card`. Prazno stanje: `EmptyState`. Oznaka: `Badge` (neutral / accent / success / warning / danger).
+- Nova stranica koristi ove komponente — bez novih ručno pisanih visina i zaobljenja.

@@ -108,7 +108,7 @@ export function SourcesPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Sources</h1>
           <p className="mt-0.5 text-[13.5px] text-muted">Where leads come from. Every source uses an official API, open data, RSS or your own email alerts — and respects its terms.</p>
         </div>
-        <button onClick={() => window.dispatchEvent(new Event("open-add-lead"))} className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2 sm:ml-auto">
+        <button onClick={() => window.dispatchEvent(new Event("open-add-lead"))} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2 sm:ml-auto">
           <Plus size={14} /> Add a lead manually
         </button>
       </div>
@@ -162,7 +162,7 @@ export function SourcesPage() {
                   <select
                     value={s.intervalMinutes}
                     onChange={(e) => void act(s.id, `/sources/${s.id}`, { method: "PATCH", body: JSON.stringify({ intervalMinutes: Number(e.target.value) }) }, { intervalMinutes: Number(e.target.value) })}
-                    className="h-[32px] flex-1 rounded-md border border-line bg-bg px-2 text-[12.5px] outline-none"
+                    className="h-[34px] flex-1 rounded-md border border-line bg-bg px-2 text-[12.5px] outline-none"
                     aria-label={`${s.name} schedule`}
                   >
                     {[...new Set([...SCHEDULES, s.intervalMinutes])].sort((a, b) => a - b).map((m) => (

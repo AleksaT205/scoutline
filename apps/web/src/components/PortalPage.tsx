@@ -84,9 +84,9 @@ export function PortalPage({ token }: { token: string }) {
       <div className="mx-auto max-w-[920px] px-4 py-8 sm:px-6">
         <div className="mb-6 flex items-center gap-2.5 text-[13px] text-muted">
           {org?.logoUrl ? (
-            <img src={org.logoUrl} alt="" className="size-[28px] rounded-[7px] object-cover" />
+            <img src={org.logoUrl} alt="" className="size-[28px] rounded-lg object-cover" />
           ) : (
-          <div className="grid size-[24px] place-items-center rounded-[7px] bg-gradient-to-br from-accent to-[#b4a9ff]">
+          <div className="grid size-[24px] place-items-center rounded-lg bg-gradient-to-br from-accent to-[#b4a9ff]">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round">
               <circle cx="12" cy="12" r="3" />
               <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
@@ -181,15 +181,15 @@ export function PortalPage({ token }: { token: string }) {
                       }
                     }}
                   >
-                    <input className={`${field} h-[36px]`} placeholder="Your name" value={form.name} onChange={set("name")} />
-                    <input className={`${field} h-[36px]`} type="email" placeholder="Email (for our reply)" value={form.email} onChange={set("email")} />
-                    <input className={`${field} h-[36px] sm:col-span-2`} placeholder="Short title, e.g. “Add PDF export to invoices”" value={form.title} onChange={set("title")} required />
+                    <input className={`${field} h-[34px]`} placeholder="Your name" value={form.name} onChange={set("name")} />
+                    <input className={`${field} h-[34px]`} type="email" placeholder="Email (for our reply)" value={form.email} onChange={set("email")} />
+                    <input className={`${field} h-[34px] sm:col-span-2`} placeholder="Short title, e.g. “Add PDF export to invoices”" value={form.title} onChange={set("title")} required />
                     <textarea className={`${field} h-28 resize-none py-2 sm:col-span-2`} placeholder="Details (what, where, why it matters)" value={form.details} onChange={set("details")} />
                     {/* Zamka za botove — ljudi ne vide ovo polje */}
                     <input className="hidden" tabIndex={-1} autoComplete="off" value={form.website} onChange={set("website")} aria-hidden="true" />
                     {formError && <div className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[12.5px] text-danger sm:col-span-2">{formError}</div>}
                     <div className="sm:col-span-2">
-                      <button disabled={busy || !form.title.trim()} className="inline-flex h-[36px] items-center gap-1.5 rounded-[7px] bg-fg px-4 text-[13px] font-medium text-bg disabled:opacity-40">
+                      <button disabled={busy || !form.title.trim()} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-4 text-[13px] font-medium text-bg disabled:opacity-40">
                         {busy ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Send request
                       </button>
                     </div>

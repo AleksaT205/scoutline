@@ -103,9 +103,9 @@ export function AlertsDialog({ open, onClose }: { open: boolean; onClose: () => 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Team password"
-              className="h-[36px] flex-1 rounded-lg border border-line bg-bg px-3 text-[13.5px] outline-none placeholder:text-faint focus:border-accent/60"
+              className="h-[34px] flex-1 rounded-lg border border-line bg-bg px-3 text-[13.5px] outline-none placeholder:text-faint focus:border-accent/60"
             />
-            <button disabled={!password} className="h-[36px] rounded-[7px] bg-fg px-3.5 text-[13px] font-medium text-bg disabled:opacity-40">
+            <button disabled={!password} className="h-[34px] rounded-lg bg-fg px-3.5 text-[13px] font-medium text-bg disabled:opacity-40">
               Unlock
             </button>
           </form>
@@ -165,7 +165,7 @@ export function AlertsDialog({ open, onClose }: { open: boolean; onClose: () => 
                   <select
                     value={alerts.maxAgeHours}
                     onChange={(e) => set({ maxAgeHours: Number(e.target.value) })}
-                    className="h-[30px] rounded-lg border border-line bg-bg px-2 text-[13px] text-fg outline-none"
+                    className="h-[28px] rounded-lg border border-line bg-bg px-2 text-[13px] text-fg outline-none"
                   >
                     <option value={6}>6 hours</option>
                     <option value={24}>24 hours</option>
@@ -196,7 +196,7 @@ export function AlertsDialog({ open, onClose }: { open: boolean; onClose: () => 
                     setBusy(null);
                   }
                 }}
-                className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2 disabled:opacity-40"
+                className="inline-flex h-[34px] items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2 disabled:opacity-40"
               >
                 {busy === "test" ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />} Send test
               </button>
@@ -216,7 +216,7 @@ export function AlertsDialog({ open, onClose }: { open: boolean; onClose: () => 
                     setBusy(null);
                   }
                 }}
-                className="ml-auto inline-flex h-[34px] items-center gap-1.5 rounded-[7px] bg-fg px-4 text-[13px] font-medium text-bg hover:opacity-90 disabled:opacity-40"
+                className="ml-auto inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-4 text-[13px] font-medium text-bg hover:opacity-90 disabled:opacity-40"
               >
                 {busy === "save" && <Loader2 size={14} className="animate-spin" />} Save
               </button>

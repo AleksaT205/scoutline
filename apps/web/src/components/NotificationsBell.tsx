@@ -65,7 +65,7 @@ export function NotificationsBell() {
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="relative grid size-[34px] place-items-center rounded-[7px] border border-line bg-surface text-muted hover:bg-surface-2 hover:text-fg"
+        className="relative grid size-[34px] place-items-center rounded-lg border border-line bg-surface text-muted hover:bg-surface-2 hover:text-fg"
         aria-label={unread ? `Notifications (${unread} new)` : "Notifications"}
         aria-expanded={open}
       >

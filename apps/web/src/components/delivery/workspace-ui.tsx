@@ -4,10 +4,11 @@ import { teamFetch } from "../../lib/team";
 import { canEdit, useSessionUser } from "../../lib/session";
 import { PreviewButton, makePreview } from "./agent";
 import { askConfirm } from "../../lib/confirm";
+import { btnSm, segItem } from "../../lib/ui";
 import { Dialog, ErrorNote, btnPrimary, btnSecondary, field } from "./parts";
 
 /** Faza 15 — Skills (PR u repo), Pokreni lokalno, Figma u tasku. */
-const small = "inline-flex h-[28px] items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 text-[12px] font-medium hover:bg-surface-2 disabled:opacity-50";
+const small = btnSm;
 
 interface Skill {
   id: string;
@@ -107,10 +108,10 @@ function SkillCatalog({ onLibrary, onInstall, busy, canEdit: editable }: { onLib
           }}
         >
           <span className="text-[12px] text-muted">Source</span>
-          <input value={input} onChange={(e) => setInput(e.target.value)} className={`${field} num h-[30px] w-52 text-[12.5px]`} aria-label="GitHub repo with skills (owner/repo)" />
+          <input value={input} onChange={(e) => setInput(e.target.value)} className={`${field} num h-[28px] w-52 text-[12.5px]`} aria-label="GitHub repo with skills (owner/repo)" />
           <button className={small}>Load</button>
         </form>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search skills…" className={`${field} h-[30px] w-full text-[12.5px] sm:ml-auto sm:w-56`} aria-label="Search skills" />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search skills…" className={`${field} h-[28px] w-full text-[12.5px] sm:ml-auto sm:w-56`} aria-label="Search skills" />
       </div>
       {err && <ErrorNote>{err}</ErrorNote>}
       {!items && !err && (
@@ -231,7 +232,7 @@ export function SkillsView({ projectId, repo }: { projectId: string; repo: strin
       setBusy(null);
     }
   };
-  const seg = (on: boolean) => `h-[28px] rounded-md px-3 text-[12.5px] ${on ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`;
+  const seg = segItem;
   const tabs = (
     <div className="inline-flex rounded-lg border border-line bg-surface p-0.5">
       {(
@@ -413,10 +414,10 @@ function BrowserPreview({ projectId, repo }: { projectId: string; repo: string }
         <span className="text-[13px] font-semibold">Run in browser</span>
         <span className="text-[12px] text-faint">the website from {repo}, straight from GitHub — nothing to install</span>
         <div className="ml-auto flex flex-wrap gap-2">
-          <button onClick={() => void show()} disabled={busy} className="inline-flex h-[32px] items-center gap-1.5 rounded-[7px] bg-fg px-3 text-[12.5px] font-medium text-bg hover:opacity-90 disabled:opacity-50">
+          <button onClick={() => void show()} disabled={busy} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[12.5px] font-medium text-bg hover:opacity-90 disabled:opacity-50">
             {busy ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />} {url ? "Reload" : "Run here"}
           </button>
-          <PreviewButton projectId={projectId} repo={repo} className="inline-flex h-[32px] items-center gap-1.5 rounded-[7px] border border-line bg-surface px-3 text-[12.5px] font-medium hover:bg-surface-2 disabled:opacity-50">
+          <PreviewButton projectId={projectId} repo={repo} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[12.5px] font-medium hover:bg-surface-2 disabled:opacity-50">
             Open in new tab
           </PreviewButton>
         </div>
@@ -482,11 +483,11 @@ function ProjectRunCommand({ projectId }: { projectId: string }) {
                 setCopied(true);
                 setTimeout(() => setCopied(false), 1500);
               }}
-              className="inline-flex h-[32px] items-center gap-1.5 rounded-[7px] bg-fg px-3 text-[12.5px] font-medium text-bg hover:opacity-90"
+              className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[12.5px] font-medium text-bg hover:opacity-90"
             >
               {copied ? <Check size={13} /> : <Copy size={13} />} {copied ? "Copied" : "Copy command"}
             </button>
-            <button onClick={download} className="inline-flex h-[32px] items-center gap-1.5 rounded-[7px] border border-line bg-surface px-3 text-[12.5px] font-medium hover:bg-surface-2">
+            <button onClick={download} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[12.5px] font-medium hover:bg-surface-2">
               Download run.sh
             </button>
             <span className="text-[11.5px] text-faint">
@@ -586,7 +587,7 @@ export function RunLocallyView({ projectId, repo }: { projectId: string; repo: s
         {d.note && <p className="mt-2 rounded-lg border border-line bg-bg px-3 py-2 text-[12.5px] text-muted">{d.note}</p>}
         {d.localUrl && (
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <a href={d.localUrl} target="_blank" rel="noreferrer" className="inline-flex h-[32px] items-center gap-1.5 rounded-[7px] bg-fg px-3 text-[12.5px] font-medium text-bg hover:opacity-90">
+            <a href={d.localUrl} target="_blank" rel="noreferrer" className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[12.5px] font-medium text-bg hover:opacity-90">
               <ExternalLink size={13} /> Open {d.localUrl.replace("http://", "")}
             </a>
             <span className="text-[12px] text-faint">after the last command is running in your terminal</span>
@@ -684,7 +685,7 @@ export function FigmaBox({ issueId, links, onChanged }: { issueId: string; links
             }
           }}
         >
-          <input autoFocus={adding && !figma.length} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Paste a Figma link (right-click a frame → Copy link)" className="h-[30px] min-w-0 flex-1 rounded-md border border-line bg-surface px-2 text-[12.5px] outline-none placeholder:text-faint focus:border-accent/60" />
+          <input autoFocus={adding && !figma.length} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Paste a Figma link (right-click a frame → Copy link)" className="h-[28px] min-w-0 flex-1 rounded-md border border-line bg-surface px-2 text-[12.5px] outline-none placeholder:text-faint focus:border-accent/60" />
           <button disabled={busy || !url.trim()} className={small}>
             {busy ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Add
           </button>

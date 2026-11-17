@@ -202,12 +202,12 @@ export function VoiceButton({ value, onChange, className = "", size = "md" }: { 
   const live = v.state === "listening" || v.state === "recording";
   return (
     <span className={`inline-flex shrink-0 items-center ${/\babsolute\b/.test(className) ? "" : "relative"} ${className}`}>
-      <span className={`inline-flex ${size === "sm" ? "h-[30px]" : "h-[34px]"} items-stretch overflow-hidden rounded-md border border-line bg-surface`}>
+      <span className={`inline-flex ${size === "sm" ? "h-[28px]" : "h-[34px]"} items-stretch overflow-hidden rounded-md border border-line bg-surface`}>
         <button
           type="button"
           onClick={v.toggle}
           disabled={v.state === "transcribing"}
-          className={`grid ${size === "sm" ? "w-[30px]" : "w-[34px]"} place-items-center ${live ? "bg-danger/10 text-danger" : "text-muted hover:text-fg"} disabled:opacity-60`}
+          className={`grid ${size === "sm" ? "w-[28px]" : "w-[34px]"} place-items-center ${live ? "bg-danger/10 text-danger" : "text-muted hover:text-fg"} disabled:opacity-60`}
           aria-label={live ? "Stop voice input" : "Talk instead of typing"}
           title={live ? "Stop" : `Talk instead of typing (${v.lang === "sr" ? "Serbian" : "English"})`}
         >

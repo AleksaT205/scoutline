@@ -6,6 +6,7 @@ import { IntegrationsSettings } from "./IntegrationsSettings";
 import { useHashParam } from "../lib/hashParams";
 import { askConfirm } from "../lib/confirm";
 import { OrganizationSettings } from "./OrganizationSettings";
+import { input } from "../lib/ui";
 import { SystemSettings } from "./SystemSettings";
 
 type Tab = "profile" | "organization" | "team" | "shares" | "alerts" | "integrations" | "system";
@@ -14,7 +15,7 @@ interface Invite { id: string; email: string | null; role: string; expiresAt: st
 interface Share { id: string; label: string; minScore: number; expiresAt: string | null; lastViewedAt: string | null; createdAt: string }
 
 const base = () => `${window.location.origin}${window.location.pathname}`;
-const field = "h-[36px] w-full rounded-lg border border-line bg-bg px-3 text-[13.5px] outline-none placeholder:text-faint focus:border-accent/60";
+const field = input;
 const ROLE_HINT: Record<string, string> = { owner: "Everything, incl. team", member: "Work with leads, router, settings", viewer: "Read only" };
 
 function CopyBox({ value }: { value: string }) {
@@ -29,7 +30,7 @@ function CopyBox({ value }: { value: string }) {
           setDone(true);
           setTimeout(() => setDone(false), 1500);
         }}
-        className="inline-flex h-[26px] shrink-0 items-center gap-1 rounded-md border border-line bg-surface px-2 text-[12px] text-muted hover:text-fg"
+        className="inline-flex h-[28px] shrink-0 items-center gap-1 rounded-md border border-line bg-surface px-2 text-[12px] text-muted hover:text-fg"
       >
         {done ? <Check size={12} className="text-success" /> : <Copy size={12} />} {done ? "Copied" : "Copy"}
       </button>
@@ -87,7 +88,7 @@ function Profile() {
         <label className="block pt-2 text-[12px] text-faint">Change password (optional)</label>
         <input className={field} type="password" autoComplete="current-password" placeholder="Current password" value={current} onChange={(e) => setCurrent(e.target.value)} />
         <input className={field} type="password" autoComplete="new-password" placeholder="New password (min. 8)" value={next} onChange={(e) => setNext(e.target.value)} />
-        <button disabled={busy} className="mt-1 inline-flex h-[34px] items-center gap-1.5 rounded-[7px] bg-fg px-4 text-[13px] font-medium text-bg disabled:opacity-40">
+        <button disabled={busy} className="mt-1 inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-4 text-[13px] font-medium text-bg disabled:opacity-40">
           {busy && <Loader2 size={13} className="animate-spin" />} Save
         </button>
         <Msg msg={msg} />
@@ -134,7 +135,7 @@ function Team() {
               </div>
               {isOwner && u.id !== me?.id ? (
                 <div className="flex w-full items-center gap-2 sm:w-auto">
-                  <select value={u.role} onChange={(e) => act(() => teamFetch(`/team/users/${u.id}`, { method: "PATCH", body: JSON.stringify({ role: e.target.value }) }))} className="h-[32px] w-[96px] shrink-0 rounded-lg border border-line bg-bg px-2 text-[12.5px] sm:h-[30px] sm:w-auto">
+                  <select value={u.role} onChange={(e) => act(() => teamFetch(`/team/users/${u.id}`, { method: "PATCH", body: JSON.stringify({ role: e.target.value }) }))} className="h-[34px] w-[96px] shrink-0 rounded-lg border border-line bg-bg px-2 text-[12.5px] sm:h-[28px] sm:w-auto">
                     <option value="owner">Owner</option>
                     <option value="member">Member</option>
                     <option value="viewer">Viewer</option>
@@ -143,7 +144,7 @@ function Team() {
                     <select
                       value={(u as { access?: string }).access ?? "all"}
                       onChange={(e) => act(() => teamFetch(`/team/users/${u.id}`, { method: "PATCH", body: JSON.stringify({ access: e.target.value }) }))}
-                      className="h-[32px] min-w-0 flex-1 rounded-lg border border-line bg-bg px-2 text-[12.5px] sm:h-[30px] sm:flex-none"
+                      className="h-[34px] min-w-0 flex-1 rounded-lg border border-line bg-bg px-2 text-[12.5px] sm:h-[28px] sm:flex-none"
                       title="Which part of the app this person can use"
                       aria-label={`${u.name} access`}
                     >
@@ -152,7 +153,7 @@ function Team() {
                       <option value="delivery">Delivery only</option>
                     </select>
                   )}
-                  <button onClick={async () => (await askConfirm(`Remove ${u.name} from the team?`)) && act(() => teamFetch(`/team/users/${u.id}`, { method: "DELETE" }))} className="grid size-[32px] shrink-0 place-items-center rounded-lg text-faint hover:bg-surface-2 hover:text-danger sm:size-[30px]" aria-label={`Remove ${u.name}`}>
+                  <button onClick={async () => (await askConfirm(`Remove ${u.name} from the team?`)) && act(() => teamFetch(`/team/users/${u.id}`, { method: "DELETE" }))} className="grid size-[34px] shrink-0 place-items-center rounded-lg text-faint hover:bg-surface-2 hover:text-danger sm:size-[30px]" aria-label={`Remove ${u.name}`}>
                     <Trash2 size={14} />
                   </button>
                 </div>
@@ -176,7 +177,7 @@ function Team() {
                   setDemo(await teamFetch<{ email: string; password: string }>("/team/demo", { method: "POST", body: "{}" }));
                 })
               }
-              className="inline-flex h-[36px] items-center gap-1.5 rounded-[7px] bg-fg px-3.5 text-[13px] font-medium text-bg"
+              className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3.5 text-[13px] font-medium text-bg"
             >
               <UserPlus size={14} /> {hasDemo ? "New demo password" : "Create demo login"}
             </button>
@@ -202,7 +203,7 @@ function Team() {
         <Card title="Invite a teammate" sub="Creates a one-time link valid for 7 days. Send it on Slack, email or Telegram.">
           <div className="flex flex-wrap gap-2">
             <input className={`${field} max-w-xs flex-1`} type="email" placeholder="Email (optional)" value={email} onChange={(e) => setEmail(e.target.value)} />
-            <select value={role} onChange={(e) => setRole(e.target.value)} className="h-[36px] rounded-lg border border-line bg-bg px-2 text-[13px]" title={ROLE_HINT[role]}>
+            <select value={role} onChange={(e) => setRole(e.target.value)} className="h-[34px] rounded-lg border border-line bg-bg px-2 text-[13px]" title={ROLE_HINT[role]}>
               <option value="member">Member — {ROLE_HINT.member}</option>
               <option value="viewer">Viewer — {ROLE_HINT.viewer}</option>
               <option value="owner">Owner — {ROLE_HINT.owner}</option>
@@ -215,7 +216,7 @@ function Team() {
                   setEmail("");
                 })
               }
-              className="inline-flex h-[36px] items-center gap-1.5 rounded-[7px] bg-fg px-3.5 text-[13px] font-medium text-bg"
+              className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3.5 text-[13px] font-medium text-bg"
             >
               <UserPlus size={14} /> Create invite link
             </button>
@@ -260,9 +261,9 @@ function Shares() {
         <input className={`${field} max-w-[220px]`} placeholder="Label (e.g. For Marko)" value={label} onChange={(e) => setLabel(e.target.value)} />
         <label className="inline-flex items-center gap-1.5 text-[12.5px] text-muted">
           Min score
-          <input className="h-[36px] w-16 rounded-lg border border-line bg-bg px-2 text-[13px]" type="number" min={0} max={100} value={minScore} onChange={(e) => setMinScore(e.target.value)} />
+          <input className="h-[34px] w-16 rounded-lg border border-line bg-bg px-2 text-[13px]" type="number" min={0} max={100} value={minScore} onChange={(e) => setMinScore(e.target.value)} />
         </label>
-        <select value={days} onChange={(e) => setDays(e.target.value)} className="h-[36px] rounded-lg border border-line bg-bg px-2 text-[13px]">
+        <select value={days} onChange={(e) => setDays(e.target.value)} className="h-[34px] rounded-lg border border-line bg-bg px-2 text-[13px]">
           <option value="7">Expires in 7 days</option>
           <option value="30">Expires in 30 days</option>
           <option value="0">Never expires</option>
@@ -279,7 +280,7 @@ function Shares() {
               setMsg({ ok: false, text: (e as Error).message });
             }
           }}
-          className="inline-flex h-[36px] items-center gap-1.5 rounded-[7px] bg-fg px-3.5 text-[13px] font-medium text-bg"
+          className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3.5 text-[13px] font-medium text-bg"
         >
           <Link2 size={14} /> Create link
         </button>
@@ -342,7 +343,7 @@ export function SettingsPage({ initialTab = "profile", onOpenAlerts }: { initial
       </div>
       <div className="mb-4 flex max-w-full overflow-x-auto"><div className="inline-flex shrink-0 rounded-lg border border-line bg-surface p-0.5 text-[13px]">
         {tabs.map(([k, label]) => (
-          <button key={k} onClick={() => setTab(k)} className={`h-[30px] whitespace-nowrap rounded-md px-3 ${tab === k ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}>
+          <button key={k} onClick={() => setTab(k)} className={`h-[28px] whitespace-nowrap rounded-md px-3 ${tab === k ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}>
             {label}
           </button>
         ))}
@@ -356,7 +357,7 @@ export function SettingsPage({ initialTab = "profile", onOpenAlerts }: { initial
       {tab === "shares" && (role === "viewer" ? <Card title="View-only links" sub="Viewers can't create links." children={null} /> : <Shares />)}
       {tab === "alerts" && (
         <Card title="Telegram notifications" sub="Choose which new leads are sent to Telegram.">
-          <button onClick={onOpenAlerts} className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2">
+          <button onClick={onOpenAlerts} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2">
             <BellRing size={14} /> Open alert settings
           </button>
         </Card>

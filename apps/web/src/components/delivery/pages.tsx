@@ -117,11 +117,11 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
         <div className="grid gap-3 px-4 py-4 sm:grid-cols-2">
           <label className="sm:col-span-2">
             <span className={label}>Project name</span>
-            <input autoFocus className={`${field} h-[36px]`} value={f.name} onChange={set("name")} placeholder="e.g. Customer portal MVP" />
+            <input autoFocus className={`${field} h-[34px]`} value={f.name} onChange={set("name")} placeholder="e.g. Customer portal MVP" />
           </label>
           <label>
             <span className={label}>Client</span>
-            <select className={`${field} h-[36px]`} value={f.customerId} onChange={set("customerId")}>
+            <select className={`${field} h-[34px]`} value={f.customerId} onChange={set("customerId")}>
               <option value="">No client</option>
               {(customers.data ?? []).map((c) => (
                 <option key={c.id} value={c.id}>
@@ -134,12 +134,12 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
           {f.customerId === "__new" ? (
             <label>
               <span className={label}>New client name</span>
-              <input className={`${field} h-[36px]`} value={f.customerName} onChange={set("customerName")} placeholder="Acme GmbH" />
+              <input className={`${field} h-[34px]`} value={f.customerName} onChange={set("customerName")} placeholder="Acme GmbH" />
             </label>
           ) : (
             <label>
               <span className={label}>Status</span>
-              <select className={`${field} h-[36px]`} value={f.status} onChange={set("status")}>
+              <select className={`${field} h-[34px]`} value={f.status} onChange={set("status")}>
                 {PROJECT_STATUSES.map((s) => (
                   <option key={s} value={s}>
                     {PROJECT_STATUS_META[s].label}
@@ -150,7 +150,7 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
           )}
           <label>
             <span className={label}>Billing</span>
-            <select className={`${field} h-[36px]`} value={f.billing} onChange={set("billing")}>
+            <select className={`${field} h-[34px]`} value={f.billing} onChange={set("billing")}>
               <option value="fixed">Fixed price (budget)</option>
               <option value="hourly">Hourly (time × rate)</option>
             </select>
@@ -158,21 +158,21 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
           {f.billing === "hourly" ? (
             <label>
               <span className={label}>Client hourly rate (€)</span>
-              <input className={`${field} h-[36px]`} inputMode="numeric" value={f.hourlyRateEur} onChange={set("hourlyRateEur")} placeholder="45" />
+              <input className={`${field} h-[34px]`} inputMode="numeric" value={f.hourlyRateEur} onChange={set("hourlyRateEur")} placeholder="45" />
             </label>
           ) : (
             <label>
               <span className={label}>Budget (€)</span>
-              <input className={`${field} h-[36px]`} inputMode="numeric" value={f.budgetEur} onChange={set("budgetEur")} placeholder="15000" />
+              <input className={`${field} h-[34px]`} inputMode="numeric" value={f.budgetEur} onChange={set("budgetEur")} placeholder="15000" />
             </label>
           )}
           <label>
             <span className={label}>Target date</span>
-            <input type="date" className={`${field} h-[36px]`} value={f.dueDate} onChange={set("dueDate")} />
+            <input type="date" className={`${field} h-[34px]`} value={f.dueDate} onChange={set("dueDate")} />
           </label>
           <label>
             <span className={label}>Project lead</span>
-            <select className={`${field} h-[36px]`} value={f.ownerId} onChange={set("ownerId")}>
+            <select className={`${field} h-[34px]`} value={f.ownerId} onChange={set("ownerId")}>
               <option value="">Nobody yet</option>
               {members.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -183,12 +183,12 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
           </label>
           <label>
             <span className={label}>GitHub repo (optional)</span>
-            <input className={`${field} h-[36px]`} value={f.repoUrl} onChange={set("repoUrl")} placeholder="https://github.com/…" />
+            <input className={`${field} h-[34px]`} value={f.repoUrl} onChange={set("repoUrl")} placeholder="https://github.com/…" />
           </label>
           {aiClients.length > 0 && (
             <label className="sm:col-span-2">
               <span className={label}>AI Router key (its AI cost and savings count toward this project)</span>
-              <select className={`${field} h-[36px]`} value={f.aiClientId} onChange={set("aiClientId")}>
+              <select className={`${field} h-[34px]`} value={f.aiClientId} onChange={set("aiClientId")}>
                 <option value="">None</option>
                 {aiClients.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -238,7 +238,7 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
                   setError((e as Error).message);
                 }
               }}
-              className="mr-auto inline-flex h-[34px] items-center rounded-[7px] px-2.5 text-[13px] text-danger hover:bg-danger/10"
+              className="mr-auto inline-flex h-[34px] items-center rounded-lg px-2.5 text-[13px] text-danger hover:bg-danger/10"
             >
               Delete project
             </button>
@@ -592,14 +592,14 @@ export function ProjectPage({ id }: { id: string }) {
               ["ask", "Ask AI", MessagesSquare],
             ] as const
           ).map(([v, l, Icon]) => (
-            <button key={v} onClick={() => pickView(v)} className={`inline-flex h-[30px] flex-1 items-center justify-center gap-1.5 rounded-md px-2 sm:h-[28px] sm:flex-none sm:px-2.5 ${view === v ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}>
+            <button key={v} onClick={() => pickView(v)} className={`inline-flex h-[28px] flex-1 items-center justify-center gap-1.5 rounded-md px-2 sm:flex-none sm:px-2.5 ${view === v ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}>
               <Icon size={13} className="hidden sm:block" /> {l}
             </button>
           ))}
         </div>
         </div>
         {(view === "board" || view === "list") && (
-          <label className="flex h-[32px] w-full items-center sm:ml-auto sm:w-64 gap-2 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-faint focus-within:border-accent/55">
+          <label className="flex h-[34px] w-full items-center sm:ml-auto sm:w-64 gap-2 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-faint focus-within:border-accent/55">
             <Search size={13} />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter tasks…" className="w-full bg-transparent text-fg outline-none placeholder:text-faint" />
           </label>
@@ -733,23 +733,23 @@ function ClientDialog({ open, onClose, client, onSaved }: { open: boolean; onClo
         <div className="grid gap-3 px-4 py-4 sm:grid-cols-2">
           <label className="sm:col-span-2">
             <span className={label}>Company name</span>
-            <input autoFocus className={`${field} h-[36px]`} value={f.name} onChange={set("name")} placeholder="Acme GmbH" />
+            <input autoFocus className={`${field} h-[34px]`} value={f.name} onChange={set("name")} placeholder="Acme GmbH" />
           </label>
           <label>
             <span className={label}>Contact person</span>
-            <input className={`${field} h-[36px]`} value={f.contactName} onChange={set("contactName")} />
+            <input className={`${field} h-[34px]`} value={f.contactName} onChange={set("contactName")} />
           </label>
           <label>
             <span className={label}>Contact email</span>
-            <input className={`${field} h-[36px]`} type="email" value={f.contactEmail} onChange={set("contactEmail")} />
+            <input className={`${field} h-[34px]`} type="email" value={f.contactEmail} onChange={set("contactEmail")} />
           </label>
           <label>
             <span className={label}>Website</span>
-            <input className={`${field} h-[36px]`} value={f.website} onChange={set("website")} placeholder="https://" />
+            <input className={`${field} h-[34px]`} value={f.website} onChange={set("website")} placeholder="https://" />
           </label>
           <label>
             <span className={label}>Country (2 letters)</span>
-            <input className={`${field} h-[36px] uppercase`} maxLength={2} value={f.country} onChange={set("country")} placeholder="DE" />
+            <input className={`${field} h-[34px] uppercase`} maxLength={2} value={f.country} onChange={set("country")} placeholder="DE" />
           </label>
           <label className="sm:col-span-2">
             <span className={label}>Notes</span>

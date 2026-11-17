@@ -167,7 +167,7 @@ function FilterMenu({ label, value, active, children, wide, onClear }: { label: 
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className={`inline-flex h-[30px] items-center gap-1.5 rounded-lg border px-2.5 text-[12.5px] transition-colors ${active ? "border-accent/50 bg-accent-soft text-fg" : "border-line bg-surface text-muted hover:text-fg"}`}
+        className={`inline-flex h-[28px] items-center gap-1.5 rounded-lg border px-2.5 text-[12.5px] transition-colors ${active ? "border-accent/50 bg-accent-soft text-fg" : "border-line bg-surface text-muted hover:text-fg"}`}
       >
         <span className={active ? "text-muted" : "text-faint"}>{label}</span>
         <span className={`max-w-[150px] truncate ${active ? "font-medium text-fg" : "text-fg"}`}>{value}</span>
@@ -215,7 +215,7 @@ function Chip({ on, onClick, title, children }: { on: boolean; onClick: () => vo
     <button
       onClick={onClick}
       title={title}
-      className={`inline-flex h-[30px] items-center gap-1.5 rounded-full border px-2.5 text-[12.5px] transition-colors ${on ? "border-accent/55 bg-accent-soft text-fg" : "border-line bg-surface text-muted hover:text-fg"}`}
+      className={`inline-flex h-[28px] items-center gap-1.5 rounded-full border px-2.5 text-[12.5px] transition-colors ${on ? "border-accent/55 bg-accent-soft text-fg" : "border-line bg-surface text-muted hover:text-fg"}`}
     >
       {children}
     </button>
@@ -297,12 +297,12 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
 
       {/* Telefon: jedno dugme „Filters“ */}
       <div className="flex items-center gap-2 sm:hidden">
-        <button onClick={() => setMobileOpen((o) => !o)} className={`inline-flex h-[32px] items-center gap-1.5 rounded-lg border px-3 text-[13px] ${!isDefault ? "border-accent/50 bg-accent-soft" : "border-line bg-surface"}`} aria-expanded={mobileOpen}>
+        <button onClick={() => setMobileOpen((o) => !o)} className={`inline-flex h-[34px] items-center gap-1.5 rounded-lg border px-3 text-[13px] ${!isDefault ? "border-accent/50 bg-accent-soft" : "border-line bg-surface"}`} aria-expanded={mobileOpen}>
           Filters {!isDefault && <span className="size-1.5 rounded-full bg-accent" />}
           <ChevronDown size={13} className={`text-faint transition-transform ${mobileOpen ? "rotate-180" : ""}`} />
         </button>
         {!isDefault && (
-          <button onClick={() => onChange(freshFilters())} className="inline-flex h-[32px] items-center gap-1 px-1 text-[12.5px] text-muted">
+          <button onClick={() => onChange(freshFilters())} className="inline-flex h-[34px] items-center gap-1 px-1 text-[12.5px] text-muted">
             <RotateCcw size={12} /> Reset
           </button>
         )}
@@ -313,7 +313,7 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
 
       {/* Ostali filteri — isti stil za svaki meni */}
       <div className={`${mobileOpen ? "flex" : "hidden"} flex-wrap items-center gap-1.5 sm:flex`}>
-        <label className="flex h-[30px] w-full items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 text-faint focus-within:border-accent/55 sm:w-56">
+        <label className="flex h-[28px] w-full items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 text-faint focus-within:border-accent/55 sm:w-56">
           <Search size={13} />
           <input value={value.query} onChange={(e) => set({ query: e.target.value })} placeholder="Search title, company, city…" className="w-full bg-transparent text-[12.5px] text-fg outline-none placeholder:text-faint" aria-label="Search leads" />
           {value.query && (
@@ -359,7 +359,7 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
           {() => (
             <>
               {sources.length > 7 && (
-                <label className="mb-1 flex h-[30px] items-center gap-1.5 rounded-md border border-line bg-bg px-2 text-faint focus-within:border-accent/60">
+                <label className="mb-1 flex h-[28px] items-center gap-1.5 rounded-md border border-line bg-bg px-2 text-faint focus-within:border-accent/60">
                   <Search size={12} />
                   <input autoFocus value={sourceQ} onChange={(e) => setSourceQ(e.target.value)} placeholder="Find a source…" className="w-full bg-transparent text-[12.5px] text-fg outline-none placeholder:text-faint" />
                 </label>
@@ -467,7 +467,7 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
               {a.label} <X size={11} className="text-faint" />
             </button>
           ))}
-          <button onClick={() => onChange(freshFilters({ sortBy: value.sortBy, sortDir: value.sortDir }))} className="ml-auto inline-flex h-[26px] items-center gap-1 rounded-md bg-fg px-2.5 text-[12px] font-medium text-bg hover:opacity-90">
+          <button onClick={() => onChange(freshFilters({ sortBy: value.sortBy, sortDir: value.sortDir }))} className="ml-auto inline-flex h-[28px] items-center gap-1 rounded-md bg-fg px-2.5 text-[12px] font-medium text-bg hover:opacity-90">
             <RotateCcw size={12} /> Clear all
           </button>
         </div>

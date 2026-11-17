@@ -128,7 +128,7 @@ export function NewIssueDialog({
       >
         <div className="space-y-2 px-4 pt-3">
           {!projectId && (
-            <Menu label="Project" value={pid} onChange={setPid} options={projects.map((p) => ({ value: p.id, label: p.name, hint: p.key }))} className="h-[26px] border border-line px-2">
+            <Menu label="Project" value={pid} onChange={setPid} options={projects.map((p) => ({ value: p.id, label: p.name, hint: p.key }))} className="h-[28px] border border-line px-2">
               <span className="num text-[11px] text-faint">{project?.key ?? "—"}</span>
               <span className="max-w-[260px] truncate text-fg">{project?.name ?? "Pick a project"}</span>
             </Menu>

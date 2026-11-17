@@ -3,6 +3,7 @@ import { FileText, Link2, Loader2, Lock, Sparkles, X } from "lucide-react";
 import type { UiLead } from "../data/demo";
 import { API_URL } from "../lib/api";
 import { getSessionToken } from "../lib/session";
+import { input } from "../lib/ui";
 import { getTeamToken } from "../lib/team";
 
 const TOKEN_KEY = "scoutline-team-token";
@@ -67,7 +68,6 @@ export function AddLeadDialog({ open, onClose, onAdded }: { open: boolean; onClo
     }
   };
 
-  const input = "h-[36px] w-full rounded-lg border border-line bg-bg px-3 text-[13.5px] outline-none placeholder:text-faint focus:border-accent/60";
   const canSubmit = !busy && token.length > 0 && (mode === "link" ? /^https?:\/\/\S+\.\S+/.test(url) : text.trim().length >= 40);
 
   return (
@@ -101,7 +101,7 @@ export function AddLeadDialog({ open, onClose, onAdded }: { open: boolean; onClo
               key={m}
               type="button"
               onClick={() => setMode(m)}
-              className={`inline-flex h-[30px] items-center gap-1.5 rounded-md px-3 ${mode === m ? "bg-surface text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}
+              className={`inline-flex h-[28px] items-center gap-1.5 rounded-md px-3 ${mode === m ? "bg-surface text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}
             >
               <Icon size={13} /> {label}
             </button>
@@ -144,13 +144,13 @@ export function AddLeadDialog({ open, onClose, onAdded }: { open: boolean; onClo
         {error && <div className="mt-3 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[12.5px] text-danger">{error}</div>}
 
         <div className="mt-4 flex items-center justify-end gap-2">
-          <button type="button" onClick={onClose} disabled={busy} className="h-[34px] rounded-[7px] border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2">
+          <button type="button" onClick={onClose} disabled={busy} className="h-[34px] rounded-lg border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2">
             Cancel
           </button>
           <button
             type="submit"
             disabled={!canSubmit}
-            className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] bg-fg px-3.5 text-[13px] font-medium text-bg hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+            className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3.5 text-[13px] font-medium text-bg hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
           >
             {busy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={14} />}
             {busy ? "Analyzing…" : "Add & score"}

@@ -475,7 +475,7 @@ export function ClaudeSetup({ projectId, repo, compact }: { projectId: string; r
 // ── Ask AI na projektu: „Build with Claude“ (radi u repou) ili „Ask“ (samo odgovara) ──
 export function ProjectAI({ projectId, hasRepo }: { projectId: string; hasRepo: boolean }) {
   const [mode, setMode] = useHashParam<"build" | "ask">("ai", hasRepo ? "build" : "ask", ["build", "ask"]);
-  const seg = (on: boolean) => `inline-flex h-[30px] flex-1 items-center justify-center gap-1.5 rounded-md px-3 text-[12.5px] sm:h-[28px] sm:flex-none ${on ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`;
+  const seg = (on: boolean) => `inline-flex h-[28px] flex-1 items-center justify-center gap-1.5 rounded-md px-3 text-[12.5px] sm:flex-none ${on ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`;
   return (
     <div className="space-y-3">
       <div className="flex w-full rounded-lg border border-line bg-surface p-0.5 sm:inline-flex sm:w-auto">

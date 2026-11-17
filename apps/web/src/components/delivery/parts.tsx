@@ -190,7 +190,7 @@ export function Menu<V extends string | number | null>({
                 setHi(0);
               }}
               placeholder={`${label}…`}
-              className="mb-1 h-[30px] w-full rounded-md border border-line bg-bg px-2 text-[12.5px] outline-none placeholder:text-faint focus:border-accent/60"
+              className="mb-1 h-[28px] w-full rounded-md border border-line bg-bg px-2 text-[12.5px] outline-none placeholder:text-faint focus:border-accent/60"
               onKeyDown={(e) => {
                 if (e.key === "ArrowDown") (e.preventDefault(), setHi((h) => Math.min(shown.length - 1, h + 1)));
                 if (e.key === "ArrowUp") (e.preventDefault(), setHi((h) => Math.max(0, h - 1)));
@@ -259,9 +259,7 @@ export function ProgressRing({ value, size = 18 }: { value: number; size?: numbe
   );
 }
 
-export const field = "w-full rounded-lg border border-line bg-bg px-3 text-[13.5px] outline-none placeholder:text-faint focus:border-accent/60";
-export const btnPrimary = "inline-flex h-[34px] items-center justify-center gap-1.5 rounded-[7px] bg-fg px-3.5 text-[13px] font-medium text-bg hover:opacity-90 disabled:opacity-40";
-export const btnSecondary = "inline-flex h-[34px] items-center justify-center gap-1.5 rounded-[7px] border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2 disabled:opacity-50";
+export { btnPrimary, btnSecondary, field } from "../../lib/ui";
 
 export function ErrorNote({ children }: { children: React.ReactNode }) {
   return <div className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[12.5px] text-danger">{children}</div>;

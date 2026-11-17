@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Check, Loader2 } from "lucide-react";
 import { teamFetch } from "../lib/team";
 import { useSessionUser } from "../lib/session";
+import { input } from "../lib/ui";
 import { loadOrg, orgChanged, type Organization } from "../lib/org";
 
 /** Settings → Organization: ime, logo i boja firme (meni, portal klijenta, izveštaji). Menja vlasnik. */
@@ -15,7 +16,6 @@ export function OrganizationSettings() {
     void loadOrg(true).then((o) => o && setF(o));
   }, []);
   const set = (k: keyof Organization) => (e: React.ChangeEvent<HTMLInputElement>) => setF({ ...f, [k]: e.target.value });
-  const input = "h-[34px] w-full rounded-lg border border-line bg-bg px-3 text-[13px] outline-none placeholder:text-faint focus:border-accent/60 disabled:opacity-60";
   return (
     <section className="rounded-xl border border-line bg-surface p-5">
       <div className="mb-4">
@@ -68,7 +68,7 @@ export function OrganizationSettings() {
             {f.name || "Your company"}
           </span>
           {owner && (
-            <button disabled={busy} className="ml-auto inline-flex h-[34px] items-center gap-1.5 rounded-[7px] bg-fg px-3.5 text-[13px] font-medium text-bg disabled:opacity-50">
+            <button disabled={busy} className="ml-auto inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3.5 text-[13px] font-medium text-bg disabled:opacity-50">
               {busy ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />} Save
             </button>
           )}

@@ -59,13 +59,13 @@ export function TimeBox({ issueId }: { issueId: string }) {
             }
           }}
         >
-          <input value={text} onChange={(e) => setText(e.target.value)} placeholder="1h 30m" aria-label="Time spent" className={`num h-[30px] w-24 rounded-md border bg-surface px-2 text-[12.5px] outline-none placeholder:text-faint ${text && !minutes ? "border-danger/60" : "border-line focus:border-accent/60"}`} />
-          <input type="date" value={day} onChange={(e) => setDay(e.target.value)} aria-label="Date" className="h-[30px] rounded-md border border-line bg-surface px-2 text-[12.5px] outline-none focus:border-accent/60" />
-          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="What did you do? (optional)" aria-label="Note" className="h-[30px] min-w-[140px] flex-1 rounded-md border border-line bg-surface px-2 text-[12.5px] outline-none placeholder:text-faint focus:border-accent/60" />
+          <input value={text} onChange={(e) => setText(e.target.value)} placeholder="1h 30m" aria-label="Time spent" className={`num h-[28px] w-24 rounded-md border bg-surface px-2 text-[12.5px] outline-none placeholder:text-faint ${text && !minutes ? "border-danger/60" : "border-line focus:border-accent/60"}`} />
+          <input type="date" value={day} onChange={(e) => setDay(e.target.value)} aria-label="Date" className="h-[28px] rounded-md border border-line bg-surface px-2 text-[12.5px] outline-none focus:border-accent/60" />
+          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="What did you do? (optional)" aria-label="Note" className="h-[28px] min-w-[140px] flex-1 rounded-md border border-line bg-surface px-2 text-[12.5px] outline-none placeholder:text-faint focus:border-accent/60" />
           <label className="inline-flex items-center gap-1 text-[12px] text-muted" title="Counts toward client billing on hourly projects">
             <input type="checkbox" checked={billable} onChange={(e) => setBillable(e.target.checked)} className="accent-[var(--accent)]" /> Billable
           </label>
-          <button disabled={busy || !text.trim()} className="inline-flex h-[30px] items-center gap-1 rounded-md bg-fg px-2.5 text-[12px] font-medium text-bg disabled:opacity-40">
+          <button disabled={busy || !text.trim()} className="inline-flex h-[28px] items-center gap-1 rounded-md bg-fg px-2.5 text-[12px] font-medium text-bg disabled:opacity-40">
             {busy ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Log
           </button>
         </form>

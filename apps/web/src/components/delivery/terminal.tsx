@@ -151,7 +151,7 @@ export function TerminalView({ projectId, repo }: { projectId: string; repo: str
           }}
         >
           <div className="flex flex-wrap gap-2">
-            <select value={ref} onChange={(e) => setRef(e.target.value)} className="h-[36px] max-w-[200px] rounded-lg border border-line bg-bg px-2 font-mono text-[12.5px]" aria-label="Branch">
+            <select value={ref} onChange={(e) => setRef(e.target.value)} className="h-[34px] max-w-[200px] rounded-lg border border-line bg-bg px-2 font-mono text-[12.5px]" aria-label="Branch">
               <option value="">{branches[0] ? `${branches[0]} (default)` : "default branch"}</option>
               {branches.slice(1).map((b) => (
                 <option key={b} value={b}>
@@ -159,7 +159,7 @@ export function TerminalView({ projectId, repo }: { projectId: string; repo: str
                 </option>
               ))}
             </select>
-            <label className="flex h-[36px] min-w-[220px] flex-1 items-center gap-2 rounded-lg border border-line bg-bg px-3 font-mono focus-within:border-accent/60">
+            <label className="flex h-[34px] min-w-[220px] flex-1 items-center gap-2 rounded-lg border border-line bg-bg px-3 font-mono focus-within:border-accent/60">
               <span className="text-faint">$</span>
               <input
                 value={cmd}
@@ -182,7 +182,7 @@ export function TerminalView({ projectId, repo }: { projectId: string; repo: str
                 spellCheck={false}
               />
             </label>
-            <button disabled={!cmd.trim()} className="inline-flex h-[36px] items-center gap-1.5 rounded-[7px] bg-fg px-3.5 text-[13px] font-medium text-bg disabled:opacity-40">
+            <button disabled={!cmd.trim()} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3.5 text-[13px] font-medium text-bg disabled:opacity-40">
               <Play size={13} /> Run
             </button>
           </div>

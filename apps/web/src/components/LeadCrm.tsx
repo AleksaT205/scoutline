@@ -57,7 +57,7 @@ export function StatusBar({ lead, live, onUpdated }: { lead: UiLead; live: boole
             aria-checked={status === s}
             disabled={busy}
             onClick={() => status !== s && go(s)}
-            className={`h-[26px] shrink-0 rounded-md px-2 text-[12px] transition-colors ${
+            className={`h-[28px] shrink-0 rounded-md px-2 text-[12px] transition-colors ${
               status === s ? `font-medium ring-1 ring-inset ${STATUS_META[s].cls}` : "text-muted hover:bg-surface-2 hover:text-fg"
             }`}
           >
@@ -81,7 +81,7 @@ export function StatusBar({ lead, live, onUpdated }: { lead: UiLead; live: boole
             }
           }}
           disabled={busy}
-          className="mt-2 inline-flex h-[32px] w-full items-center justify-center gap-1.5 rounded-[7px] bg-success text-[12.5px] font-medium text-white hover:opacity-90 disabled:opacity-50"
+          className="mt-2 inline-flex h-[34px] w-full items-center justify-center gap-1.5 rounded-lg bg-success text-[12.5px] font-medium text-white hover:opacity-90 disabled:opacity-50"
         >
           {busy ? <Loader2 size={13} className="animate-spin" /> : <FolderPlus size={13} />} Create project in Delivery
         </button>
@@ -92,7 +92,7 @@ export function StatusBar({ lead, live, onUpdated }: { lead: UiLead; live: boole
           <button
             onClick={() => go(next)}
             disabled={busy}
-            className="inline-flex h-[32px] flex-1 items-center justify-center gap-1.5 rounded-[7px] bg-accent text-[12.5px] font-medium text-white hover:opacity-90 disabled:opacity-50"
+            className="inline-flex h-[34px] flex-1 items-center justify-center gap-1.5 rounded-lg bg-accent text-[12.5px] font-medium text-white hover:opacity-90 disabled:opacity-50"
           >
             {busy ? <Loader2 size={13} className="animate-spin" /> : <ArrowRight size={13} />} {NEXT_LABEL[status]}
           </button>
@@ -102,12 +102,12 @@ export function StatusBar({ lead, live, onUpdated }: { lead: UiLead; live: boole
             onClick={() => go("hidden")}
             disabled={busy}
             title="Hide this lead (not a fit)"
-            className="inline-flex h-[32px] items-center justify-center gap-1.5 rounded-[7px] border border-line bg-surface px-3 text-[12.5px] font-medium text-muted hover:bg-surface-2 hover:text-fg disabled:opacity-50"
+            className="inline-flex h-[34px] items-center justify-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[12.5px] font-medium text-muted hover:bg-surface-2 hover:text-fg disabled:opacity-50"
           >
             <EyeOff size={13} /> Hide
           </button>
         ) : (
-          <button onClick={() => go("new")} disabled={busy} className="inline-flex h-[32px] flex-1 items-center justify-center rounded-[7px] border border-line bg-surface text-[12.5px] font-medium hover:bg-surface-2">
+          <button onClick={() => go("new")} disabled={busy} className="inline-flex h-[34px] flex-1 items-center justify-center rounded-lg border border-line bg-surface text-[12.5px] font-medium hover:bg-surface-2">
             Restore
           </button>
         )}
@@ -207,7 +207,7 @@ export function NotesPanel({ lead, live }: { lead: UiLead; live: boolean }) {
               placeholder="Add a note… (e.g. sent email to CTO, follow up Friday)"
               className="min-h-[56px] flex-1 resize-none rounded-lg border border-line bg-bg px-2.5 py-2 text-[12.5px] outline-none placeholder:text-faint focus:border-accent/60"
             />
-            <button disabled={busy || !text.trim()} className="grid size-[32px] place-items-center rounded-[7px] bg-fg text-bg disabled:opacity-30" aria-label="Add note">
+            <button disabled={busy || !text.trim()} className="grid size-[34px] place-items-center rounded-lg bg-fg text-bg disabled:opacity-30" aria-label="Add note">
               {busy ? <Loader2 size={13} className="animate-spin" /> : <Send size={13} />}
             </button>
           </form>

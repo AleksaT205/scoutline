@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Bot, Check, GitBranch, Loader2, Mail, Send, ShieldCheck, Landmark, Plug } from "lucide-react";
 import { teamFetch } from "../lib/team";
 import { askConfirm } from "../lib/confirm";
+import { input } from "../lib/ui";
 import { useSessionUser } from "../lib/session";
 
 /** Bez automatskog popunjavanja (Chrome, 1Password, LastPass, Bitwarden): ovo su ključevi, ne prijava. */
@@ -33,7 +34,6 @@ interface Mine {
   claudeCode?: SecretView;
 }
 
-const input = "h-[34px] w-full rounded-lg border border-line bg-bg px-3 text-[13px] outline-none placeholder:text-faint focus:border-accent/60 disabled:opacity-60";
 
 function SourcePill({ source }: { source: Source }) {
   const m = { app: ["Connected", "bg-success-soft text-success ring-success/30"], server: ["From server settings", "bg-surface-2 text-muted ring-line"], none: ["Not connected", "bg-surface-2 text-faint ring-line"] }[source];
@@ -139,7 +139,7 @@ function IntegrationCard({
         {help && <div className="text-[12px] leading-relaxed text-faint sm:col-span-2">{help}</div>}
         {canEdit && (
           <div className="flex flex-wrap gap-2 sm:col-span-2">
-            <button disabled={!!busy} className="inline-flex h-[32px] items-center gap-1.5 rounded-[7px] bg-fg px-3 text-[12.5px] font-medium text-bg disabled:opacity-50">
+            <button disabled={!!busy} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[12.5px] font-medium text-bg disabled:opacity-50">
               {busy === "save" ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />} Save
             </button>
             {test && (
@@ -158,7 +158,7 @@ function IntegrationCard({
                     setBusy(null);
                   }
                 }}
-                className="inline-flex h-[32px] items-center gap-1.5 rounded-[7px] border border-line bg-surface px-3 text-[12.5px] font-medium hover:bg-surface-2 disabled:opacity-50"
+                className="inline-flex h-[34px] items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[12.5px] font-medium hover:bg-surface-2 disabled:opacity-50"
               >
                 {busy === "test" ? <Loader2 size={13} className="animate-spin" /> : <Plug size={13} />} Test connection
               </button>
@@ -168,7 +168,7 @@ function IntegrationCard({
                 type="button"
                 disabled={!!busy}
                 onClick={async () => (await askConfirm(`Remove ${title} settings saved in the app?`)) && void save(Object.fromEntries(fields.filter((f) => f.secret).map((f) => [f.key, null])), "remove")}
-                className="ml-auto h-[32px] rounded-[7px] px-2 text-[12.5px] text-muted hover:text-danger"
+                className="ml-auto h-[34px] rounded-lg px-2 text-[12.5px] text-muted hover:text-danger"
               >
                 Remove
               </button>
@@ -234,11 +234,11 @@ function MyIntegrations() {
         }}
       >
         <input className={`${input} num min-w-[240px] flex-1`} type="password" {...NO_AUTOFILL} name="integration-personal-github" value={token} onChange={(e) => setToken(e.target.value)} placeholder={me.github?.set ? `Saved ${me.github.hint ?? ""} · paste a new token to replace` : "github_pat_…"} />
-        <button disabled={busy || !token.trim()} className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] bg-fg px-3 text-[12.5px] font-medium text-bg disabled:opacity-50">
+        <button disabled={busy || !token.trim()} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[12.5px] font-medium text-bg disabled:opacity-50">
           {busy ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />} Connect
         </button>
         {me.github?.set && (
-          <button type="button" disabled={busy} onClick={() => void put({ githubToken: null }, "Disconnected.")} className="h-[34px] rounded-[7px] px-2 text-[12.5px] text-muted hover:text-danger">
+          <button type="button" disabled={busy} onClick={() => void put({ githubToken: null }, "Disconnected.")} className="h-[34px] rounded-lg px-2 text-[12.5px] text-muted hover:text-danger">
             Disconnect
           </button>
         )}
@@ -304,11 +304,11 @@ function ClaudeKeyForm({ saved, busy, onSave, placeholder = "sk-ant-…" }: { sa
       }}
     >
       <input className={`${input} num min-w-[240px] flex-1`} type="password" {...NO_AUTOFILL} name="integration-personal-key" value={k} onChange={(e) => setK(e.target.value)} placeholder={saved ? "Saved · paste a new key to replace" : placeholder} />
-      <button disabled={busy || !k.trim()} className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] bg-fg px-3 text-[12.5px] font-medium text-bg disabled:opacity-50">
+      <button disabled={busy || !k.trim()} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[12.5px] font-medium text-bg disabled:opacity-50">
         <Check size={13} /> Save
       </button>
       {saved && (
-        <button type="button" disabled={busy} onClick={() => onSave(null)} className="h-[34px] rounded-[7px] px-2 text-[12.5px] text-muted hover:text-danger">
+        <button type="button" disabled={busy} onClick={() => onSave(null)} className="h-[34px] rounded-lg px-2 text-[12.5px] text-muted hover:text-danger">
           Remove
         </button>
       )}

@@ -74,13 +74,13 @@ export function InboxPage() {
               </button>
               {editable && (
                 <div className="flex w-full gap-1.5 pl-7 sm:w-auto sm:pl-0">
-                  <button disabled={busy === i.id} onClick={() => void decide(i, "todo", true)} className="inline-flex h-[32px] flex-1 items-center justify-center gap-1.5 rounded-md bg-fg px-2.5 sm:h-[30px] sm:flex-none text-[12px] font-medium text-bg disabled:opacity-50" title="Accept into Todo in the current cycle">
+                  <button disabled={busy === i.id} onClick={() => void decide(i, "todo", true)} className="inline-flex h-[34px] flex-1 items-center justify-center gap-1.5 rounded-md bg-fg px-2.5 sm:h-[28px] sm:flex-none text-[12px] font-medium text-bg disabled:opacity-50" title="Accept into Todo in the current cycle">
                     {busy === i.id ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Accept
                   </button>
-                  <button disabled={busy === i.id} onClick={() => void decide(i, "backlog")} className="h-[32px] flex-1 rounded-md border border-line bg-surface px-2.5 text-[12px] font-medium hover:bg-surface-2 disabled:opacity-50 sm:h-[30px] sm:flex-none" title="Accept for later">
+                  <button disabled={busy === i.id} onClick={() => void decide(i, "backlog")} className="h-[34px] flex-1 rounded-md border border-line bg-surface px-2.5 text-[12px] font-medium hover:bg-surface-2 disabled:opacity-50 sm:h-[28px] sm:flex-none" title="Accept for later">
                     Backlog
                   </button>
-                  <button disabled={busy === i.id} onClick={() => void decide(i, "canceled")} className="grid size-[32px] shrink-0 place-items-center rounded-md border border-line text-muted sm:size-[30px] hover:bg-surface-2 hover:text-danger disabled:opacity-50" aria-label="Decline" title="Decline">
+                  <button disabled={busy === i.id} onClick={() => void decide(i, "canceled")} className="grid size-[34px] shrink-0 place-items-center rounded-md border border-line text-muted sm:size-[30px] hover:bg-surface-2 hover:text-danger disabled:opacity-50" aria-label="Decline" title="Decline">
                     <X size={13} />
                   </button>
                 </div>
@@ -155,7 +155,7 @@ function CycleLength({ onChanged }: { onChanged: () => void }) {
             setBusy(false);
           }
         }}
-        className="h-[30px] rounded-lg border border-line bg-surface px-2 text-[12.5px] text-fg outline-none disabled:opacity-60"
+        className="h-[28px] rounded-lg border border-line bg-surface px-2 text-[12.5px] text-fg outline-none disabled:opacity-60"
       >
         {[7, 14, 21, 28].map((d) => (
           <option key={d} value={d}>

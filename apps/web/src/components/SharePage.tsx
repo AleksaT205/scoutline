@@ -28,7 +28,7 @@ export function SharePage({ token }: { token: string }) {
   return (
     <div className="min-h-screen bg-bg">
       <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-line bg-bg/80 px-4 backdrop-blur-md sm:px-6">
-        <div className="grid size-[26px] place-items-center rounded-[7px] bg-gradient-to-br from-accent to-[#b4a9ff]">
+        <div className="grid size-[26px] place-items-center rounded-lg bg-gradient-to-br from-accent to-[#b4a9ff]">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.4" strokeLinecap="round">
             <circle cx="12" cy="12" r="3" />
             <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
@@ -42,7 +42,7 @@ export function SharePage({ token }: { token: string }) {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Search…"
-          className="ml-auto hidden h-[32px] w-64 rounded-lg border border-line bg-surface px-3 text-[13px] outline-none placeholder:text-faint focus:border-accent/55 sm:block"
+          className="ml-auto hidden h-[34px] w-64 rounded-lg border border-line bg-surface px-3 text-[13px] outline-none placeholder:text-faint focus:border-accent/55 sm:block"
         />
       </header>
       <main className="mx-auto max-w-[1480px] px-4 pt-7 pb-10 sm:px-6">
@@ -79,7 +79,7 @@ export function SharePage({ token }: { token: string }) {
                     </ul>
                   )}
                   {selected.url && (
-                    <a href={selected.url} target="_blank" rel="noreferrer" className="mt-4 inline-flex h-[34px] w-full items-center justify-center gap-1.5 rounded-[7px] bg-fg text-[13px] font-medium text-bg hover:opacity-90">
+                    <a href={selected.url} target="_blank" rel="noreferrer" className="mt-4 inline-flex h-[34px] w-full items-center justify-center gap-1.5 rounded-lg bg-fg text-[13px] font-medium text-bg hover:opacity-90">
                       <ExternalLink size={14} /> Open original post
                     </a>
                   )}

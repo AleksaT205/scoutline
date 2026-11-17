@@ -6,6 +6,7 @@ import { useProjects } from "../../lib/delivery";
 import { CreateTasksButton } from "./tasks-from-text";
 import { askConfirm } from "../../lib/confirm";
 import { VoiceButton } from "../../lib/voice";
+import { segItem } from "../../lib/ui";
 import { Dialog, ErrorNote, Menu, btnPrimary } from "./parts";
 
 /** Faza 13: AI asistent — „pitaj projekat“ i brzi status izveštaj. */
@@ -281,7 +282,7 @@ export function StatusDialog({ open, onClose, projectId }: { open: boolean; onCl
       setBusy(false);
     }
   };
-  const seg = (on: boolean) => `h-[28px] rounded-md px-3 text-[12.5px] ${on ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`;
+  const seg = segItem;
   return (
     <Dialog open={open} onClose={onClose} title="Status update" width={640}>
       <div className="space-y-3 px-4 py-4">
@@ -322,7 +323,7 @@ export function StatusDialog({ open, onClose, projectId }: { open: boolean; onCl
                 setCopied(true);
                 setTimeout(() => setCopied(false), 1500);
               }}
-              className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2"
+              className="inline-flex h-[34px] items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2"
             >
               {copied ? <Check size={14} className="text-success" /> : <Copy size={14} />} {copied ? "Copied" : "Copy"}
             </button>
@@ -352,7 +353,7 @@ export function AssistantPage() {
           <p className="mt-0.5 text-[13.5px] text-muted">Ask where something is and how it works — answers come from the project's code and tasks.</p>
         </div>
         <div className="sm:ml-auto">
-          <Menu label="Project" value={pid} onChange={setPid} options={[{ value: "", label: "No project (general)" }, ...(projects.data ?? []).map((x) => ({ value: x.id, label: x.name, hint: x.key }))]} className="h-[32px] border border-line px-2.5">
+          <Menu label="Project" value={pid} onChange={setPid} options={[{ value: "", label: "No project (general)" }, ...(projects.data ?? []).map((x) => ({ value: x.id, label: x.name, hint: x.key }))]} className="h-[34px] border border-line px-2.5">
             <span className="text-faint">Project</span>
             <span className="max-w-[220px] truncate text-fg">{p?.name ?? "General"}</span>
           </Menu>

@@ -49,7 +49,7 @@ export class ErrorBoundary extends Component<{ children: ReactNode }, { failed: 
         <div>
           <div className="text-[15px] font-semibold">Something went wrong on this page.</div>
           <p className="mt-1 text-[13px] text-muted">It's been reported. Reloading usually fixes it.</p>
-          <button onClick={() => window.location.reload()} className="mt-4 inline-flex h-[34px] items-center rounded-[7px] bg-fg px-3.5 text-[13px] font-medium text-bg hover:opacity-90">
+          <button onClick={() => window.location.reload()} className="mt-4 inline-flex h-[34px] items-center rounded-lg bg-fg px-3.5 text-[13px] font-medium text-bg hover:opacity-90">
             Reload
           </button>
         </div>

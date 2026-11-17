@@ -103,18 +103,18 @@ export function LeadDetail({ lead, live, onUpdated }: { lead: UiLead; live: bool
       </div>
 
       <div className="mt-4 flex gap-2">
-        <button onClick={copy} className="inline-flex h-[34px] flex-1 items-center justify-center gap-1.5 rounded-[7px] border border-line bg-surface text-[13px] font-medium hover:bg-surface-2">
+        <button onClick={copy} className="inline-flex h-[34px] flex-1 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface text-[13px] font-medium hover:bg-surface-2">
           {copied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
           {copied ? "Copied" : "Copy"}
         </button>
         {lead.url && (
-          <a href={lead.url} target="_blank" rel="noreferrer" className="inline-flex h-[34px] flex-1 items-center justify-center gap-1.5 rounded-[7px] border border-line bg-surface text-[13px] font-medium hover:bg-surface-2">
+          <a href={lead.url} target="_blank" rel="noreferrer" className="inline-flex h-[34px] flex-1 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface text-[13px] font-medium hover:bg-surface-2">
             <ExternalLink size={14} /> {lead.leadType === "tender" ? "Notice" : lead.leadType === "intent" ? "Article" : "Post"}
           </a>
         )}
         <a
           href={`mailto:?subject=${encodeURIComponent(lead.email.subject)}&body=${encodeURIComponent(lead.email.body)}`}
-          className="inline-flex h-[34px] flex-[1.4] items-center justify-center gap-1.5 rounded-[7px] bg-fg text-[13px] font-medium text-bg hover:opacity-90"
+          className="inline-flex h-[34px] flex-[1.4] items-center justify-center gap-1.5 rounded-lg bg-fg text-[13px] font-medium text-bg hover:opacity-90"
         >
           <Mail size={14} /> Open in mail
         </a>

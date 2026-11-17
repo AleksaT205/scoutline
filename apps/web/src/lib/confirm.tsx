@@ -78,14 +78,14 @@ export function ConfirmHost() {
           </div>
         </div>
         <div className="mt-5 flex justify-end gap-2">
-          <button type="button" onClick={() => close(false)} className="inline-flex h-[34px] items-center rounded-[7px] border border-line bg-surface px-3.5 text-[13px] font-medium hover:bg-surface-2">
+          <button type="button" onClick={() => close(false)} className="inline-flex h-[34px] items-center rounded-lg border border-line bg-surface px-3.5 text-[13px] font-medium hover:bg-surface-2">
             Cancel
           </button>
           <button
             ref={ok}
             type="button"
             onClick={() => close(true)}
-            className={`inline-flex h-[34px] items-center rounded-[7px] px-3.5 text-[13px] font-medium ${p.danger ? "bg-danger text-white hover:opacity-90" : "bg-fg text-bg hover:opacity-90"}`}
+            className={`inline-flex h-[34px] items-center rounded-lg px-3.5 text-[13px] font-medium ${p.danger ? "bg-danger text-white hover:opacity-90" : "bg-fg text-bg hover:opacity-90"}`}
           >
             {p.confirmLabel ?? "Confirm"}
           </button>

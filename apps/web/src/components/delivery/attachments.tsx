@@ -89,7 +89,7 @@ export function AttachButton({ onFiles, className }: { onFiles: (f: FileList) =>
           e.target.value = "";
         }}
       />
-      <button type="button" onClick={() => input.current?.click()} className={className ?? "inline-flex h-[32px] items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 text-[12.5px] text-muted hover:text-fg"} title="Add an image from your computer (or paste one with ⌘V)" aria-label="Add image">
+      <button type="button" onClick={() => input.current?.click()} className={className ?? "inline-flex h-[34px] items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 text-[12.5px] text-muted hover:text-fg"} title="Add an image from your computer (or paste one with ⌘V)" aria-label="Add image">
         <ImagePlus size={14} /> <span className="hidden sm:inline">Image</span>
       </button>
     </>

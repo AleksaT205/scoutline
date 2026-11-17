@@ -216,7 +216,7 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
           </label>
           <button
             onClick={toggleTheme}
-            className="ml-auto grid size-[34px] place-items-center rounded-[7px] border border-line bg-surface text-muted hover:bg-surface-2 hover:text-fg"
+            className="ml-auto grid size-[34px] place-items-center rounded-lg border border-line bg-surface text-muted hover:bg-surface-2 hover:text-fg"
             aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             title={theme === "dark" ? "Light mode" : "Dark mode"}
           >
@@ -327,13 +327,13 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
             <div className="flex gap-2 sm:ml-auto">
               <button
                 onClick={() => setAlertsOpen(true)}
-                className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2"
+                className="inline-flex h-[34px] items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2"
               >
                 <BellRing size={14} /> Telegram alerts
               </button>
               <button
                 onClick={() => setAddOpen(true)}
-                className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] bg-fg px-3 text-[13px] font-medium text-bg hover:opacity-90"
+                className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[13px] font-medium text-bg hover:opacity-90"
               >
                 <Plus size={14} /> Add lead
               </button>
@@ -368,7 +368,7 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
                   {Math.min(pageNo, pages - 1) * PAGE_SIZE + 1}–{Math.min(leads.length, (Math.min(pageNo, pages - 1) + 1) * PAGE_SIZE)} of {leads.length}
                 </span>
                 <div className="ml-auto flex items-center gap-1">
-                  <button disabled={pageNo === 0} onClick={() => (setPage((p) => Math.max(0, p - 1)), window.scrollTo({ top: 0, behavior: "smooth" }))} className="h-[30px] rounded-md border border-line bg-surface px-2.5 hover:bg-surface-2 disabled:opacity-40">
+                  <button disabled={pageNo === 0} onClick={() => (setPage((p) => Math.max(0, p - 1)), window.scrollTo({ top: 0, behavior: "smooth" }))} className="h-[28px] rounded-md border border-line bg-surface px-2.5 hover:bg-surface-2 disabled:opacity-40">
                     ← Prev
                   </button>
                   {Array.from({ length: pages }, (_, i) => i)
@@ -376,12 +376,12 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
                     .map((i, k, arr) => (
                       <span key={i} className="flex items-center gap-1">
                         {k > 0 && i - arr[k - 1]! > 1 && <span className="px-1 text-faint">…</span>}
-                        <button onClick={() => (setPage(i), window.scrollTo({ top: 0, behavior: "smooth" }))} className={`num h-[30px] min-w-[30px] rounded-md px-2 ${i === pageNo ? "bg-fg font-medium text-bg" : "border border-line bg-surface hover:bg-surface-2"}`} aria-current={i === pageNo ? "page" : undefined}>
+                        <button onClick={() => (setPage(i), window.scrollTo({ top: 0, behavior: "smooth" }))} className={`num h-[28px] min-w-[28px] rounded-md px-2 ${i === pageNo ? "bg-fg font-medium text-bg" : "border border-line bg-surface hover:bg-surface-2"}`} aria-current={i === pageNo ? "page" : undefined}>
                           {i + 1}
                         </button>
                       </span>
                     ))}
-                  <button disabled={pageNo >= pages - 1} onClick={() => (setPage((p) => Math.min(pages - 1, p + 1)), window.scrollTo({ top: 0, behavior: "smooth" }))} className="h-[30px] rounded-md border border-line bg-surface px-2.5 hover:bg-surface-2 disabled:opacity-40">
+                  <button disabled={pageNo >= pages - 1} onClick={() => (setPage((p) => Math.min(pages - 1, p + 1)), window.scrollTo({ top: 0, behavior: "smooth" }))} className="h-[28px] rounded-md border border-line bg-surface px-2.5 hover:bg-surface-2 disabled:opacity-40">
                     Next →
                   </button>
                 </div>

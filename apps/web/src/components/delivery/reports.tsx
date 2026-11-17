@@ -130,7 +130,7 @@ function RatesDialog({ open, onClose, report, onSaved }: { open: boolean; onClos
             {report.members.map((m) => (
               <label key={m.id} className="flex items-center gap-3 px-3 py-2 text-[13px]">
                 <span className="flex-1">{m.name}</span>
-                <input className={`${field} num h-[30px] w-24`} inputMode="decimal" placeholder={def} value={members[m.id] ?? ""} onChange={(e) => setMembers({ ...members, [m.id]: e.target.value })} aria-label={`${m.name} cost per hour`} />
+                <input className={`${field} num h-[28px] w-24`} inputMode="decimal" placeholder={def} value={members[m.id] ?? ""} onChange={(e) => setMembers({ ...members, [m.id]: e.target.value })} aria-label={`${m.name} cost per hour`} />
               </label>
             ))}
           </div>
@@ -189,7 +189,7 @@ export function ReportsPage() {
         <div className="flex flex-wrap gap-2 sm:ml-auto">
           <div className="inline-flex rounded-lg border border-line bg-surface p-0.5 text-[12.5px]">
             {PERIODS.map(([d, l]) => (
-              <button key={d} onClick={() => setDays(d)} className={`h-[30px] rounded-md px-2.5 ${days === d ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}>
+              <button key={d} onClick={() => setDays(d)} className={`h-[28px] rounded-md px-2.5 ${days === d ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}>
                 {l}
               </button>
             ))}

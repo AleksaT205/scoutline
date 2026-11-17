@@ -136,7 +136,7 @@ export function PipelinePage({ leads, live, onUpdated }: { leads: UiLead[]; live
 
       {/* Pretraga i filteri */}
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <label className="flex h-[32px] min-w-[220px] flex-1 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-faint focus-within:border-accent/55 sm:max-w-[340px]">
+        <label className="flex h-[34px] min-w-[220px] flex-1 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-faint focus-within:border-accent/55 sm:max-w-[340px]">
           <Search size={14} />
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search leads, companies, sources…" className="w-full bg-transparent text-fg outline-none placeholder:text-faint" />
           {q && (
@@ -155,14 +155,14 @@ export function PipelinePage({ leads, live, onUpdated }: { leads: UiLead[]; live
                 else n.add(t);
                 setTypes(n);
               }}
-              className={`inline-flex h-[30px] items-center rounded-full border px-2.5 text-[12.5px] ${types.has(t) ? "border-accent/55 bg-accent-soft text-fg" : "border-line bg-surface text-muted hover:text-fg"}`}
+              className={`inline-flex h-[28px] items-center rounded-full border px-2.5 text-[12.5px] ${types.has(t) ? "border-accent/55 bg-accent-soft text-fg" : "border-line bg-surface text-muted hover:text-fg"}`}
               title={`${TYPE_META[t].hint} (applies to the New column)`}
             >
               {TYPE_META[t].label}
             </button>
           ))}
         </div>
-        <div className="inline-flex h-[30px] items-center rounded-full border border-line bg-surface p-0.5 text-[12.5px]">
+        <div className="inline-flex h-[28px] items-center rounded-full border border-line bg-surface p-0.5 text-[12.5px]">
           {[0, 50, 70].map((s) => (
             <button key={s} onClick={() => setMinScore(s)} className={`h-full rounded-full px-2.5 ${minScore === s ? "bg-surface-2 text-fg ring-1 ring-line ring-inset" : "text-muted hover:text-fg"}`}>
               {s === 0 ? "Any score" : `${s}+`}

@@ -83,7 +83,7 @@ function CreateTasksDialog({ projectId, text, onClose }: { projectId: string; te
                   <input
                     value={r.title}
                     onChange={(e) => setRows(rows.map((x, j) => (j === i ? { ...x, title: e.target.value } : x)))}
-                    className={`h-[32px] min-w-0 flex-1 rounded-md border border-line bg-bg px-2 text-[13px] outline-none focus:border-accent/60 ${r.on ? "" : "text-faint line-through"}`}
+                    className={`h-[34px] min-w-0 flex-1 rounded-md border border-line bg-bg px-2 text-[13px] outline-none focus:border-accent/60 ${r.on ? "" : "text-faint line-through"}`}
                   />
                 </li>
               ))}
@@ -97,7 +97,7 @@ function CreateTasksDialog({ projectId, text, onClose }: { projectId: string; te
       </div>
       <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line px-4 py-3">
         {done === null && (
-          <select value={status} onChange={(e) => setStatus(e.target.value as "todo" | "backlog")} className="mr-auto h-[32px] rounded-md border border-line bg-surface px-2 text-[12.5px]" aria-label="Column">
+          <select value={status} onChange={(e) => setStatus(e.target.value as "todo" | "backlog")} className="mr-auto h-[34px] rounded-md border border-line bg-surface px-2 text-[12.5px]" aria-label="Column">
             <option value="todo">Add to Todo</option>
             <option value="backlog">Add to Backlog</option>
           </select>

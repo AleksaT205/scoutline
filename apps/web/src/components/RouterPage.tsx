@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Check, Copy, KeyRound, Loader2, Lock, Plus, Route, ShieldOff, X, Zap } from "lucide-react";
 import { API_URL } from "../lib/api";
 import { askConfirm } from "../lib/confirm";
+import { input } from "../lib/ui";
 import { ApiError, getTeamToken, setTeamToken, teamFetch, usd } from "../lib/team";
 
 interface Client {
@@ -95,10 +96,10 @@ function PasswordGate({ onUnlock }: { onUnlock: () => void }) {
         value={token}
         onChange={(e) => setToken(e.target.value)}
         placeholder="Team password"
-        className="h-[36px] w-full rounded-lg border border-line bg-bg px-3 text-[13.5px] outline-none placeholder:text-faint focus:border-accent/60"
+        className="h-[34px] w-full rounded-lg border border-line bg-bg px-3 text-[13.5px] outline-none placeholder:text-faint focus:border-accent/60"
       />
       {error && <div className="mt-2 text-[12.5px] text-danger">{error}</div>}
-      <button disabled={busy || !token} className="mt-3 inline-flex h-[34px] w-full items-center justify-center gap-1.5 rounded-[7px] bg-fg text-[13px] font-medium text-bg disabled:opacity-40">
+      <button disabled={busy || !token} className="mt-3 inline-flex h-[34px] w-full items-center justify-center gap-1.5 rounded-lg bg-fg text-[13px] font-medium text-bg disabled:opacity-40">
         {busy && <Loader2 size={14} className="animate-spin" />} Unlock
       </button>
     </form>
@@ -121,7 +122,7 @@ function NewClientDialog({ open, onClose, onCreated }: { open: boolean; onClose:
   }, [open]);
   if (!open) return null;
 
-  const field = "h-[36px] w-full rounded-lg border border-line bg-bg px-3 text-[13.5px] outline-none placeholder:text-faint focus:border-accent/60";
+  const field = input;
   const close = () => {
     if (created) onCreated();
     onClose();
@@ -161,7 +162,7 @@ function NewClientDialog({ open, onClose, onCreated }: { open: boolean; onClose:
               </div>
             ))}
             <div className="flex justify-end pt-1">
-              <button onClick={close} className="h-[34px] rounded-[7px] bg-fg px-4 text-[13px] font-medium text-bg">
+              <button onClick={close} className="h-[34px] rounded-lg bg-fg px-4 text-[13px] font-medium text-bg">
                 Done
               </button>
             </div>
@@ -195,10 +196,10 @@ function NewClientDialog({ open, onClose, onCreated }: { open: boolean; onClose:
             </label>
             {error && <div className="rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[12.5px] text-danger">{error}</div>}
             <div className="flex justify-end gap-2 pt-2">
-              <button type="button" onClick={close} className="h-[34px] rounded-[7px] border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2">
+              <button type="button" onClick={close} className="h-[34px] rounded-lg border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2">
                 Cancel
               </button>
-              <button disabled={busy || !name.trim() || !(Number(budget) > 0)} className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] bg-fg px-3.5 text-[13px] font-medium text-bg disabled:opacity-40">
+              <button disabled={busy || !name.trim() || !(Number(budget) > 0)} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3.5 text-[13px] font-medium text-bg disabled:opacity-40">
                 {busy ? <Loader2 size={14} className="animate-spin" /> : <KeyRound size={14} />} Create key
               </button>
             </div>
@@ -303,7 +304,7 @@ function ClientDetail({ client, onChanged }: { client: Client; onChanged: () => 
             value={budget}
             onChange={(e) => setBudget(e.target.value)}
             disabled={client.status === "revoked"}
-            className="num h-[32px] w-28 rounded-lg border border-line bg-bg px-2.5 text-[13px] outline-none focus:border-accent/60"
+            className="num h-[34px] w-28 rounded-lg border border-line bg-bg px-2.5 text-[13px] outline-none focus:border-accent/60"
           />
           <button
             disabled={busy !== null || client.status === "revoked" || Number(budget) === client.monthlyBudgetUsd || !(Number(budget) > 0)}
@@ -319,7 +320,7 @@ function ClientDetail({ client, onChanged }: { client: Client; onChanged: () => 
                 setBusy(null);
               }
             }}
-            className="inline-flex h-[32px] items-center gap-1.5 rounded-[7px] border border-line bg-surface px-3 text-[12.5px] font-medium hover:bg-surface-2 disabled:opacity-40"
+            className="inline-flex h-[34px] items-center gap-1.5 rounded-lg border border-line bg-surface px-3 text-[12.5px] font-medium hover:bg-surface-2 disabled:opacity-40"
           >
             {busy === "budget" && <Loader2 size={12} className="animate-spin" />} Save
           </button>
@@ -363,7 +364,7 @@ function ClientDetail({ client, onChanged }: { client: Client; onChanged: () => 
               setBusy(null);
             }
           }}
-          className="mt-4 inline-flex h-[32px] w-full items-center justify-center gap-1.5 rounded-[7px] border border-danger/40 text-[12.5px] font-medium text-danger hover:bg-danger/10 disabled:opacity-40"
+          className="mt-4 inline-flex h-[34px] w-full items-center justify-center gap-1.5 rounded-lg border border-danger/40 text-[12.5px] font-medium text-danger hover:bg-danger/10 disabled:opacity-40"
         >
           {busy === "revoke" ? <Loader2 size={12} className="animate-spin" /> : <ShieldOff size={13} />} Revoke key
         </button>
@@ -435,7 +436,7 @@ export function RouterPage() {
           <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">AI Router</h1>
           <p className="mt-0.5 text-[13.5px] text-muted">One endpoint for your clients' apps. Simple requests go to fast models, complex ones to smart models — with spend tracked per client.</p>
         </div>
-        <button onClick={() => setNewOpen(true)} className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] bg-fg px-3 text-[13px] font-medium text-bg hover:opacity-90 sm:ml-auto">
+        <button onClick={() => setNewOpen(true)} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[13px] font-medium text-bg hover:opacity-90 sm:ml-auto">
           <Plus size={14} /> New client
         </button>
       </div>
@@ -461,7 +462,7 @@ export function RouterPage() {
         </div>
         <div className="mb-2 inline-flex rounded-lg border border-line bg-bg p-0.5 text-[12.5px]">
           {Object.keys(SNIPPETS).map((k) => (
-            <button key={k} onClick={() => setTab(k)} className={`h-[26px] rounded-md px-2.5 ${tab === k ? "bg-surface text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}>
+            <button key={k} onClick={() => setTab(k)} className={`h-[28px] rounded-md px-2.5 ${tab === k ? "bg-surface text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}>
               {k}
             </button>
           ))}
@@ -483,7 +484,7 @@ export function RouterPage() {
               </div>
               <div className="text-sm font-medium">No clients yet</div>
               <p className="mt-1 max-w-sm text-[13px] text-muted">Create a client to get a private API key with its own budget. Their apps use your endpoint instead of OpenAI or Anthropic directly.</p>
-              <button onClick={() => setNewOpen(true)} className="mt-4 inline-flex h-[34px] items-center gap-1.5 rounded-[7px] bg-fg px-3 text-[13px] font-medium text-bg">
+              <button onClick={() => setNewOpen(true)} className="mt-4 inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[13px] font-medium text-bg">
                 <Plus size={14} /> New client
               </button>
             </div>

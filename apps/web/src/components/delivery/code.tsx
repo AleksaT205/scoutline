@@ -8,6 +8,7 @@ import { ClaudeSetup, PreviewButton } from "./agent";
 import { TerminalView } from "./terminal";
 import { useHashParam } from "../../lib/hashParams";
 import { askConfirm } from "../../lib/confirm";
+import { btnSm, segItem } from "../../lib/ui";
 import { RunLocallyView, SkillsView } from "./workspace-ui";
 
 /** Faza 14 — tab „Code“: GitHub iz aplikacije (analitika, PR-ovi, grane, Actions, deploy). */
@@ -25,7 +26,7 @@ const ago = (iso: string) => {
   return `${Math.round(m / 1440)}d ago`;
 };
 const inp = field.replace("w-full ", ""); // polja koja ne zauzimaju ceo red
-const small = "inline-flex h-[28px] items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 text-[12px] font-medium hover:bg-surface-2 disabled:opacity-50";
+const small = btnSm;
 
 function useLoad<T>(path: string | null) {
   const [data, setData] = useState<T | null>(null);
@@ -300,7 +301,7 @@ function PullsView({ projectId, repo }: { projectId: string; repo: string }) {
       setBusy(null);
     }
   };
-  const seg = (on: boolean) => `h-[28px] rounded-md px-3 text-[12.5px] ${on ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`;
+  const seg = segItem;
   const filters = (
     <div className="flex flex-wrap items-center gap-3">
       <div className="inline-flex rounded-lg border border-line bg-surface p-0.5">
@@ -439,7 +440,7 @@ function BranchesView({ projectId, repo }: { projectId: string; repo: string }) 
             }
           }}
         >
-          <input className={`${inp} num h-[32px] w-full max-w-[320px]`} value={name} onChange={(e) => setName(e.target.value)} placeholder={`new branch from ${data.defaultBranch}, e.g. feature/login`} />
+          <input className={`${inp} num h-[34px] w-full max-w-[320px]`} value={name} onChange={(e) => setName(e.target.value)} placeholder={`new branch from ${data.defaultBranch}, e.g. feature/login`} />
           <button disabled={busy || !name.trim()} className={small}>
             {busy ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Create branch
           </button>
@@ -584,7 +585,7 @@ function DeployView({ projectId }: { projectId: string }) {
                   reload();
                 }
               }}
-              className="inline-flex h-[30px] items-center gap-1.5 rounded-md bg-fg px-3 text-[12.5px] font-medium text-bg disabled:opacity-50"
+              className="inline-flex h-[28px] items-center gap-1.5 rounded-md bg-fg px-3 text-[12.5px] font-medium text-bg disabled:opacity-50"
             >
               {busy === h.id ? <Loader2 size={13} className="animate-spin" /> : <Rocket size={13} />} Deploy {h.name}
             </button>
@@ -672,7 +673,7 @@ export function CodeTab({ projectId, initialSection }: { projectId: string; init
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-2">
         {list.map((r) => (
-          <button key={r.full} onClick={() => setRepo(r.full)} className={`inline-flex h-[30px] items-center gap-1.5 rounded-full border px-3 text-[12.5px] ${repo === r.full ? "border-accent/50 bg-accent-soft text-fg" : "border-line bg-surface text-muted hover:text-fg"}`}>
+          <button key={r.full} onClick={() => setRepo(r.full)} className={`inline-flex h-[28px] items-center gap-1.5 rounded-full border px-3 text-[12.5px] ${repo === r.full ? "border-accent/50 bg-accent-soft text-fg" : "border-line bg-surface text-muted hover:text-fg"}`}>
             <GitBranch size={12} /> {r.full}
             {r.label && <span className="text-faint">· {r.label}</span>}
             <a href={`https://github.com/${r.full}`} target="_blank" rel="noreferrer" onClick={(e) => e.stopPropagation()} className="text-faint hover:text-fg" aria-label={`Open ${r.full} on GitHub`}>
@@ -710,9 +711,9 @@ export function CodeTab({ projectId, initialSection }: { projectId: string; init
               }
             }}
           >
-            <input className={`${inp} num h-[32px] w-full sm:h-[30px] sm:w-56`} value={adding.repo} onChange={(e) => setAdding({ ...adding, repo: e.target.value })} placeholder={list.length ? "owner/repo or GitHub link" : "Paste a GitHub link…"} aria-label="GitHub repo link or owner/repo" />
-            <input className={`${inp} h-[32px] min-w-0 flex-1 sm:h-[30px] sm:w-36 sm:flex-none`} value={adding.label} onChange={(e) => setAdding({ ...adding, label: e.target.value })} placeholder="Label (optional)" aria-label="Repo label, e.g. frontend" />
-            <button disabled={!adding.repo.trim()} className={small.replace("h-[28px]", "h-[32px] sm:h-[30px]")}>
+            <input className={`${inp} num h-[34px] w-full sm:h-[28px] sm:w-56`} value={adding.repo} onChange={(e) => setAdding({ ...adding, repo: e.target.value })} placeholder={list.length ? "owner/repo or GitHub link" : "Paste a GitHub link…"} aria-label="GitHub repo link or owner/repo" />
+            <input className={`${inp} h-[34px] min-w-0 flex-1 sm:h-[28px] sm:w-36 sm:flex-none`} value={adding.label} onChange={(e) => setAdding({ ...adding, label: e.target.value })} placeholder="Label (optional)" aria-label="Repo label, e.g. frontend" />
+            <button disabled={!adding.repo.trim()} className={small.replace("h-[28px]", "h-[34px] sm:h-[28px]")}>
               <Plus size={12} /> {list.length ? "Add repo" : "Link repo"}
             </button>
           </form>
