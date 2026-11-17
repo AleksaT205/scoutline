@@ -52,6 +52,9 @@ services:
       # Timska lozinka za dodavanje leadova iz dashboard-a (bez nje je dodavanje isključeno)
       API_TOKEN: ${API_TOKEN:-}
       SESSION_SECRET: ${SESSION_SECRET:-}
+      # Owner nalog za prijavu (napravi se / uskladi pri startu); ostavi prazno ako ne treba
+      OWNER_EMAIL: ${OWNER_EMAIL:-}
+      OWNER_PASSWORD: ${OWNER_PASSWORD:-}
       # Taskovi u dashboard-u = GitHub Issues (Faza 7)
       GITHUB_TOKEN: ${GITHUB_TOKEN:-}
       GITHUB_REPO: ${GITHUB_REPO:-}

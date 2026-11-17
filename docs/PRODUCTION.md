@@ -12,6 +12,11 @@
 | **Zaštita prijave** | Najviše 10 pogrešnih pokušaja po emailu u 15 minuta. |
 | **Sigurnosna zaglavlja** | API (`secureHeaders`) i Netlify (`X-Frame-Options`, `nosniff`, …). |
 
+## Owner nalog bez pozivnice (OWNER_EMAIL / OWNER_PASSWORD)
+Najlakši način da se dobije (ili povrati) prijava: u Coolify → Environment upiši `OWNER_EMAIL` i `OWNER_PASSWORD` (bar 8 znakova) pa Redeploy.
+API pri startu napravi taj nalog kao **owner**, a ako već postoji — uskladi lozinku i ulogu. Promena lozinke u env-u = nova lozinka posle sledećeg Redeploy-a.
+Demo nalog za druge (Member) ide preko Settings → Team → „Create demo login“.
+
 ## 1. Spoljni monitoring (5 min, besplatno) — preporučeno odmah
 
 Monitoring iznutra ne može da javi ako padne ceo mini PC ili internet. Za to:

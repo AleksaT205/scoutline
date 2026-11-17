@@ -12,6 +12,31 @@ import { invites, shareLinks, users, type Db } from "@radar/db";
  * API_TOKEN (stara timska lozinka) i dalje radi kao "owner" ključ — za skripte i za prvo podešavanje.
  */
 export type Role = "owner" | "member" | "viewer";
+/**
+ * Owner nalog iz podešavanja servera (Coolify → Environment): OWNER_EMAIL + OWNER_PASSWORD.
+ * Pri svakom startu: ako nalog ne postoji — napravi ga kao owner; ako postoji — lozinka i uloga se usklade sa env-om.
+ * Najlakši način da se dobije (ili povrati) prijava bez pozivnica. Ko menja env servera ionako ima pun pristup.
+ */
+export async function ensureEnvOwner(db: Db) {
+  const email = process.env.OWNER_EMAIL?.trim().toLowerCase();
+  const password = process.env.OWNER_PASSWORD ?? "";
+  if (!email || !password) return;
+  if (!/^\S+@\S+\.\S+$/.test(email)) return console.warn("[owner] OWNER_EMAIL nije ispravan email — preskačem");
+  if (password.length < 8) return console.warn("[owner] OWNER_PASSWORD mora imati bar 8 znakova — preskačem");
+  const [u] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  if (!u) {
+    await db.insert(users).values({ email, name: email.split("@")[0]!, passwordHash: await hashPassword(password), role: "owner" });
+    return console.log(`[owner] napravljen owner nalog ${email}`);
+  }
+  const same = await verifyPassword(password, u.passwordHash);
+  if (same && u.role === "owner") return;
+  await db
+    .update(users)
+    .set({ ...(same ? {} : { passwordHash: await hashPassword(password), tokenVersion: u.tokenVersion + 1 }), role: "owner", access: "all", updatedAt: new Date() })
+    .where(eq(users.id, u.id));
+  console.log(`[owner] nalog ${email} usklađen sa OWNER_EMAIL/OWNER_PASSWORD`);
+}
+
 /** Email demo naloga (nije pravi sandučić — služi samo za prijavu). */
 export const DEMO_EMAIL = "demo@scoutline.demo";
 
