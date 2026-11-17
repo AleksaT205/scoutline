@@ -4,7 +4,7 @@ import { teamFetch } from "../../lib/team";
 import { canEdit, useSessionUser } from "../../lib/session";
 import { fmtDate } from "../../lib/delivery";
 import { ErrorNote, field } from "./parts";
-import { ClaudeSetup, previewUrl } from "./agent";
+import { ClaudeSetup, PreviewButton } from "./agent";
 import { RunLocallyView, SkillsView } from "./workspace-ui";
 
 /** Faza 14 — tab „Code“: GitHub iz aplikacije (analitika, PR-ovi, grane, Actions, deploy). */
@@ -231,9 +231,7 @@ function PullsView({ projectId, repo }: { projectId: string; repo: string }) {
                 <span>
                   {p.author} · {p.branch} → {p.base} · {ago(p.createdAt)}
                 </span>
-                <a href={previewUrl(repo, p.branch)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 text-accent hover:underline" title="Run this branch in the browser (StackBlitz)">
-                  ▶ Preview
-                </a>
+                <PreviewButton projectId={projectId} repo={repo} branch={p.branch} className="inline-flex items-center gap-1 text-accent hover:underline disabled:opacity-50" />
                 {p.draft && <span className="text-faint">draft</span>}
               </div>
               <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11.5px]">

@@ -21,6 +21,7 @@ import { notificationRoutes } from "./notifications.js";
 import { assistantRoutes } from "./assistant.js";
 import { githubFlowRoutes } from "./github-flow.js";
 import { agentRoutes } from "./agents.js";
+import { previewRoutes } from "./preview.js";
 import { workspaceRoutes } from "./workspace.js";
 
 type Tier = "T1" | "T2" | "T3" | "DOMESTIC";
@@ -65,7 +66,9 @@ export function createApp(getDb: () => Db) {
   const actorName = (c: Context) => ((c.get("actor" as never) as Actor | undefined)?.name ?? "team");
   const origins = (process.env.CORS_ORIGINS ?? "http://localhost:5173").split(",");
   const isDev = process.env.NODE_ENV !== "production";
-  app.use("*", secureHeaders({ crossOriginResourcePolicy: false, crossOriginOpenerPolicy: false }));
+  const secure = secureHeaders({ crossOriginResourcePolicy: false, crossOriginOpenerPolicy: false });
+  // /preview/* = sajt iz repoa (ima svoja zaglavlja: sandbox CSP, sme u iframe u Scoutline-u)
+  app.use("*", (c, next) => (c.req.path.startsWith("/preview/") ? next() : secure(c, next)));
   app.use(
     "*",
     cors({
@@ -229,6 +232,8 @@ export function createApp(getDb: () => Db) {
   app.route("/delivery", githubFlowRoutes(getDb, a));
   // Faza 16: Claude Code iz aplikacije (setup repoa, sesije, odgovori, potrošnja)
   app.route("/delivery", agentRoutes(getDb, a));
+  // „Run in browser“: pregled sajta iz repoa (potpisan link)
+  app.route("/", previewRoutes(getDb, a));
   // Faza 15: organizacija, skills, Figma, pokreni lokalno
   app.route("/", workspaceRoutes(getDb, a));
   app.use("/dev/*", a.require("member"));

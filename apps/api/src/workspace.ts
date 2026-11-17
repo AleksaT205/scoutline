@@ -1,6 +1,6 @@
 import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { and, desc, eq } from "drizzle-orm";
-import { decryptSecret, ghFetch, ghJson, issueEvents, issueLinks, projectRepoNames, projects, readUserIntegrations, settings, skills, userGithubToken, type Db } from "@radar/db";
+import { decryptSecret, ghFetch, ghJson, issueEvents, issueLinks, projectRepoNames, projectRepos, projects, readUserIntegrations, settings, skills, userGithubToken, type Db } from "@radar/db";
 import { runtime } from "./runtime.js";
 import { repoContext, runModel } from "./assistant.js";
 
@@ -373,6 +373,75 @@ export function workspaceRoutes(getDb: () => Db, g: Guards) {
     } catch (e) {
       return c.json({ repo: r.full, stack, links, steps, error: (e as Error).message });
     }
+  });
+
+  // ── Pokreni ceo projekat lokalno (FE + BE…): jedna komanda za sve repoe projekta ──
+  // Klonira ili osveži svaki repo, instalira zavisnosti i pokrene sve zajedno (concurrently, označeni logovi).
+  app.get("/delivery/projects/:id/dev-all", member, async (c) => {
+    const id = c.req.param("id")!;
+    const [p] = /^[0-9a-f-]{36}$/i.test(id) ? await getDb().select().from(projects).where(eq(projects.id, id)).limit(1) : [];
+    if (!p) return c.json({ error: "Project not found." }, 404);
+    const names = await projectRepoNames(getDb(), p);
+    if (!names.length) return c.json({ error: "Link a GitHub repo to the project first." }, 400);
+    const extra = await getDb().select().from(projectRepos).where(eq(projectRepos.projectId, p.id));
+    const labelOf = (full: string) => extra.find((e) => e.repoUrl.toLowerCase().endsWith(`/${full.toLowerCase()}`))?.label ?? null;
+    const tok = await ghToken(c);
+    let staticPort = 3000;
+    const parts = await Promise.all(
+      names.map(async (full) => {
+        const dir = full.split("/")[1]!;
+        const base = { repo: full, dir, label: labelOf(full) ?? (names.length === 1 ? dir : full === names[0] ? "app" : dir), stack: "unknown", start: null as string | null, url: null as string | null };
+        try {
+          const root = await ghJson<Array<{ name: string; type: string }>>(tok, `/repos/${full}/contents/`);
+          const has = (n: string) => root.some((f) => f.name === n);
+          if (has("package.json")) {
+            const res = await ghFetch(tok, `/repos/${full}/contents/package.json`, { headers: { Accept: "application/vnd.github.raw" } });
+            const pkg = res.ok ? ((await res.json().catch(() => ({}))) as { scripts?: Record<string, string>; packageManager?: string }) : {};
+            const pm = pkg.packageManager?.startsWith("pnpm") || has("pnpm-lock.yaml") ? "pnpm" : pkg.packageManager?.startsWith("yarn") || has("yarn.lock") ? "yarn" : "npm";
+            const sc = pkg.scripts ?? {};
+            const script = sc.dev ? "dev" : sc.start ? "start" : null;
+            const env = has(".env.example") ? "([ -f .env ] || cp .env.example .env) && " : "";
+            const pre = pm === "pnpm" ? "corepack enable && " : "";
+            const devScript = `${sc.dev ?? ""} ${sc.start ?? ""}`;
+            const port = /--port[ =](\d+)|-p (\d+)/.exec(devScript);
+            return {
+              ...base,
+              stack: `Node.js (${pm})`,
+              start: script ? `${pre}${env}${pm} install && ${pm === "npm" ? `npm run ${script}` : `${pm} ${script}`}` : null,
+              url: script ? `http://localhost:${port?.[1] ?? port?.[2] ?? (/vite/.test(devScript) ? 5173 : /astro/.test(devScript) ? 4321 : 3000)}` : null,
+            };
+          }
+          if (has("index.html") || has("public")) {
+            const port = staticPort++;
+            const d = has("index.html") ? "." : "public";
+            return { ...base, stack: "Static site", start: `npx --yes serve ${d} -l ${port}`, url: `http://localhost:${port}` };
+          }
+          if (has("requirements.txt") || has("pyproject.toml")) {
+            const run = has("manage.py") ? "python manage.py runserver" : has("main.py") ? "python main.py" : has("app.py") ? "python app.py" : null;
+            return { ...base, stack: "Python", start: run ? `python3 -m venv .venv && . .venv/bin/activate && pip install -q ${has("requirements.txt") ? "-r requirements.txt" : "-e ."} && ${run}` : null, url: has("manage.py") ? "http://localhost:8000" : null };
+          }
+          if (has("go.mod")) return { ...base, stack: "Go", start: "go run ." };
+          if (has("docker-compose.yml") || has("compose.yaml")) return { ...base, stack: "Docker", start: "docker compose up" };
+          return { ...base, stack: root.every((f) => /^(readme|license|\.github|\.gitignore)/i.test(f.name)) ? "Empty repo" : "unknown" };
+        } catch (e) {
+          return { ...base, stack: "unreachable", error: (e as Error).message };
+        }
+      }),
+    );
+    const runnable = parts.filter((x) => x.start);
+    const folder = `$HOME/scoutline/${p.key}`;
+    const q = (x: string) => `"${x.replace(/(["\\$`])/g, "\\$1")}"`;
+    const lines = [
+      "#!/usr/bin/env bash",
+      `# Scoutline — ${p.name}: preuzme i pokrene sve delove projekta lokalno`,
+      "set -e",
+      `mkdir -p ${folder} && cd ${folder}`,
+      `for r in ${names.join(" ")}; do d="\${r#*/}"; if [ -d "$d/.git" ]; then git -C "$d" pull --ff-only; else git clone "https://github.com/$r.git"; fi; done`,
+    ];
+    if (runnable.length === 1) lines.push(`cd ${runnable[0]!.dir} && ${runnable[0]!.start}`);
+    else if (runnable.length > 1)
+      lines.push(`npx --yes concurrently -k -n ${q(runnable.map((x) => x.label.replace(/[ ,]/g, "-")).join(","))} -c "magenta,cyan,green,yellow" ${runnable.map((x) => q(`cd ${x.dir} && ${x.start}`)).join(" ")}`);
+    return c.json({ project: p.key, folder, parts, script: lines.join("\n"), canRun: runnable.length > 0 });
   });
 
   // ── Figma u tasku ──

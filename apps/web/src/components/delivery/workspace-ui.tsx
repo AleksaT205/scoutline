@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Check, Copy, ExternalLink, Loader2, PenTool, Pencil, Plus, Sparkles, Terminal, Trash2, X, Play } from "lucide-react";
 import { teamFetch } from "../../lib/team";
 import { canEdit, useSessionUser } from "../../lib/session";
+import { PreviewButton, makePreview } from "./agent";
 import { Dialog, ErrorNote, btnPrimary, btnSecondary, field } from "./parts";
 
 /** Faza 15 — Skills (PR u repo), Pokreni lokalno, Figma u tasku. */
@@ -228,6 +229,117 @@ export function SkillsView({ projectId, repo }: { projectId: string; repo: strin
 }
 
 /** Pokreni lokalno: VS Code / Cursor / Codespaces + komande. */
+/** Ugrađeni pregled sajta (iz repoa, bez spoljnog servisa) + jedna komanda za ceo projekat (FE + BE) u terminalu. */
+function BrowserPreview({ projectId, repo }: { projectId: string; repo: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const show = async () => {
+    setBusy(true);
+    setErr(null);
+    try {
+      setUrl(await makePreview(projectId, repo));
+    } catch (e) {
+      setErr((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <section className="rounded-xl border border-line bg-surface p-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <Play size={14} className="text-accent" />
+        <span className="text-[13px] font-semibold">Run in browser</span>
+        <span className="text-[12px] text-faint">the website from {repo}, straight from GitHub — nothing to install</span>
+        <div className="ml-auto flex flex-wrap gap-2">
+          <button onClick={() => void show()} disabled={busy} className="inline-flex h-[32px] items-center gap-1.5 rounded-[7px] bg-fg px-3 text-[12.5px] font-medium text-bg hover:opacity-90 disabled:opacity-50">
+            {busy ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />} {url ? "Reload" : "Run here"}
+          </button>
+          <PreviewButton projectId={projectId} repo={repo} className="inline-flex h-[32px] items-center gap-1.5 rounded-[7px] border border-line bg-surface px-3 text-[12.5px] font-medium hover:bg-surface-2 disabled:opacity-50">
+            Open in new tab
+          </PreviewButton>
+        </div>
+      </div>
+      {err && <p className="mt-2 text-[12px] text-danger">{err}</p>}
+      {url && (
+        <div className="mt-3 overflow-hidden rounded-lg border border-line bg-white">
+          <iframe key={url} src={url} title="Website preview" className="h-[520px] w-full" sandbox="allow-scripts allow-forms allow-popups allow-modals" />
+        </div>
+      )}
+      <p className="mt-2 text-[11.5px] text-faint">Works for plain websites (HTML, CSS, JS). Apps with a build step (React, Next, Vue…) run in StackBlitz or Codespaces below, or on your computer with the command.</p>
+    </section>
+  );
+}
+
+function ProjectRunCommand({ projectId }: { projectId: string }) {
+  const [d, setD] = useState<{ folder: string; parts: Array<{ repo: string; dir: string; label: string; stack: string; start: string | null; url: string | null; error?: string }>; script: string; canRun: boolean } | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    teamFetch<NonNullable<typeof d>>(`/delivery/projects/${projectId}/dev-all`)
+      .then(setD)
+      .catch((e) => setErr((e as Error).message));
+  }, [projectId]);
+  if (err) return <ErrorNote>{err}</ErrorNote>;
+  if (!d) return <div className="h-24 animate-pulse rounded-xl bg-surface-2" />;
+  const download = () => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([`${d.script}\n`], { type: "text/x-sh" }));
+    a.download = "run.sh";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+  return (
+    <section className="rounded-xl border border-line bg-surface p-4">
+      <div className="mb-2 flex flex-wrap items-center gap-2">
+        <Terminal size={14} className="text-accent" />
+        <span className="text-[13px] font-semibold">Run the whole project on your computer</span>
+        <span className="text-[12px] text-faint">{d.parts.length > 1 ? "frontend + backend together, one terminal" : "one command"}</span>
+      </div>
+      <ul className="mb-3 space-y-1">
+        {d.parts.map((x) => (
+          <li key={x.repo} className="flex flex-wrap items-center gap-2 text-[12.5px]">
+            <span className="rounded-full border border-line px-2 py-px text-[11.5px]">{x.label}</span>
+            <span className="num text-muted">{x.repo}</span>
+            <span className="text-faint">· {x.stack}</span>
+            {x.url && x.start && (
+              <a href={x.url} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 text-accent hover:underline">
+                {x.url.replace("http://", "")} <ExternalLink size={11} />
+              </a>
+            )}
+            {!x.start && <span className="ml-auto text-[11.5px] text-faint">{x.stack === "Empty repo" ? "nothing to run yet" : "no start command found"}</span>}
+          </li>
+        ))}
+      </ul>
+      {d.canRun ? (
+        <>
+          <pre className="num max-h-48 overflow-auto rounded-lg border border-line bg-bg p-3 text-[12px] leading-relaxed text-fg">{d.script}</pre>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <button
+              onClick={async () => {
+                await navigator.clipboard.writeText(d.script.split("\n").filter((l) => !l.startsWith("#")).join("\n"));
+                setCopied(true);
+                setTimeout(() => setCopied(false), 1500);
+              }}
+              className="inline-flex h-[32px] items-center gap-1.5 rounded-[7px] bg-fg px-3 text-[12.5px] font-medium text-bg hover:opacity-90"
+            >
+              {copied ? <Check size={13} /> : <Copy size={13} />} {copied ? "Copied" : "Copy command"}
+            </button>
+            <button onClick={download} className="inline-flex h-[32px] items-center gap-1.5 rounded-[7px] border border-line bg-surface px-3 text-[12.5px] font-medium hover:bg-surface-2">
+              Download run.sh
+            </button>
+            <span className="text-[11.5px] text-faint">
+              Paste into Terminal (or <code className="num">bash run.sh</code>). Code goes to <code className="num">{d.folder.replace("$HOME", "~")}</code>; stop with Ctrl+C. Needs Git and Node.js; private repos need GitHub sign-in in Git (<code className="num">gh auth login</code>).
+            </span>
+          </div>
+        </>
+      ) : (
+        <p className="text-[12.5px] text-muted">Nothing to run yet — once there's code (hand a task to Claude), the command appears here.</p>
+      )}
+    </section>
+  );
+}
+
 export function RunLocallyView({ projectId, repo }: { projectId: string; repo: string }) {
   const [d, setD] = useState<{ stack: string; links: Record<string, string>; steps: Array<{ label: string; cmd: string }>; localUrl?: string | null; note?: string | null; devcontainer?: boolean; error?: string } | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -247,15 +359,18 @@ export function RunLocallyView({ projectId, repo }: { projectId: string; repo: s
     setTimeout(() => setCopied(null), 1500);
   };
   return (
+    <div className="space-y-4">
+    <BrowserPreview projectId={projectId} repo={repo} />
+    <ProjectRunCommand projectId={projectId} />
     <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] [&>*]:min-w-0">
       <section className="space-y-2 rounded-xl border border-line bg-surface p-4">
-        <div className="text-[13px] font-semibold">Run it in the browser</div>
-        <p className="text-[12px] text-muted">Nothing to install — the project starts in a new tab with a live preview.</p>
-        <a href={d.links.stackblitz} target="_blank" rel="noreferrer" className="flex items-center gap-2.5 rounded-lg bg-fg px-3 py-2.5 text-bg hover:opacity-90">
-          <Play size={14} />
+        <div className="text-[13px] font-semibold">Apps with a build step</div>
+        <p className="text-[12px] text-muted">React, Next, Vue, backends — these run the whole app in the cloud.</p>
+        <a href={d.links.stackblitz} target="_blank" rel="noreferrer" className="flex items-center gap-2.5 rounded-lg border border-line bg-bg px-3 py-2 hover:border-accent/50">
+          <ExternalLink size={13} className="text-faint" />
           <span className="min-w-0 flex-1">
             <span className="block text-[13px] font-medium">Run in StackBlitz</span>
-            <span className="block text-[11.5px] opacity-70">Websites and Node apps run right in the browser · private repos ask you to sign in with GitHub once</span>
+            <span className="block text-[11.5px] text-faint">Node apps right in the browser · private repos ask you to sign in with GitHub once</span>
           </span>
         </a>
         {[
@@ -317,8 +432,9 @@ export function RunLocallyView({ projectId, repo }: { projectId: string; repo: s
           </div>
         )}
         {d.error && <p className="mt-2 text-[12px] text-warning">{d.error}</p>}
-        <p className="mt-3 text-[12px] text-faint">Previews per pull request: turn on Deploy Previews in Netlify or Preview Deployments in Coolify — the link then shows on each PR in Code → Pull requests.</p>
+        <p className="mt-3 text-[12px] text-faint">Every pull request has a “Preview” button (Code → Pull requests) that runs that branch the same way.</p>
       </section>
+    </div>
     </div>
   );
 }

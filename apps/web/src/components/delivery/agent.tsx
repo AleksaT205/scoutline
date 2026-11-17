@@ -59,8 +59,41 @@ const tidy = (md: string) =>
     .replace(/^(\s*)[-*] \[ \]\s*/gm, "$1○ ")
     .replace(/\n{3,}/g, "\n\n");
 const repoQ = (repo: string) => `repo=${encodeURIComponent(repo)}`;
-/** Pregled grane u browseru (bez deploy-a). */
+/** Pregled grane u StackBlitz-u (aplikacije sa build korakom). */
 export const previewUrl = (repo: string, branch: string) => `https://stackblitz.com/github/${repo}/tree/${encodeURIComponent(branch)}`;
+
+/** Potpisan link za ugrađeni pregled sajta iz repoa (Scoutline, bez spoljnog servisa). */
+export const makePreview = (projectId: string, repo: string, ref?: string) =>
+  teamFetch<{ url: string }>(`/delivery/projects/${projectId}/preview?${repoQ(repo)}${ref ? `&ref=${encodeURIComponent(ref)}` : ""}`, { method: "POST", body: "{}" }).then((d) => d.url);
+
+/** Dugme „Preview“: otvara sajt iz te grane u novom tabu (prozor se otvara odmah, da ga pregledač ne blokira). */
+export function PreviewButton({ projectId, repo, branch, className, children }: { projectId: string; repo: string; branch?: string; className?: string; children?: React.ReactNode }) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      className={className ?? btnSecondary}
+      title="Opens this version of the website in a new tab (plain HTML/CSS/JS sites)"
+      onClick={async () => {
+        const w = window.open("about:blank", "_blank");
+        setBusy(true);
+        try {
+          const url = await makePreview(projectId, repo, branch);
+          if (w) w.location.href = url;
+          else window.open(url, "_blank");
+        } catch (e) {
+          w?.close();
+          window.alert((e as Error).message);
+        } finally {
+          setBusy(false);
+        }
+      }}
+    >
+      {busy ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />} {children ?? "Preview"}
+    </button>
+  );
+}
 
 // ── Checklist: šta treba da bi Claude radio na repou ──
 export function ClaudeSetup({ projectId, repo, compact }: { projectId: string; repo: string; compact?: boolean }) {
@@ -389,8 +422,9 @@ function RunThread({ projectId, repo, run, onChanged }: { projectId: string; rep
           <a href={pr.url} target="_blank" rel="noreferrer" className="min-w-0 flex-1 basis-[60%] truncate hover:underline">
             <span className="num text-faint">#{pr.number}</span> {pr.title}
           </a>
-          <a href={previewUrl(repo, pr.branch)} target="_blank" rel="noreferrer" className={btnSecondary} title="Runs this branch in the browser (StackBlitz)">
-            <Play size={13} /> Preview
+          <PreviewButton projectId={projectId} repo={repo} branch={pr.branch} />
+          <a href={previewUrl(repo, pr.branch)} target="_blank" rel="noreferrer" className="text-[12px] text-muted hover:text-fg" title="For apps with a build step (React, Next…)">
+            StackBlitz ↗
           </a>
           {pr.state === "open" && canEdit(user) && (
             <button onClick={() => void merge()} disabled={!!busy} className={btnPrimary}>
