@@ -33,6 +33,40 @@ export async function loadOrganization(db: Db): Promise<Organization> {
 
 // ── Ugrađena biblioteka skills-a (proverene osnove; tim dodaje svoje) ──
 const skill = (name: string, description: string, body: string) => `---\nname: ${name}\ndescription: ${description}\n---\n\n${body.trim()}\n`;
+
+// ── Skills sa GitHub-a: katalog (npr. anthropics/skills) i uvoz iz linka ──
+const DEFAULT_SKILL_SOURCES = ["anthropics/skills"];
+/** Link → repo, grana i folder skill-a. Prima github.com/o/r/tree/main/skills/x, …/blob/main/skills/x/SKILL.md ili o/r/putanja. */
+export function parseSkillUrl(input: string): { repo: string; ref: string | null; dir: string } | null {
+  const t = input.trim().replace(/^https?:\/\/(www\.)?github\.com\//, "").replace(/\/+$/, "").replace(/\.git$/, "");
+  const m = /^([\w.-]+)\/([\w.-]+)(?:\/(?:tree|blob)\/([^/]+))?(?:\/(.*))?$/.exec(t);
+  if (!m) return null;
+  let dir = (m[4] ?? "").replace(/\/?SKILL\.md$/i, "");
+  if (dir.includes("..")) return null;
+  dir = dir.replace(/^\/+/, "");
+  return { repo: `${m[1]}/${m[2]}`, ref: m[3] ?? null, dir };
+}
+/** Frontmatter iz SKILL.md: name, description, license. */
+export function skillFrontmatter(md: string): { name?: string; description?: string; license?: string } {
+  const fm = /^---\s*\n([\s\S]*?)\n---/.exec(md)?.[1] ?? "";
+  const lines = fm.split(/\r?\n/);
+  const get = (k: string) => {
+    const i = lines.findIndex((l) => l.startsWith(`${k}:`));
+    if (i < 0) return undefined;
+    const v = lines[i]!.slice(k.length + 1).trim();
+    // YAML blok (> ili |): sledeći uvučeni redovi
+    if (/^[>|][-+]?$/.test(v)) {
+      const block: string[] = [];
+      for (let j = i + 1; j < lines.length && (/^\s+/.test(lines[j]!) || lines[j] === ""); j++) block.push(lines[j]!.trim());
+      return block.join(v.startsWith(">") ? " " : "\n").trim() || undefined;
+    }
+    return v ? v.replace(/^["']|["']$/g, "") : undefined;
+  };
+  return { name: get("name"), description: get("description"), license: get("license") };
+}
+const catalogCache = new Map<string, { at: number; items: unknown[] }>();
+const slugOf = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 50) || "skill";
+
 export const BUILTIN_SKILLS = [
   {
     id: "agents-md",
@@ -227,6 +261,101 @@ export function workspaceRoutes(getDb: () => Db, g: Guards) {
     return c.json({ ok: true });
   });
 
+  // GitHub helper za javne/privatne repoe sa skill-ovima (radi i bez tokena za javne repoe)
+  const ghPublic = async (tok: string | null, path: string, raw = false) => {
+    const headers: Record<string, string> = raw ? { Accept: "application/vnd.github.raw" } : {};
+    const anon = () => fetch(`${process.env.GITHUB_API_URL ?? "https://api.github.com"}${path}`, { headers: { "User-Agent": "scoutline", ...(raw ? headers : { Accept: "application/vnd.github+json" }) }, signal: AbortSignal.timeout(15_000) });
+    let r = tok ? await ghFetch(tok, path, { headers }) : await anon();
+    // Javni repo: ako token ne važi ili ne vidi taj repo, pokušaj bez tokena
+    if (tok && (r.status === 401 || r.status === 403 || r.status === 404)) r = await anon();
+    if (!r.ok) throw new Error(r.status === 404 ? "Not found on GitHub — check the link (and that your token can see the repo)." : `GitHub: HTTP ${r.status}`);
+    return r;
+  };
+  /** Svi fajlovi foldera skill-a (do 40 fajlova, svaki do 300 KB), kao base64. */
+  const skillFolder = async (tok: string | null, src: { repo: string; ref: string | null; dir: string }, full = true) => {
+    const ref = src.ref ?? ((await (await ghPublic(tok, `/repos/${src.repo}`)).json()) as { default_branch: string }).default_branch;
+    const tree = (await (await ghPublic(tok, `/repos/${src.repo}/git/trees/${encodeURIComponent(ref)}?recursive=1`)).json()) as { tree: Array<{ path: string; type: string; size?: number }> };
+    const prefix = src.dir ? `${src.dir}/` : "";
+    const all = tree.tree.filter((x) => x.type === "blob" && x.path.startsWith(prefix));
+    if (!all.some((b) => b.path.toLowerCase() === `${prefix}skill.md`)) throw new Error("No SKILL.md in that folder.");
+    // Samo SKILL.md (za biblioteku) — bez ograničenja veličine foldera
+    if (!full) {
+      const sk = all.find((b) => b.path.toLowerCase() === `${prefix}skill.md`)!;
+      const r = await ghPublic(tok, `/repos/${src.repo}/contents/${sk.path.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(ref)}`, true);
+      const md = await r.text();
+      return { ref, files: all.map((b) => ({ rel: b.path.slice(prefix.length), b64: "" })), md, fm: skillFrontmatter(md) };
+    }
+    const blobs = all.filter((x) => (x.size ?? 0) <= 300_000).sort((a, b) => Number(b.path.toLowerCase().endsWith("skill.md")) - Number(a.path.toLowerCase().endsWith("skill.md")));
+    if (blobs.length > 60 || blobs.length < all.length) throw Object.assign(new Error(`This skill has ${all.length} files${blobs.length < all.length ? " (some over 300 KB)" : ""} — too big to copy from here. Use “Add to library” for SKILL.md, or copy the folder on GitHub.`), { tooBig: true });
+    const files = await Promise.all(
+      blobs.map(async (b) => {
+        const r = await ghPublic(tok, `/repos/${src.repo}/contents/${b.path.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(ref)}`, true);
+        return { rel: b.path.slice(prefix.length), b64: Buffer.from(await r.arrayBuffer()).toString("base64") };
+      }),
+    );
+    const md = Buffer.from(files.find((f) => f.rel.toLowerCase() === "skill.md")!.b64, "base64").toString("utf8");
+    return { ref, files, md, fm: skillFrontmatter(md) };
+  };
+
+  // GET /delivery/skills/catalog?source=owner/repo — katalog skill-ova iz repoa (keš 1 h)
+  app.get("/delivery/skills/catalog", member, async (c) => {
+    const source = (c.req.query("source") ?? DEFAULT_SKILL_SOURCES[0]!).trim();
+    if (!/^[\w.-]+\/[\w.-]+$/.test(source)) return c.json({ error: "Use owner/repo." }, 400);
+    const hit = catalogCache.get(source);
+    if (hit && Date.now() - hit.at < 3_600_000) return c.json({ source, items: hit.items });
+    const tok = (await ghToken(c)) || null;
+    try {
+      const repo = (await (await ghPublic(tok, `/repos/${source}`)).json()) as { default_branch: string };
+      const tree = (await (await ghPublic(tok, `/repos/${source}/git/trees/${repo.default_branch}?recursive=1`)).json()) as { tree: Array<{ path: string; type: string }> };
+      const dirs = tree.tree.filter((x) => x.type === "blob" && /(^|\/)SKILL\.md$/i.test(x.path) && !/^template\//i.test(x.path)).map((x) => x.path.replace(/\/?SKILL\.md$/i, "")).slice(0, 60);
+      // SKILL.md: javni repo direktno sa raw.githubusercontent.com (brže, bez API limita), inače preko API-ja; najviše 6 odjednom
+      const readSkill = async (dir: string) => {
+        const rel = `${dir ? `${dir}/` : ""}SKILL.md`;
+        if (!process.env.GITHUB_API_URL) {
+          const raw = await fetch(`https://raw.githubusercontent.com/${source}/${repo.default_branch}/${rel.split("/").map(encodeURIComponent).join("/")}`, { signal: AbortSignal.timeout(15_000) }).catch(() => null);
+          if (raw?.ok) return raw.text();
+        }
+        return (await ghPublic(tok, `/repos/${source}/contents/${rel.split("/").map(encodeURIComponent).join("/")}?ref=${repo.default_branch}`, true)).text();
+      };
+      const items: Array<{ name: string; description: string; license: string | null; dir: string; files: number; url: string }> = [];
+      for (let i = 0; i < dirs.length; i += 6) {
+        const batch = await Promise.all(
+          dirs.slice(i, i + 6).map(async (dir) => {
+            const md = await readSkill(dir).catch(() => "");
+            const fm = skillFrontmatter(md);
+            const files = tree.tree.filter((x) => x.type === "blob" && x.path.startsWith(dir ? `${dir}/` : "")).length;
+            return { name: fm.name ?? dir.split("/").pop() ?? source, description: (fm.description ?? "").slice(0, 400), license: fm.license ?? null, dir, files, url: `https://github.com/${source}/tree/${repo.default_branch}/${dir}` };
+          }),
+        );
+        items.push(...batch);
+      }
+      items.sort((a, b) => a.name.localeCompare(b.name));
+      catalogCache.set(source, { at: Date.now(), items });
+      return c.json({ source, items });
+    } catch (e) {
+      return c.json({ error: (e as Error).message }, 502);
+    }
+  });
+
+  // POST /delivery/skills/import { url } — skill sa GitHub-a u biblioteku (SKILL.md)
+  app.post("/delivery/skills/import", member, async (c) => {
+    const src = parseSkillUrl(String(((await c.req.json().catch(() => ({}))) as { url?: string }).url ?? ""));
+    if (!src) return c.json({ error: "Paste a GitHub link to a skill folder or its SKILL.md." }, 400);
+    try {
+      const sk = await skillFolder((await ghToken(c)) || null, src, false);
+      const name = sk.fm.name ?? (src.dir.split("/").pop() || src.repo.split("/")[1]!);
+      const path = `.claude/skills/${slugOf(name)}/SKILL.md`;
+      const existing = await getDb().select().from(skills).where(eq(skills.path, path)).limit(1);
+      const values = { name, description: (sk.fm.description ?? "").slice(0, 300) || null, path, content: sk.md.slice(0, 20_000) };
+      const [row] = existing[0]
+        ? await getDb().update(skills).set({ ...values, updatedAt: new Date() }).where(eq(skills.id, existing[0].id)).returning()
+        : await getDb().insert(skills).values({ ...values, createdBy: actor(c).name }).returning();
+      return c.json({ skill: row, extraFiles: sk.files.length - 1, source: `https://github.com/${src.repo}/tree/${sk.ref}/${src.dir}` }, 201);
+    } catch (e) {
+      return c.json({ error: (e as Error).message }, 502);
+    }
+  });
+
   // Koji skills već postoje u repou projekta
   app.get("/delivery/projects/:id/skills", member, async (c) => {
     const r = await repoFor(c);
@@ -251,14 +380,28 @@ export function workspaceRoutes(getDb: () => Db, g: Guards) {
     const r = await repoFor(c);
     if (!r) return c.json({ error: "Project not found." }, 404);
     if (!r.full) return c.json({ error: "Add a GitHub repo to the project first." }, 400);
-    const b = (await c.req.json().catch(() => ({}))) as { ids?: unknown; files?: unknown };
+    const b = (await c.req.json().catch(() => ({}))) as { ids?: unknown; files?: unknown; remote?: unknown };
     const ids = Array.isArray(b.ids) ? (b.ids as unknown[]).filter((x): x is string => typeof x === "string") : [];
     const custom = ids.filter(isUuid).length ? await getDb().select().from(skills) : [];
-    const files: Array<{ path: string; content: string; name: string }> = [
+    // Skill-ovi sa GitHub-a: ceo folder (SKILL.md, skripte, LICENSE) ide u .claude/skills/<ime>/
+    const remote: Array<{ path: string; content: string; name: string; b64?: string }> = [];
+    try {
+      for (const url of (Array.isArray(b.remote) ? (b.remote as unknown[]) : []).filter((x): x is string => typeof x === "string").slice(0, 5)) {
+        const src = parseSkillUrl(url);
+        if (!src) return c.json({ error: `Not a GitHub skill link: ${url}` }, 400);
+        const sk = await skillFolder((await ghToken(c)) || null, src);
+        const name = sk.fm.name ?? (src.dir.split("/").pop() || "skill");
+        for (const f of sk.files) remote.push({ path: `.claude/skills/${slugOf(name)}/${f.rel}`, content: "", b64: f.b64, name });
+      }
+    } catch (e) {
+      return c.json({ error: (e as Error).message }, 502);
+    }
+    const files: Array<{ path: string; content: string; name: string; b64?: string }> = [
       ...BUILTIN_SKILLS.filter((s) => ids.includes(s.id)).map((s) => ({ path: s.path, content: s.content.replace("<one sentence: what this app does and for whom>", r.p.description?.split("\n")[0]?.slice(0, 200) || r.p.name), name: s.name })),
       ...custom.filter((s) => ids.includes(s.id)).map((s) => ({ path: s.path, content: s.content, name: s.name })),
       ...(Array.isArray(b.files) ? (b.files as Array<Record<string, unknown>>) : []).map((f) => skillInput({ ...f, name: f.name ?? f.path })).filter((v): v is { name: string; path: string; content: string; description: string | null } => !("error" in v)),
     ].slice(0, 20);
+    files.push(...remote.slice(0, 80));
     if (!files.length) return c.json({ error: "Pick at least one skill." }, 400);
     const tok = await ghToken(c);
     try {
@@ -270,11 +413,11 @@ export function workspaceRoutes(getDb: () => Db, g: Guards) {
         const enc = f.path.split("/").map(encodeURIComponent).join("/");
         const existing = await ghFetch(tok, `/repos/${r.full}/contents/${enc}?ref=${encodeURIComponent(branch)}`);
         const sha = existing.ok ? ((await existing.json()) as { sha?: string }).sha : undefined;
-        await ghJson(tok, `/repos/${r.full}/contents/${enc}`, { method: "PUT", body: JSON.stringify({ message: `${sha ? "Update" : "Add"} ${f.path}`, content: Buffer.from(f.content, "utf8").toString("base64"), branch, ...(sha ? { sha } : {}) }) });
+        await ghJson(tok, `/repos/${r.full}/contents/${enc}`, { method: "PUT", body: JSON.stringify({ message: `${sha ? "Update" : "Add"} ${f.path}`, content: f.b64 ?? Buffer.from(f.content, "utf8").toString("base64"), branch, ...(sha ? { sha } : {}) }) });
       }
       const pr = await ghJson<{ html_url: string; number: number }>(tok, `/repos/${r.full}/pulls`, {
         method: "POST",
-        body: JSON.stringify({ title: `Add AI agent skills (${files.length})`, head: branch, base: meta.default_branch, body: `Added from Scoutline by ${actor(c).name}:\n\n${files.map((f) => `- \`${f.path}\` — ${f.name}`).join("\n")}\n\nThese files help Claude Code, Codex and other agents work faster with fewer tokens.` }),
+        body: JSON.stringify({ title: `Add project skills (${new Set(files.map((f) => f.name)).size})`, head: branch, base: meta.default_branch, body: `Added from Scoutline by ${actor(c).name}:\n\n${[...new Set(files.map((f) => f.name))].map((n) => `- ${n}`).join("\n")}\n\nFiles: ${files.length}.` }),
       });
       return c.json({ ok: true, url: pr.html_url, number: pr.number }, 201);
     } catch (e) {

@@ -72,9 +72,109 @@ function SkillEditor({ open, onClose, initial, onSaved }: { open: boolean; onClo
   );
 }
 
-/** Biblioteka skills-a + „Add to project“ (otvara PR u repou). */
+/** Katalog skill-ova sa GitHub-a (podrazumevano anthropics/skills) i uvoz iz linka. */
+interface CatalogItem {
+  name: string;
+  description: string;
+  license: string | null;
+  dir: string;
+  files: number;
+  url: string;
+}
+function SkillCatalog({ onLibrary, onInstall, busy, canEdit: editable }: { onLibrary: (url: string) => void; onInstall: (url: string) => void; busy: string | null; canEdit: boolean }) {
+  const [source, setSource] = useState("anthropics/skills");
+  const [input, setInput] = useState("anthropics/skills");
+  const [items, setItems] = useState<CatalogItem[] | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [q, setQ] = useState("");
+  useEffect(() => {
+    setItems(null);
+    setErr(null);
+    teamFetch<{ items: CatalogItem[] }>(`/delivery/skills/catalog?source=${encodeURIComponent(source)}`)
+      .then((d) => setItems(d.items))
+      .catch((e) => setErr((e as Error).message));
+  }, [source]);
+  const shown = (items ?? []).filter((x) => !q || `${x.name} ${x.description}`.toLowerCase().includes(q.toLowerCase()));
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <form
+          className="flex items-center gap-1.5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (/^[\w.-]+\/[\w.-]+$/.test(input.trim())) setSource(input.trim());
+          }}
+        >
+          <span className="text-[12px] text-muted">Source</span>
+          <input value={input} onChange={(e) => setInput(e.target.value)} className={`${field} num h-[30px] w-52 text-[12.5px]`} aria-label="GitHub repo with skills (owner/repo)" />
+          <button className={small}>Load</button>
+        </form>
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search skills…" className={`${field} h-[30px] w-full text-[12.5px] sm:ml-auto sm:w-56`} aria-label="Search skills" />
+      </div>
+      {err && <ErrorNote>{err}</ErrorNote>}
+      {!items && !err && (
+        <div className="grid gap-2 md:grid-cols-2">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="h-24 animate-pulse rounded-xl bg-surface-2" />
+          ))}
+        </div>
+      )}
+      {items && (
+        <div className="grid gap-2 md:grid-cols-2">
+          {shown.map((x) => (
+            <div key={x.url} className="flex flex-col rounded-xl border border-line bg-surface p-3">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[13px] font-medium">{x.name}</span>
+                <span className="rounded-full bg-surface-2 px-1.5 py-px text-[10.5px] text-muted ring-1 ring-inset ring-line">{x.files} file{x.files === 1 ? "" : "s"}</span>
+                <a href={x.url} target="_blank" rel="noreferrer" className="ml-auto text-faint hover:text-fg" aria-label={`Open ${x.name} on GitHub`}>
+                  <ExternalLink size={12} />
+                </a>
+              </div>
+              <p className="mt-1 line-clamp-3 text-[12px] text-muted">{x.description || "No description."}</p>
+              {editable && (
+                <div className="mt-2 flex flex-wrap gap-1.5 pt-1">
+                  <button disabled={!!busy} onClick={() => onInstall(x.url)} className="inline-flex h-[28px] items-center gap-1.5 rounded-md bg-fg px-2.5 text-[12px] font-medium text-bg disabled:opacity-40" title="Copies the whole skill folder into this project's repo through a pull request">
+                    {busy === `install:${x.url}` ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Install in repo
+                  </button>
+                  <button disabled={!!busy} onClick={() => onLibrary(x.url)} className={small} title="Save SKILL.md to your team's library">
+                    {busy === `lib:${x.url}` ? <Loader2 size={12} className="animate-spin" /> : null} Add to library
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+          {shown.length === 0 && <div className="rounded-xl border border-dashed border-line px-6 py-8 text-center text-[12.5px] text-faint md:col-span-2">No skills match.</div>}
+        </div>
+      )}
+      <p className="text-[11.5px] text-faint">Skills are folders with a SKILL.md (and sometimes scripts). “Install in repo” copies the whole folder to .claude/skills/ in the project, with its license.</p>
+    </div>
+  );
+}
+
+function SkillImport({ onLibrary, onInstall, busy }: { onLibrary: (url: string) => void; onInstall: (url: string) => void; busy: string | null }) {
+  const [url, setUrl] = useState("");
+  const ok = /github\.com\/[\w.-]+\/[\w.-]+/.test(url) || /^[\w.-]+\/[\w.-]+\//.test(url.trim());
+  return (
+    <section className="space-y-2 rounded-xl border border-line bg-surface p-4">
+      <div className="text-[13px] font-semibold">Import a skill from GitHub</div>
+      <p className="text-[12px] text-muted">Paste a link to a skill folder or its SKILL.md — from any repo your GitHub token can see (public repos always work).</p>
+      <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://github.com/owner/repo/tree/main/skills/my-skill" className={`${field} num h-[34px] text-[12.5px]`} aria-label="GitHub link to a skill" />
+      <div className="flex flex-wrap gap-2">
+        <button disabled={!ok || !!busy} onClick={() => onInstall(url.trim())} className={btnPrimary}>
+          {busy === `install:${url.trim()}` ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Install in repo
+        </button>
+        <button disabled={!ok || !!busy} onClick={() => onLibrary(url.trim())} className={btnSecondary}>
+          {busy === `lib:${url.trim()}` ? <Loader2 size={14} className="animate-spin" /> : null} Add to library
+        </button>
+      </div>
+    </section>
+  );
+}
+
+/** Biblioteka skills-a + „Add to project“ (otvara PR u repou); Browse i Import sa GitHub-a. */
 export function SkillsView({ projectId, repo }: { projectId: string; repo: string }) {
   const user = useSessionUser();
+  const [mode, setMode] = useState<"library" | "browse" | "import">("library");
   const [list, setList] = useState<Skill[] | null>(null);
   const [installed, setInstalled] = useState<string[]>([]);
   const [picked, setPicked] = useState<Set<string>>(new Set());
@@ -105,9 +205,69 @@ export function SkillsView({ projectId, repo }: { projectId: string; repo: strin
       setBusy(null);
     }
   };
-  if (!list) return <div className="h-40 animate-pulse rounded-xl bg-surface-2" />;
+  const toLibrary = async (url: string) => {
+    setBusy(`lib:${url}`);
+    setMsg(null);
+    try {
+      const r = await teamFetch<{ skill: { name: string }; extraFiles: number }>("/delivery/skills/import", { method: "POST", body: JSON.stringify({ url }) });
+      setMsg({ ok: true, text: `“${r.skill.name}” added to the library${r.extraFiles > 0 ? ` (SKILL.md only — use “Install in repo” to also copy its ${r.extraFiles} extra file${r.extraFiles === 1 ? "" : "s"})` : ""}.` });
+      load();
+    } catch (e) {
+      setMsg({ ok: false, text: (e as Error).message });
+    } finally {
+      setBusy(null);
+    }
+  };
+  const installRemote = async (url: string) => {
+    setBusy(`install:${url}`);
+    setMsg(null);
+    try {
+      const r = await teamFetch<{ url: string }>(`/delivery/projects/${projectId}/skills/install?repo=${encodeURIComponent(repo)}`, { method: "POST", body: JSON.stringify({ remote: [url] }) });
+      setMsg({ ok: true, text: "Pull request opened with the skill folder — merge it in Code → Pull requests.", url: r.url });
+    } catch (e) {
+      setMsg({ ok: false, text: (e as Error).message });
+    } finally {
+      setBusy(null);
+    }
+  };
+  const seg = (on: boolean) => `h-[28px] rounded-md px-3 text-[12.5px] ${on ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`;
+  const tabs = (
+    <div className="inline-flex rounded-lg border border-line bg-surface p-0.5">
+      {(
+        [
+          ["library", "Library"],
+          ["browse", "Browse"],
+          ["import", "Import from GitHub"],
+        ] as const
+      ).map(([k, l]) => (
+        <button key={k} onClick={() => setMode(k)} className={seg(mode === k)}>
+          {l}
+        </button>
+      ))}
+    </div>
+  );
+  const banner = msg && (
+    <div className={`rounded-lg border px-3 py-2 text-[12.5px] ${msg.ok ? "border-success/40 bg-success-soft text-success" : "border-danger/40 bg-danger/10 text-danger"}`}>
+      {msg.text}{" "}
+      {msg.url && (
+        <a href={msg.url} target="_blank" rel="noreferrer" className="font-medium underline">
+          Open PR
+        </a>
+      )}
+    </div>
+  );
+  if (mode !== "library")
+    return (
+      <div className="space-y-3">
+        {tabs}
+        {banner}
+        {mode === "browse" ? <SkillCatalog onLibrary={(u) => void toLibrary(u)} onInstall={(u) => void installRemote(u)} busy={busy} canEdit={canEdit(user)} /> : <SkillImport onLibrary={(u) => void toLibrary(u)} onInstall={(u) => void installRemote(u)} busy={busy} />}
+      </div>
+    );
+  if (!list) return <div className="space-y-3">{tabs}<div className="h-40 animate-pulse rounded-xl bg-surface-2" /></div>;
   return (
     <div className="space-y-3">
+      {tabs}
       <div className="flex flex-wrap items-center gap-2">
         <p className="text-[12.5px] text-muted">Rules and skills for Claude Code, Codex and other agents. Picked files are added to <b className="text-fg">{repo}</b> through a pull request.</p>
         {canEdit(user) && (
@@ -131,8 +291,8 @@ export function SkillsView({ projectId, repo }: { projectId: string; repo: strin
             >
               {busy === "draft" ? <Loader2 size={12} className="animate-spin" /> : <Sparkles size={12} className="text-accent" />} Draft AGENTS.md with AI
             </button>
-            <button onClick={() => setEdit({})} className={small}>
-              <Plus size={12} /> New skill
+            <button onClick={() => setEdit({})} className={small} title="Write your own skill">
+              <Plus size={12} /> Write a skill
             </button>
           </div>
         )}
