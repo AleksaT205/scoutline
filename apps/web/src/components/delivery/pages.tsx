@@ -11,6 +11,7 @@ import { IssueBoard, IssueDetail, IssueList, NewIssueDialog } from "./issues";
 import { PortalDialog } from "./more";
 import { StatusDialog } from "./assistant";
 import { ProjectAI } from "./agent";
+import { useHashParam, useOptionalHashParam } from "../../lib/hashParams";
 import { CodeTab } from "./code";
 
 function PageHead({ title, sub, children }: { title: React.ReactNode; sub?: React.ReactNode; children?: React.ReactNode }) {
@@ -455,16 +456,21 @@ export function ProjectPage({ id }: { id: string }) {
   const editable = canEdit(user);
   const project = useProject(id);
   const issues = useIssues(`projectId=${id}`);
-  const [view, setView] = useState<"board" | "list" | "overview" | "ask" | "code">(() => {
-    try {
-      // Na telefonu je lista preglednija od table (kolone su preširoke za uzan ekran)
-      return (localStorage.getItem("delivery-view") as "board" | "list" | null) ?? (window.innerWidth < 640 ? "list" : "board");
-    } catch {
-      return "board";
-    }
-  });
+  // Kartica projekta je u adresi (?view=code) — osvežavanje ostaje na istom mestu
+  const [view, setView] = useHashParam<"board" | "list" | "overview" | "ask" | "code">(
+    "view",
+    () => {
+      try {
+        // Na telefonu je lista preglednija od table (kolone su preširoke za uzan ekran)
+        return (localStorage.getItem("delivery-view") as "board" | "list" | null) ?? (window.innerWidth < 640 ? "list" : "board");
+      } catch {
+        return "board";
+      }
+    },
+    ["board", "list", "overview", "ask", "code"],
+  );
   const [newOpen, setNewOpen] = useState<IssueStatus | null>(null);
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useOptionalHashParam("task"); // otvoren task ostaje otvoren posle osvežavanja
   const [editOpen, setEditOpen] = useState(false);
   const [portalOpen, setPortalOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
@@ -638,11 +644,11 @@ export function ProjectPage({ id }: { id: string }) {
 export function MyIssuesPage() {
   const user = useSessionUser();
   const editable = canEdit(user);
-  const [scope, setScope] = useState<"me" | "all">(user?.id ? "me" : "all");
+  const [scope, setScope] = useHashParam<"me" | "all">("scope", user?.id ? "me" : "all", ["me", "all"]);
   const issues = useIssues(scope === "me" ? "assignee=me&scope=open" : "scope=open");
   const projects = useProjects();
-  const [view, setView] = useState<"list" | "board">("list");
-  const [selected, setSelected] = useState<string | null>(null);
+  const [view, setView] = useHashParam<"list" | "board">("view", "list", ["list", "board"]);
+  const [selected, setSelected] = useOptionalHashParam("task");
   const [newOpen, setNewOpen] = useState(false);
   useNewIssueShortcut(() => setNewOpen(true), editable && !!projects.data?.length);
   const setIssues = (f: (prev: Issue[]) => Issue[]) => issues.setData((d) => f(d ?? []));

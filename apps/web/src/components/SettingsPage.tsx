@@ -3,6 +3,7 @@ import { BellRing, Check, Copy, Link2, Loader2, Trash2, UserPlus } from "lucide-
 import { getSessionUser, setSession, useSessionUser, type SessionUser } from "../lib/session";
 import { teamFetch } from "../lib/team";
 import { IntegrationsSettings } from "./IntegrationsSettings";
+import { useHashParam } from "../lib/hashParams";
 import { OrganizationSettings } from "./OrganizationSettings";
 
 type Tab = "profile" | "organization" | "team" | "shares" | "alerts" | "integrations";
@@ -316,8 +317,11 @@ function Shares() {
 }
 
 export function SettingsPage({ initialTab = "profile", onOpenAlerts }: { initialTab?: Tab; onOpenAlerts: () => void }) {
-  const [tab, setTab] = useState<Tab>(initialTab);
-  useEffect(() => setTab(initialTab), [initialTab]);
+  const [tab, setTab] = useHashParam<Tab>("tab", initialTab, ["profile", "organization", "team", "integrations", "shares", "alerts"]);
+  useEffect(() => {
+    if (initialTab !== "profile") setTab(initialTab);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialTab]);
   const role = getSessionUser()?.role;
   const tabs: Array<[Tab, string]> = [
     ["profile", "Profile"],

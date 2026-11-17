@@ -5,6 +5,7 @@ import { teamFetch } from "../../lib/team";
 import { canEdit, useSessionUser } from "../../lib/session";
 import { Dialog, ErrorNote, btnPrimary, btnSecondary } from "./parts";
 import { CreateTasksButton } from "./tasks-from-text";
+import { useHashParam } from "../../lib/hashParams";
 import { AskPanel, Md } from "./assistant";
 
 /**
@@ -422,7 +423,7 @@ export function ClaudeSetup({ projectId, repo, compact }: { projectId: string; r
 
 // ── Ask AI na projektu: „Build with Claude“ (radi u repou) ili „Ask“ (samo odgovara) ──
 export function ProjectAI({ projectId, hasRepo }: { projectId: string; hasRepo: boolean }) {
-  const [mode, setMode] = useState<"build" | "ask">(() => (hasRepo ? "build" : "ask"));
+  const [mode, setMode] = useHashParam<"build" | "ask">("ai", hasRepo ? "build" : "ask", ["build", "ask"]);
   const seg = (on: boolean) => `inline-flex h-[28px] items-center gap-1.5 rounded-md px-3 text-[12.5px] ${on ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`;
   return (
     <div className="space-y-3">

@@ -6,6 +6,7 @@ import { fmtDate } from "../../lib/delivery";
 import { ErrorNote, field } from "./parts";
 import { ClaudeSetup, PreviewButton } from "./agent";
 import { TerminalView } from "./terminal";
+import { useHashParam } from "../../lib/hashParams";
 import { RunLocallyView, SkillsView } from "./workspace-ui";
 
 /** Faza 14 — tab „Code“: GitHub iz aplikacije (analitika, PR-ovi, grane, Actions, deploy). */
@@ -544,7 +545,11 @@ function DeployView({ projectId }: { projectId: string }) {
 export function CodeTab({ projectId, initialSection }: { projectId: string; initialSection?: Section }) {
   const user = useSessionUser();
   const repos = useLoad<{ repos: Repo[] }>(`/delivery/projects/${projectId}/repos`);
-  const [section, setSection] = useState<Section>(initialSection ?? "insights");
+  const [section, setSection] = useHashParam<Section>("tab", initialSection ?? "insights", ["insights", "pulls", "branches", "actions", "deploy", "skills", "local", "terminal"]);
+  useEffect(() => {
+    if (initialSection) setSection(initialSection); // dugme „Run locally“ u zaglavlju projekta
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialSection]);
   const [repo, setRepo] = useState<string>("");
   const [adding, setAdding] = useState({ repo: "", label: "" });
   const [err, setErr] = useState<string | null>(null);
