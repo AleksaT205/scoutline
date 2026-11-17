@@ -61,7 +61,7 @@ function LeadsChart({ data, days }: { data: Analytics["daily"] | null; days: num
   const boxRef = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(600);
   const [idx, setIdx] = useState<number | null>(null);
-  const H = w < 520 ? 210 : 270;
+  const H = w < 520 ? 170 : 200;
   const pad = { top: 10, right: 4, bottom: 24, left: 34 };
 
   useEffect(() => {
@@ -78,10 +78,10 @@ function LeadsChart({ data, days }: { data: Analytics["daily"] | null; days: num
   const innerW = w - pad.left - pad.right;
   const innerH = H - pad.top - pad.bottom;
   const n = series.length;
-  // Širina mesta po danu: najviše 56 px, pa je malo dana i dalje uredno (stubovi uz desnu ivicu, danas desno)
-  const slot = Math.min(innerW / n, 56);
+  // Širina mesta po danu: najviše 36 px, pa je malo dana i dalje uredno (stubovi uz desnu ivicu, danas desno)
+  const slot = Math.min(innerW / n, 36);
   const startX = pad.left + innerW - slot * n;
-  const barW = Math.max(3, Math.min(slot - (slot > 12 ? 6 : 2), 40));
+  const barW = Math.max(3, Math.min(slot - (slot > 12 ? 8 : 2), 16)); // tanki stubovi
   const cx = (i: number) => startX + slot * i + slot / 2;
   const y = (v: number) => pad.top + innerH - (v / max) * innerH;
 
@@ -162,13 +162,13 @@ function LeadsChart({ data, days }: { data: Analytics["daily"] | null; days: num
           <div className="mt-1 text-[12px] text-faint">{cur ? (idx === null ? `Today · ${fmtDay(cur.day)}` : fmtDay(cur.day)) : " "}</div>
         </div>
         <div className="flex items-center gap-3 pt-0.5 text-[11.5px] text-muted">
-          <span className="inline-flex items-center gap-1.5"><i className="size-2.5 rounded-[3px] bg-accent/40" /> all leads</span>
+          <span className="inline-flex items-center gap-1.5"><i className="size-2.5 rounded-[3px] bg-line-2" /> all leads</span>
           <span className="inline-flex items-center gap-1.5"><i className="size-2.5 rounded-[3px] bg-accent" /> score ≥ 70</span>
         </div>
       </div>
 
       {!data ? (
-        <div className="h-[210px] animate-pulse rounded-lg bg-surface-2 sm:h-[270px]" />
+        <div className="h-[170px] animate-pulse rounded-lg bg-surface-2 sm:h-[200px]" />
       ) : (
         <div
           ref={boxRef}
@@ -202,8 +202,8 @@ function LeadsChart({ data, days }: { data: Analytics["daily"] | null; days: num
               const dim = idx !== null && idx !== i;
               return (
                 <g key={s.day} opacity={dim ? 0.45 : 1} style={{ transition: "opacity 120ms" }}>
-                  {/* ceo stub (svi leadovi) svetlije, a deo sa score ≥ 70 puna boja; 2 px razmaka između */}
-                  <path d={bar(x0, y(s.leads), Math.min(y(0), y(s.good) - (s.good ? 2 : 0)), barW)} fill="var(--color-accent)" fillOpacity="0.4" />
+                  {/* ceo stub (svi leadovi) neutralno sivo kao ostatak aplikacije, deo sa score ≥ 70 ljubičasto; 2 px razmaka */}
+                  <path d={bar(x0, y(s.leads), Math.min(y(0), y(s.good) - (s.good ? 2 : 0)), barW)} fill="var(--color-line-2)" />
                   <path d={bar(x0, y(s.good), y(0), barW)} fill="var(--color-accent)" />
                 </g>
               );
