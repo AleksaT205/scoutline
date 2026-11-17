@@ -75,6 +75,22 @@ Server sam pokrene Redeploy kad commit na `main` prođe CI (testovi + build). Ak
 3. U podešavanjima projekta uključi **Include Source Commit in Build** (Coolify tada sam daje `SOURCE_COMMIT` i `COOLIFY_RESOURCE_UUID`).
 4. Redeploy jednom. Stanje se vidi u **Settings → System → Auto-deploy** (i dugme *Check now*).
 
+## 4b. Web na Cloudflare Pages (bez oznake „Powered by Netlify“)
+
+Netlify na besplatnom planu dodaje oznaku na sajt i ona ne može da se isključi. Cloudflare Pages je besplatan, bez oznake, i isto objavljuje na svaki push.
+
+1. Napravi nalog na dash.cloudflare.com → **Workers & Pages → Create → Pages → Connect to Git** → izaberi repo.
+2. Build podešavanja:
+   - Build command: `pnpm --filter @radar/web build`
+   - Build output directory: `apps/web/dist`
+   - Root directory: prazno (koren repoa)
+   - Environment variables: `NODE_VERSION=20.19.4`, `VITE_API_URL=https://aleksaserver.tail32786c.ts.net`
+3. Posle prvog deploy-a dobiješ adresu `https://<ime>.pages.dev`.
+4. Coolify → Environment Variables: u `CORS_ORIGINS` dodaj novu adresu (zarezom, bez razmaka), a `DASHBOARD_URL` postavi na nju → Redeploy.
+5. Kad sve radi na novoj adresi, Netlify sajt može da se obriše (ili ostavi kao rezerva).
+
+Zaglavlja (uklj. dozvolu za mikrofon) su u `apps/web/public/_headers`; Cloudflare sam vraća `index.html` za sve putanje (SPA).
+
 ## 5. Plaćeni AI modeli za klijente (AI Router)
 
 Kad klijenti počnu da koriste router u produkciji, besplatni modeli nisu dovoljno pouzdani. U `infra/litellm.config.yaml`, u grupe `fast` i `smart`, dodaj plaćene modele (svoj OpenAI / Anthropic / Google ključ kao env promenljivu u Coolify-ju). Klijentima ništa ne menjaš — i dalje šalju `model: "auto"`. Budžet po klijentu već postoji (AI Router → klijent → Monthly budget).

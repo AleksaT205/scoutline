@@ -1,0 +1,10 @@
+# Sigurnosna zaglavlja (Cloudflare Pages čita ovaj fajl; Netlify takođe)
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(self), geolocation=()
+
+# Fajlovi sa heš-om u imenu se ne menjaju — keširaju se dugo
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable

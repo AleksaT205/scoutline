@@ -70,7 +70,10 @@ export function createApp(getDb: () => Db) {
   const app = new Hono();
   const a = auth(getDb);
   const actorName = (c: Context) => ((c.get("actor" as never) as Actor | undefined)?.name ?? "team");
-  const origins = (process.env.CORS_ORIGINS ?? "http://localhost:5173").split(",");
+  const origins = (process.env.CORS_ORIGINS ?? "http://localhost:5173")
+    .split(",")
+    .map((o) => o.trim().replace(/\/+$/, ""))
+    .filter(Boolean);
   const isDev = process.env.NODE_ENV !== "production";
   const secure = secureHeaders({ crossOriginResourcePolicy: false, crossOriginOpenerPolicy: false });
   // /preview/* = sajt iz repoa (ima svoja zaglavlja: sandbox CSP, sme u iframe u Scoutline-u)
