@@ -70,6 +70,7 @@ const resetIn = (iso: string | null | undefined, weekly = false) => {
 };
 function UsageBar({ s }: { s: Summary }) {
   const u = useCached<PlanUsage>("/delivery/claude/usage", { staleMs: 60_000, refreshMs: 120_000 });
+  const [showSessions, setShowSessions] = useState(false);
   const d = u.data;
   const Row = ({ label, w, weekly }: { label: string; w: { pct: number; resetsAt: string | null }; weekly?: boolean }) => (
     <div className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_4.5rem] items-center gap-3">
@@ -95,9 +96,50 @@ function UsageBar({ s }: { s: Summary }) {
         <div className="text-[11.5px] text-faint">Add your Claude Code token in Settings → Integrations — Claude runs only on your own subscription.</div>
       ) : null}
       {/* Limiti plana (sesija / nedelja) dolaze samo ako ih Anthropic da za ovaj token; token iz `claude setup-token` ih ne dobija — tada samo pregled meseca */}
-      <div className="text-[11px] text-faint">
-        This month: {s.month.runs} tasks · {s.month.sessions} sessions · {s.month.merged} merged
+      <div className="flex flex-wrap items-center gap-2 text-[11px] text-faint">
+        <span>
+          This month: {s.month.runs} tasks · {s.month.sessions} sessions · {s.month.merged} merged
+        </span>
+        {(s.sessions?.length ?? 0) > 0 && (
+          <button type="button" onClick={() => setShowSessions(!showSessions)} className="ml-auto text-[11.5px] text-muted hover:text-fg">
+            {showSessions ? "Hide sessions" : "Sessions"}
+          </button>
+        )}
       </div>
+      {showSessions && s.sessions && (
+        <div className="max-h-[280px] overflow-auto rounded-lg border border-line bg-surface">
+          <table className="w-full min-w-[520px] text-[12px]">
+            <thead>
+              <tr className="text-left text-[11px] text-faint">
+                <th className="px-2 py-1.5 font-normal">When</th>
+                <th className="px-2 py-1.5 font-normal">Task</th>
+                <th className="px-2 py-1.5 font-normal">Who</th>
+                <th className="px-2 py-1.5 font-normal">Model</th>
+                <th className="px-2 py-1.5 text-right font-normal">Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              {s.sessions.map((x) => (
+                <tr key={x.id} className="border-t border-line">
+                  <td className="num whitespace-nowrap px-2 py-1.5">
+                    <a href={x.url} target="_blank" rel="noreferrer" className="hover:text-fg" title="Open this session on GitHub">
+                      {new Date(x.at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    </a>
+                  </td>
+                  <td className="max-w-[280px] truncate px-2 py-1.5 text-fg" title={x.task}>
+                    <span className="num text-faint">#{x.number}</span> {x.task}
+                  </td>
+                  <td className="px-2 py-1.5">{x.by ?? "—"}</td>
+                  <td className="px-2 py-1.5 capitalize">{x.model}</td>
+                  <td className="num px-2 py-1.5 text-right">
+                    {x.status !== "completed" ? <span className="text-warning">running</span> : x.conclusion === "success" ? `${x.minutes} min` : <span className="text-danger">{x.conclusion ?? "failed"}</span>}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
@@ -358,6 +400,11 @@ export function ClaudeSetup({ projectId, repo, compact }: { projectId: string; r
         <button onClick={() => void s.reload()} className="ml-auto text-faint hover:text-fg" aria-label="Check again" title="Check again">
           <RefreshCw size={13} className={s.refreshing ? "animate-spin" : ""} />
         </button>
+        {compact && ready && (
+          <button onClick={() => setOpen(false)} className="text-[12px] text-muted hover:text-fg">
+            Hide
+          </button>
+        )}
       </div>
       <ul className="space-y-2">
         <Row ok={d.access} title={d.access ? "Scoutline can reach the repo" : "Scoutline can't reach the repo"} hint={!d.access ? (d.error ?? "Add this repo to your GitHub token's access (Settings → Integrations).") : !d.canPush ? "Read-only access — the token needs write access." : undefined} />
