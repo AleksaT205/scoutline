@@ -75,19 +75,20 @@ function DailyBars({ data, days }: { data: Analytics["daily"]; days: number }) {
 function HBars({ rows, color = "bg-accent" }: { rows: Array<{ label: string; value: number; extra?: string }>; color?: string }) {
   const max = Math.max(...rows.map((r) => r.value), 1);
   if (!rows.length) return <div className="py-6 text-center text-[12.5px] text-faint">No data yet</div>;
+  const hasExtra = rows.some((r) => r.extra);
+  // Kolone poravnate kao tabela: naziv · traka · broj · dodatak (npr. „25% good“)
   return (
-    <ul className="space-y-2">
+    <ul className="space-y-2.5">
       {rows.map((r) => (
-        <li key={r.label} className="text-[12.5px]">
-          <div className="mb-1 flex justify-between gap-2">
-            <span className="truncate">{r.label}</span>
-            <span className="num shrink-0 text-muted">
-              {r.value.toLocaleString()} {r.extra && <span className="text-faint">· {r.extra}</span>}
-            </span>
-          </div>
+        <li key={r.label} className={`grid items-center gap-x-3 text-[12.5px] ${hasExtra ? "grid-cols-[minmax(0,10rem)_minmax(0,1fr)_3rem_4.5rem]" : "grid-cols-[minmax(0,10rem)_minmax(0,1fr)_3rem]"}`}>
+          <span className="truncate" title={r.label}>
+            {r.label}
+          </span>
           <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
-            <div className={`h-full rounded-full ${color}`} style={{ width: `${(r.value / max) * 100}%` }} />
+            <div className={`h-full rounded-full ${color}`} style={{ width: `${Math.max(2, (r.value / max) * 100)}%` }} />
           </div>
+          <span className="num text-right text-fg">{r.value.toLocaleString()}</span>
+          {hasExtra && <span className="num text-right text-faint">{r.extra ?? ""}</span>}
         </li>
       ))}
     </ul>
