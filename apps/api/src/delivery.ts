@@ -1,6 +1,6 @@
 import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { and, asc, count, desc, eq, ilike, inArray, isNull, ne, sql } from "drizzle-orm";
-import { customers, issueEvents, issues, leadEvents, leads, projects, rawItems, users, type Db } from "@radar/db";
+import { customers, issueEvents, issues, leadEvents, leads, projects, rawItems, timeEntries, users, type Db } from "@radar/db";
 import { ISSUE_STATUSES, PROJECT_STATUSES, projectKey, type IssueStatus, type ProjectStatus } from "@radar/shared";
 import { currentCycleId } from "./delivery-plus.js";
 import { pushIssue, userGithubToken } from "@radar/db";
@@ -181,6 +181,102 @@ export function deliveryRoutes(getDb: () => Db, g: Guards) {
     if (!row) return c.json({ error: "Project not found." }, 404);
     const [p] = await projectList(eq(projects.id, id));
     return c.json({ project: p });
+  });
+
+  // DELETE /delivery/projects/:id — samo vlasnik (taskovi, vreme i linkovi se brišu zajedno sa projektom)
+  app.delete("/projects/:id", g.require("owner"), async (c) => {
+    const id = c.req.param("id")!;
+    if (!isUuid(id)) return c.json({ error: "Project not found." }, 404);
+    const [row] = await getDb().delete(projects).where(eq(projects.id, id)).returning({ id: projects.id });
+    return row ? c.json({ ok: true }) : c.json({ error: "Project not found." }, 404);
+  });
+
+  // POST /delivery/sample — primer projekta za probu / demo: klijent, projekat u toku, taskovi u svim fazama,
+  // procene, rokovi, logovano vreme, komentari i jedan zahtev klijenta u Inboxu. Sve je označeno kao primer.
+  app.post("/sample", member, async (c) => {
+    const db = getDb();
+    const me = actor(c);
+    const day = 86_400_000;
+    const now = Date.now();
+    const [cust] = await db
+      .insert(customers)
+      .values({ name: "Salon Lux (sample)", contactName: "Ana Petrović", contactEmail: "ana@salonlux.example", country: "RS", website: "https://salonlux.example", notes: "Sample client — safe to edit or delete." })
+      .returning({ id: customers.id });
+    const name = "Salon Lux website (sample)";
+    const [proj] = await db
+      .insert(projects)
+      .values({
+        name,
+        key: await freeKey("Salon Lux", "LUX"),
+        customerId: cust!.id,
+        status: "active",
+        billing: "fixed",
+        budgetEur: 1500,
+        startDate: new Date(now - 6 * day),
+        dueDate: new Date(now + 15 * day),
+        ownerId: me.id,
+        description: "Sample project to try Delivery.\n\nGoal: a simple website for a hair salon — home page, online booking, gallery, contact with map.\nDone = live on the client's domain, booking requests arrive by email.",
+      })
+      .returning({ id: projects.id });
+    const cycle = await currentCycleId(db);
+    type S = { title: string; status: IssueStatus; priority: number; estimate?: number; due?: number; labels?: string[]; mine?: boolean; cycle?: boolean; minutes?: number[]; comment?: string; description?: string };
+    const plan: S[] = [
+      { title: "Kickoff call and content list", status: "done", priority: 3, estimate: 1, minutes: [60], comment: "Client sends photos and price list by Friday." },
+      { title: "Sitemap and wireframes", status: "done", priority: 2, estimate: 2, minutes: [150, 90], labels: ["design"] },
+      { title: "Home page design", status: "done", priority: 2, estimate: 3, minutes: [240], labels: ["design"], comment: "Approved by the client 🎉" },
+      { title: "Booking form (date, service, phone)", status: "in_review", priority: 1, estimate: 5, due: 3, mine: true, cycle: true, minutes: [180, 120], labels: ["feature"], description: "Form sends the request to the salon's email. Required: name, phone, service, preferred date." },
+      { title: "Gallery page with lightbox", status: "in_progress", priority: 3, estimate: 3, due: 5, mine: true, cycle: true, minutes: [90], labels: ["feature"] },
+      { title: "Bug: menu doesn't close on mobile", status: "in_progress", priority: 2, estimate: 1, due: -1, cycle: true, labels: ["bug"], comment: "Happens on iPhone Safari after tapping a link." },
+      { title: "Contact page with map", status: "todo", priority: 3, estimate: 2, due: 8, cycle: true },
+      { title: "SEO basics (titles, sitemap, Google Business)", status: "todo", priority: 4, estimate: 2, due: 12 },
+      { title: "Price list page", status: "backlog", priority: 0, estimate: 2 },
+    ];
+    let n = 0;
+    for (const [idx, it] of plan.entries()) {
+      n++;
+      const created = new Date(now - (6 - Math.min(idx, 5)) * day);
+      const [row] = await db
+        .insert(issues)
+        .values({
+          projectId: proj!.id,
+          number: n,
+          title: it.title,
+          description: it.description ?? null,
+          status: it.status,
+          priority: it.priority,
+          estimate: it.estimate ?? null,
+          labels: it.labels ?? [],
+          dueDate: it.due !== undefined ? new Date(now + it.due * day) : null,
+          assigneeId: it.mine || it.status === "done" ? me.id : null,
+          cycleId: it.cycle ? cycle : null,
+          sortOrder: idx,
+          createdBy: me.name,
+          createdAt: created,
+          completedAt: it.status === "done" ? new Date(created.getTime() + day) : null,
+        })
+        .returning({ id: issues.id });
+      await db.insert(issueEvents).values({ issueId: row!.id, type: "created", actor: me.name, createdAt: created });
+      if (it.status !== "todo" && it.status !== "backlog") await db.insert(issueEvents).values({ issueId: row!.id, type: "status", data: { from: "todo", to: it.status }, actor: me.name, createdAt: new Date(created.getTime() + day / 2) });
+      if (it.comment) await db.insert(issueEvents).values({ issueId: row!.id, type: "comment", data: { text: it.comment }, actor: me.name, createdAt: new Date(created.getTime() + day * 0.8) });
+      for (const [k, m] of (it.minutes ?? []).entries())
+        await db.insert(timeEntries).values({ projectId: proj!.id, issueId: row!.id, userId: me.id, userName: me.name, minutes: m, spentOn: new Date(created.getTime() + (k + 1) * day * 0.6), note: k ? "Follow-up" : "Work", billable: true });
+    }
+    // Zahtev klijenta čeka u Inboxu
+    n++;
+    await db.insert(issues).values({
+      projectId: proj!.id,
+      number: n,
+      title: "Can we add an Instagram feed on the home page?",
+      description: "— Requested by Ana Petrović via the client portal",
+      status: "triage",
+      priority: 0,
+      labels: ["client"],
+      createdBy: "Client: Ana Petrović",
+      sortOrder: 0,
+    });
+    await db.update(projects).set({ issueSeq: n, updatedAt: new Date() }).where(eq(projects.id, proj!.id));
+    const [p] = await projectList(eq(projects.id, proj!.id));
+    return c.json({ project: p }, 201);
   });
 
   // POST /delivery/from-lead/:leadId — dobijen posao: klijent + projekat iz leada (lead → Won)

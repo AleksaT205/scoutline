@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Building2, Code2, Globe, MessagesSquare, Sparkles, CalendarDays, ExternalLink, FolderKanban, GitBranch, LayoutList, Loader2, Pencil, Plus, Search, SquareKanban, Users } from "lucide-react";
 import { PROJECT_STATUSES, type IssueStatus, type ProjectStatus } from "@radar/shared";
-import { useCached } from "../../lib/cache";
+import { mutate, useCached } from "../../lib/cache";
 import { teamFetch } from "../../lib/team";
 import { canEdit, useSessionUser } from "../../lib/session";
-import { fmtDate, fmtEur, toDateInput, typing, useCustomers, useIssues, useMembers, useProject, useProjects, type Customer, type Issue, type Project } from "../../lib/delivery";
+import { fmtDate, fmtEur, inboxChanged, toDateInput, typing, useCustomers, useIssues, useMembers, useProject, useProjects, type Customer, type Issue, type Project } from "../../lib/delivery";
 import { flag } from "../ui";
 import { Avatar, Dialog, ErrorNote, Menu, PROJECT_STATUS_META, ProgressRing, btnPrimary, btnSecondary, field } from "./parts";
 import { IssueBoard, IssueDetail, IssueList, NewIssueDialog } from "./issues";
@@ -46,6 +46,7 @@ function useNewIssueShortcut(open: () => void, enabled: boolean) {
 
 // ── Novi / izmena projekta ──
 function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onClose: () => void; project?: Project; onSaved: (p: Project) => void }) {
+  const me = useSessionUser();
   const customers = useCustomers();
   const members = useMembers();
   const [f, setF] = useState({ name: "", customerId: "", customerName: "", status: "planned" as ProjectStatus, budgetEur: "", dueDate: "", ownerId: "", repoUrl: "", description: "", githubImport: false, githubSync: false, billing: "fixed" as "fixed" | "hourly", hourlyRateEur: "", aiClientId: "" });
@@ -220,6 +221,25 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
           )}
         </div>
         <div className="flex justify-end gap-2 border-t border-line px-4 py-3">
+          {project && me?.role === "owner" && (
+            <button
+              type="button"
+              onClick={async () => {
+                if (!window.confirm(`Delete “${project.name}”? Its issues, logged time and client links are deleted too. This can't be undone.`)) return;
+                try {
+                  await teamFetch(`/delivery/projects/${project.id}`, { method: "DELETE" });
+                  mutate<{ projects: Project[] }>("/delivery/projects", (d) => (d ? { ...d, projects: d.projects.filter((x) => x.id !== project.id) } : d));
+                  onClose();
+                  window.location.hash = "#/delivery";
+                } catch (e) {
+                  setError((e as Error).message);
+                }
+              }}
+              className="mr-auto inline-flex h-[34px] items-center rounded-[7px] px-2.5 text-[13px] text-danger hover:bg-danger/10"
+            >
+              Delete project
+            </button>
+          )}
           <button type="button" onClick={onClose} className={btnSecondary}>
             Cancel
           </button>
@@ -238,17 +258,44 @@ export function ProjectsPage() {
   const { data, setData, error } = useProjects();
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<"open" | "all">("open");
+  const [sampleBusy, setSampleBusy] = useState(false);
+  const [sampleError, setSampleError] = useState<string | null>(null);
+  // Primer projekta za probu/demo: klijent, taskovi u svim fazama, vreme, komentari, zahtev u Inboxu
+  const createSample = async () => {
+    setSampleBusy(true);
+    setSampleError(null);
+    try {
+      const { project } = await teamFetch<{ project: Project }>("/delivery/sample", { method: "POST", body: "{}" });
+      setData((d) => [project, ...(d ?? [])]);
+      inboxChanged();
+      window.location.hash = `#/delivery/projects/${project.id}`;
+    } catch (e) {
+      setSampleError((e as Error).message);
+    } finally {
+      setSampleBusy(false);
+    }
+  };
   const shown = (data ?? []).filter((p) => filter === "all" || (p.status !== "done" && p.status !== "canceled"));
   const active = (data ?? []).filter((p) => p.status === "active");
   return (
     <>
       <PageHead title="Projects" sub="Everything the team is delivering. Won leads become projects with one click.">
         {canEdit(user) && (
+          <button onClick={() => void createSample()} disabled={sampleBusy} className={btnSecondary} title="Adds a ready-made sample project with a client, issues in every stage, logged time and a client request — to try everything">
+            {sampleBusy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={13} />} Sample project
+          </button>
+        )}
+        {canEdit(user) && (
           <button onClick={() => setOpen(true)} className={btnPrimary}>
             <Plus size={14} /> New project
           </button>
         )}
       </PageHead>
+      {sampleError && (
+        <div className="mb-4">
+          <ErrorNote>{sampleError}</ErrorNote>
+        </div>
+      )}
       {error && (
         <div className="mb-4">
           <ErrorNote>{error}</ErrorNote>
@@ -352,7 +399,7 @@ export function ProjectsPage() {
                   <td colSpan={6} className="px-6 py-14 text-center">
                     <FolderKanban size={22} className="mx-auto mb-2 text-faint" />
                     <div className="text-[13.5px] font-medium">No projects yet</div>
-                    <p className="mt-1 text-[12.5px] text-muted">Create one, or open a won lead and click “Create project”.</p>
+                    <p className="mt-1 text-[12.5px] text-muted">Create one, open a won lead and click “Create project”, or add a sample project to try everything.</p>
                   </td>
                 </tr>
               )}
