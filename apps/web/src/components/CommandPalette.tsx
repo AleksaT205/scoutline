@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, BarChart3, Building2, CircleDot, FolderKanban, Inbox, Kanban, LayoutGrid, Moon, Plus, Rss, Search, Settings, Sparkles, SquareCheck, Users } from "lucide-react";
+import { ArrowRight, BarChart3, Building2, CircleDot, FolderKanban, Inbox, Kanban, LayoutGrid, Moon, Plus, Route, Rss, Search, Settings, Sparkles, SquareCheck, Users } from "lucide-react";
 import { teamFetch } from "../lib/team";
 import { onlySpace, useSessionUser } from "../lib/session";
 
@@ -69,6 +69,7 @@ export function CommandPalette({ open, onClose, onToggleTheme }: { open: boolean
       nav("leads", "Leads", "#/", <LayoutGrid size={15} />);
       nav("pipeline", "Pipeline", "#/pipeline", <Kanban size={15} />);
       nav("sources", "Sources", "#/sources", <Rss size={15} />);
+      nav("router", "AI Router", "#/router", <Route size={15} />);
       a.push({ id: "addlead", group: "Actions", label: "Add a lead", icon: <Plus size={15} />, run: () => window.dispatchEvent(new Event("open-add-lead")) });
     }
     nav("team", "Team", "#/team", <Users size={15} />);
