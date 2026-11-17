@@ -10,7 +10,8 @@ export let rt: Effective = {
   telegramChatId: env.TELEGRAM_CHAT_ID ?? "",
   imap: { host: env.IMAP_HOST ?? "", port: Number(env.IMAP_PORT ?? 993), secure: (env.IMAP_SECURE ?? "true") !== "false", user: env.IMAP_USER ?? "", pass: env.IMAP_PASSWORD ?? "", mailbox: env.IMAP_MAILBOX ?? "INBOX" },
   samKey: env.SAM_API_KEY ?? "",
-  source: { github: "none", telegram: "none", imap: "none", sam: "none" },
+  anthropicKey: "",
+  source: { github: "none", telegram: "none", imap: "none", sam: "none", anthropic: "none" },
 };
 
 export async function refreshRuntime(db: Db) {

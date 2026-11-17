@@ -314,3 +314,24 @@ export const timeEntries = pgTable(
   },
   (t) => [index("time_entries_project_idx").on(t.projectId), index("time_entries_issue_idx").on(t.issueId), index("time_entries_spent_idx").on(t.spentOn)],
 );
+
+/** AI asistent (Faza 13): pitanja/odgovori i status izveštaji — istorija i potrošnja tokena. */
+export const aiMessages = pgTable(
+  "ai_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "set null" }),
+    userName: text("user_name").notNull(),
+    projectId: uuid("project_id").references(() => projects.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull(), // ask | status
+    question: text("question").notNull(),
+    answer: text("answer").notNull(),
+    model: text("model").notNull(),
+    provider: text("provider").notNull(), // free | anthropic
+    tokensIn: integer("tokens_in").default(0).notNull(),
+    tokensOut: integer("tokens_out").default(0).notNull(),
+    sources: jsonb("sources"), // fajlovi iz repoa korišćeni za odgovor
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("ai_messages_user_idx").on(t.userId), index("ai_messages_project_idx").on(t.projectId)],
+);

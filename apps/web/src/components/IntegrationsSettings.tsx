@@ -16,11 +16,13 @@ interface Workspace {
   telegram: { botToken: SecretView; chatId: string; source: Source };
   imap: { host: string; port: number; user: string; mailbox: string; password: SecretView; source: Source; effectiveUser: string };
   sam: { apiKey: SecretView; source: Source };
+  anthropic: { apiKey: SecretView; source: Source };
 }
 interface Mine {
   account: boolean;
   github?: SecretView & { login: string | null };
   agent?: "claude" | "codex";
+  anthropic?: SecretView;
 }
 
 const input = "h-[34px] w-full rounded-lg border border-line bg-bg px-3 text-[13px] outline-none placeholder:text-faint focus:border-accent/60 disabled:opacity-60";
@@ -64,7 +66,7 @@ function IntegrationCard({
   source: Source;
   fields: Field[];
   canEdit: boolean;
-  section: "github" | "telegram" | "imap" | "sam";
+  section: "github" | "telegram" | "imap" | "sam" | "anthropic";
   test?: "github" | "telegram" | "imap";
   help?: React.ReactNode;
   onSaved: () => void;
@@ -246,8 +248,43 @@ function MyIntegrations() {
         </div>
         <span className="text-[12px] text-faint">Shown first on every issue. Uses your own subscription through GitHub.</span>
       </div>
+      <div className="mt-4 border-t border-line pt-4">
+        <div className="flex flex-wrap items-center gap-2 text-[13px]">
+          <span className="font-medium">Your Claude API key</span>
+          <span className="text-[12px] text-faint">optional · for the AI Assistant with Claude models (billed to your Anthropic account)</span>
+          {me.anthropic?.set && <span className="rounded-full bg-success-soft px-2 py-0.5 text-[11px] font-medium text-success ring-1 ring-inset ring-success/30">Saved {me.anthropic.hint}</span>}
+        </div>
+        <ClaudeKeyForm saved={!!me.anthropic?.set} busy={busy} onSave={(k) => void put({ anthropicKey: k }, k ? "Claude key saved." : "Claude key removed.")} />
+        <p className="mt-1.5 text-[12px] text-faint">Without a key the Assistant uses free models. Your Claude subscription (Pro/Max) works for agents on GitHub, not for API calls.</p>
+      </div>
       <Note msg={msg} />
     </section>
+  );
+}
+
+function ClaudeKeyForm({ saved, busy, onSave }: { saved: boolean; busy: boolean; onSave: (k: string | null) => void }) {
+  const [k, setK] = useState("");
+  return (
+    <form
+      className="mt-2 flex flex-wrap gap-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (k.trim()) {
+          onSave(k.trim());
+          setK("");
+        }
+      }}
+    >
+      <input className={`${input} num min-w-[240px] flex-1`} type="password" autoComplete="off" value={k} onChange={(e) => setK(e.target.value)} placeholder={saved ? "Saved · paste a new key to replace" : "sk-ant-…"} />
+      <button disabled={busy || !k.trim()} className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] bg-fg px-3 text-[12.5px] font-medium text-bg disabled:opacity-50">
+        <Check size={13} /> Save
+      </button>
+      {saved && (
+        <button type="button" disabled={busy} onClick={() => onSave(null)} className="h-[34px] rounded-[7px] px-2 text-[12.5px] text-muted hover:text-danger">
+          Remove
+        </button>
+      )}
+    </form>
   );
 }
 
@@ -339,6 +376,17 @@ export function IntegrationsSettings() {
                 section="sam"
                 onSaved={load}
                 fields={[{ key: "apiKey", label: "Public API key", placeholder: "Your SAM.gov API key", secret: w.sam.apiKey }]}
+              />
+              <IntegrationCard
+                icon={<Bot size={15} />}
+                title="Claude for the Assistant (workspace)"
+                desc="Optional. Lets everyone use Claude models in the AI Assistant, billed to the company. Personal keys take priority."
+                source={w.anthropic.source}
+                canEdit={w.canEdit}
+                section="anthropic"
+                onSaved={load}
+                fields={[{ key: "apiKey", label: "Anthropic API key", placeholder: "sk-ant-…", secret: w.anthropic.apiKey }]}
+                help="Without it, the Assistant uses the free models (Groq, Gemini, OpenRouter). console.anthropic.com → API keys."
               />
             </div>
           )}

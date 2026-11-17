@@ -16,6 +16,7 @@ import { deliveryPlusRoutes, portalRoutes } from "./delivery-plus.js";
 import { reportRoutes } from "./reports.js";
 import { integrationRoutes } from "./integrations.js";
 import { notificationRoutes } from "./notifications.js";
+import { assistantRoutes } from "./assistant.js";
 
 type Tier = "T1" | "T2" | "T3" | "DOMESTIC";
 type LeadRow = { lead: typeof leads.$inferSelect; raw: typeof rawItems.$inferSelect; source: string };
@@ -73,6 +74,7 @@ export function createApp(getDb: () => Db) {
   // Mora pre ruta (Hono izvršava redom registracije)
   // Pristup po delu aplikacije (Settings → Team): Sales korisnik ne vidi Delivery i obrnuto
   app.use("/delivery/*", a.space("delivery"));
+  app.use("/assistant/*", a.space("delivery"));
   for (const p of ["/leads", "/leads/*", "/pipeline", "/sources", "/sources/*", "/analytics", "/stats"]) app.use(p, a.space("sales"));
 
   const selectLeads = () =>
@@ -204,6 +206,8 @@ export function createApp(getDb: () => Db) {
   // Settings → Integrations: ključevi firme (vlasnik) i lični GitHub token (svako)
   app.route("/integrations", integrationRoutes(getDb, a));
   app.route("/notifications", notificationRoutes(getDb, a.readGuard));
+  // Faza 13: AI asistent (pitaj projekat, status izveštaj)
+  app.route("/assistant", assistantRoutes(getDb, a));
   app.use("/dev/*", a.require("member"));
   app.route("/dev/tasks", devTasks(getDb));
 

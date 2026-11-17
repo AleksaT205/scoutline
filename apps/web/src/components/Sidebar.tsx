@@ -1,4 +1,4 @@
-import { BarChart3, Building2, CircleDot, FolderKanban, Inbox, ListTodo, Kanban, LayoutGrid, RefreshCcw, Rss, Search, Settings, Users, X } from "lucide-react";
+import { BarChart3, Building2, CircleDot, FolderKanban, Inbox, MessagesSquare, ListTodo, Kanban, LayoutGrid, RefreshCcw, Rss, Search, Settings, Users, X } from "lucide-react";
 import { useInboxCount } from "../lib/delivery";
 import { onlySpace, useSessionUser } from "../lib/session";
 import type { ApiStatus } from "../lib/api";
@@ -16,8 +16,9 @@ const delivery = [
   { label: "Cycles", icon: RefreshCcw, href: "#/delivery/cycles", page: "cycles" },
   { label: "Clients", icon: Building2, href: "#/delivery/clients", page: "clients" },
   { label: "Reports", icon: BarChart3, href: "#/delivery/reports", page: "reports" },
+  { label: "Assistant", icon: MessagesSquare, href: "#/delivery/assistant", page: "assistant" },
 ];
-export const DELIVERY_PAGES = ["inbox", "issues", "projects", "project", "cycles", "clients", "reports"];
+export const DELIVERY_PAGES = ["inbox", "issues", "projects", "project", "cycles", "clients", "reports", "assistant"];
 const formatCost = (v?: number) => (v === undefined ? "—" : v > 0 && v < 0.01 ? `$${v.toFixed(4)}` : `$${v.toFixed(2)}`);
 
 const workspace = [

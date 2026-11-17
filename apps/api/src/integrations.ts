@@ -62,6 +62,7 @@ export function integrationRoutes(getDb: () => Db, g: Guards) {
       telegram: { botToken: view(w.telegram?.botToken), chatId: w.telegram?.chatId ?? "", source: rt.source.telegram },
       imap: { host: w.imap?.host ?? "", port: w.imap?.port ?? 993, user: w.imap?.user ?? "", mailbox: w.imap?.mailbox ?? "INBOX", password: view(w.imap?.password), source: rt.source.imap, effectiveUser: rt.imap.user },
       sam: { apiKey: view(w.sam?.apiKey), source: rt.source.sam },
+      anthropic: { apiKey: view(w.anthropic?.apiKey), source: rt.source.anthropic },
     });
   });
 
@@ -84,6 +85,7 @@ export function integrationRoutes(getDb: () => Db, g: Guards) {
       };
     }
     if (b.sam) w.sam = { apiKey: nextSecret(w.sam?.apiKey, b.sam.apiKey) };
+    if (b.anthropic) w.anthropic = { apiKey: nextSecret(w.anthropic?.apiKey, b.anthropic.apiKey) };
     await writeWorkspaceIntegrations(db, w);
     await refreshRuntime(db);
     return c.json({ ok: true });
@@ -137,14 +139,14 @@ export function integrationRoutes(getDb: () => Db, g: Guards) {
     const a = actor(c);
     if (!a.id) return c.json({ account: false });
     const u = await readUserIntegrations(getDb(), a.id);
-    return c.json({ account: true, github: { ...view(u.githubToken), login: u.githubLogin ?? null }, agent: u.agent ?? "claude" });
+    return c.json({ account: true, github: { ...view(u.githubToken), login: u.githubLogin ?? null }, agent: u.agent ?? "claude", anthropic: view(u.anthropicKey) });
   });
 
   // PUT /integrations/me { githubToken?: string | null, agent?: "claude" | "codex" }
   app.put("/me", g.require("viewer"), async (c) => {
     const a = actor(c);
     if (!a.id) return c.json({ error: "Sign in with your own account to connect personal integrations." }, 400);
-    const b = (await c.req.json().catch(() => ({}))) as { githubToken?: string | null; agent?: string };
+    const b = (await c.req.json().catch(() => ({}))) as { githubToken?: string | null; agent?: string; anthropicKey?: string | null };
     const db = getDb();
     const u: UserIntegrations = await readUserIntegrations(db, a.id);
     if (b.githubToken !== undefined) {
@@ -162,8 +164,14 @@ export function integrationRoutes(getDb: () => Db, g: Guards) {
       }
     }
     if (b.agent === "claude" || b.agent === "codex") u.agent = b.agent;
+    if (b.anthropicKey !== undefined) {
+      const k = typeof b.anthropicKey === "string" ? b.anthropicKey.trim() : "";
+      if (k && !/^sk-ant-/.test(k)) return c.json({ error: "That doesn't look like a Claude API key (it starts with sk-ant-)." }, 400);
+      if (k) u.anthropicKey = encryptSecret(k);
+      else delete u.anthropicKey;
+    }
     await db.update(users).set({ integrations: u, updatedAt: new Date() }).where(eq(users.id, a.id));
-    return c.json({ ok: true, github: { ...view(u.githubToken), login: u.githubLogin ?? null }, agent: u.agent ?? "claude" });
+    return c.json({ ok: true, github: { ...view(u.githubToken), login: u.githubLogin ?? null }, agent: u.agent ?? "claude", anthropic: view(u.anthropicKey) });
   });
 
   return app;

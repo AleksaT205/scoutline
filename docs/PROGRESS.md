@@ -21,9 +21,16 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 | 11 | Cycles (sprintovi + burn-up), Inbox (triage), GitHub PR sync (PR → In Review / Done, issues → Inbox), Assign to Claude/Codex (brief u GitHub issue), portal za klijenta (+ zahtevi) · [DELIVERY.md](DELIVERY.md) · #11 | ✅ |
 | 12 | Izveštaji: evidencija vremena na tasku, cena rada (po osobi), naplata fiksno/po satu, profitabilnost po projektu (vrednost, trošak, marža, potrošen budžet, €/h), sati po nedelji i osobi, AI trošak i ušteda po projektu, taskovi agenata, CSV · [DELIVERY.md](DELIVERY.md) | ✅ |
 
-**Sledeći korak:** Redeploy u Coolify-ju → podesiti Email-in po [EMAIL-IN.md](EMAIL-IN.md) (Gmail + App password u Coolify) i, po želji, `SAM_API_KEY`. Za Delivery + GitHub: `GITHUB_TOKEN` sa pristupom repoima projekata ([DELIVERY.md](DELIVERY.md)). Sledeće: Faza 13 (AI asistent u projektu) po [ROADMAP-3.md](ROADMAP-3.md).
+**Sledeći korak:** Redeploy u Coolify-ju → podesiti Email-in po [EMAIL-IN.md](EMAIL-IN.md) (Gmail + App password u Coolify) i, po želji, `SAM_API_KEY`. Za Delivery + GitHub: `GITHUB_TOKEN` sa pristupom repoima projekata ([DELIVERY.md](DELIVERY.md)). Sledeće: Faza 14 (GitHub tok rada + dvosmerna sinhronizacija i analitika iz GitHub-a) po [ROADMAP-3.md](ROADMAP-3.md).
 
 ## Urađeno
+
+- **17. 11. 2026. — Faza 13 (AI asistent u projektu)**
+  - **Ask AI** (tab na projektu) i **Delivery → Assistant**: pitanja „gde je i kako radi“ — odgovor iz repoa projekta (stablo + najrelevantniji fajlovi, linkovi na GitHub) i taskova; istorija razgovora.
+  - **Status update** (dugme na projektu): izveštaj za tim ili klijenta (7/14/30 dana); klijentska verzija bez ključeva, imena i taskova „internal“; bez AI-a radi čist izveštaj iz podataka.
+  - **Izbor modela**: Auto (preporuka po pitanju), Fast/Smart (besplatni preko LiteLLM-a), Claude Haiku/Sonnet/Opus 5.5 uz lični ključ ili ključ firme (Settings → Integrations; Anthropic SDK).
+  - **Ušteda tokena**: samo relevantni fajlovi (~6k tokena konteksta), keš stabla repoa 10 min, keš prompta kod Claude-a, prvo besplatni modeli, rezerva Claude Haiku; tokeni po odgovoru i `/assistant/usage`. Migracija 0013.
+  - Za odgovore iz koda GitHub token treba i **Contents: Read**.
 
 - **17. 11. 2026. — Dorade (lista želja, deo 1)**
   - Logo u tabu pregledača (favicon).

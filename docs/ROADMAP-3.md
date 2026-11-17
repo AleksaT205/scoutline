@@ -10,7 +10,7 @@ Datum: 17. 11. 2026. Spisak želja iz razgovora, grupisan u faze. Urađeno odmah
 - telefon: kartice umesto tabela;
 - AI Router sklonjen iz menija.
 
-## Faza 13 — AI asistent u projektu (chat, statusi, modeli)
+## Faza 13 ✅ — AI asistent u projektu (chat, statusi, modeli)
 | Šta | Kako |
 |---|---|
 | **Chat „pitaj projekat“** | „Gde je login i kako radi?“ — odgovor iz repoa projekta (GitHub) + taskova. Pretraga fajlova preko GitHub API-ja, kratak kontekst → odgovor. |

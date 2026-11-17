@@ -18,12 +18,14 @@ export interface WorkspaceIntegrations {
   telegram?: { botToken?: Secret; chatId?: string };
   imap?: { host?: string; port?: number; secure?: boolean; user?: string; password?: Secret; mailbox?: string };
   sam?: { apiKey?: Secret };
+  anthropic?: { apiKey?: Secret }; // Claude za AI asistenta (trošak ide firmi)
 }
 
 export interface UserIntegrations {
   githubToken?: Secret;
   githubLogin?: string;
   agent?: "claude" | "codex";
+  anthropicKey?: Secret; // lični Claude ključ za AI asistenta (trošak ide toj osobi)
 }
 
 const key = () => createHash("sha256").update(process.env.SECRETS_KEY || `scoutline-secrets:${process.env.SESSION_SECRET || process.env.API_TOKEN || "dev"}`).digest();
@@ -70,7 +72,8 @@ export interface Effective {
   telegramChatId: string;
   imap: { host: string; port: number; secure: boolean; user: string; pass: string; mailbox: string };
   samKey: string;
-  source: Record<"github" | "telegram" | "imap" | "sam", "app" | "server" | "none">;
+  anthropicKey: string;
+  source: Record<"github" | "telegram" | "imap" | "sam" | "anthropic", "app" | "server" | "none">;
 }
 
 export async function loadIntegrations(db: Db): Promise<Effective> {
@@ -80,6 +83,7 @@ export async function loadIntegrations(db: Db): Promise<Effective> {
   const tgApp = decryptSecret(w.telegram?.botToken);
   const imapApp = decryptSecret(w.imap?.password);
   const samApp = decryptSecret(w.sam?.apiKey);
+  const anthropicApp = decryptSecret(w.anthropic?.apiKey);
   const imapFromApp = Boolean(w.imap?.host && w.imap?.user && imapApp);
   const src = (app: boolean, server: boolean) => (app ? "app" : server ? "server" : "none") as "app" | "server" | "none";
   return {
@@ -91,11 +95,13 @@ export async function loadIntegrations(db: Db): Promise<Effective> {
       ? { host: w.imap!.host!, port: w.imap!.port ?? 993, secure: w.imap!.secure ?? true, user: w.imap!.user!, pass: imapApp!, mailbox: w.imap!.mailbox || "INBOX" }
       : { host: env.IMAP_HOST ?? "", port: Number(env.IMAP_PORT ?? 993), secure: (env.IMAP_SECURE ?? "true") !== "false", user: env.IMAP_USER ?? "", pass: env.IMAP_PASSWORD ?? "", mailbox: env.IMAP_MAILBOX ?? "INBOX" },
     samKey: samApp ?? env.SAM_API_KEY ?? "",
+    anthropicKey: anthropicApp ?? env.ANTHROPIC_API_KEY ?? "",
     source: {
       github: src(!!ghApp, !!env.GITHUB_TOKEN),
       telegram: src(!!(tgApp && w.telegram?.chatId), !!(env.TELEGRAM_BOT_TOKEN && env.TELEGRAM_CHAT_ID)),
       imap: src(imapFromApp, !!(env.IMAP_HOST && env.IMAP_USER && env.IMAP_PASSWORD)),
       sam: src(!!samApp, !!env.SAM_API_KEY),
+      anthropic: src(!!anthropicApp, !!env.ANTHROPIC_API_KEY),
     },
   };
 }

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Building2, Globe, CalendarDays, ExternalLink, FolderKanban, GitBranch, LayoutList, Loader2, Pencil, Plus, Search, SquareKanban, Users } from "lucide-react";
+import { ArrowLeft, Building2, Globe, MessagesSquare, Sparkles, CalendarDays, ExternalLink, FolderKanban, GitBranch, LayoutList, Loader2, Pencil, Plus, Search, SquareKanban, Users } from "lucide-react";
 import { PROJECT_STATUSES, type IssueStatus, type ProjectStatus } from "@radar/shared";
 import { teamFetch } from "../../lib/team";
 import { canEdit, useSessionUser } from "../../lib/session";
@@ -8,6 +8,7 @@ import { flag } from "../ui";
 import { Avatar, Dialog, ErrorNote, Menu, PROJECT_STATUS_META, ProgressRing, btnPrimary, btnSecondary, field } from "./parts";
 import { IssueBoard, IssueDetail, IssueList, NewIssueDialog } from "./issues";
 import { PortalDialog } from "./more";
+import { AskPanel, StatusDialog } from "./assistant";
 
 function PageHead({ title, sub, children }: { title: React.ReactNode; sub?: React.ReactNode; children?: React.ReactNode }) {
   return (
@@ -373,7 +374,7 @@ export function ProjectPage({ id }: { id: string }) {
   const editable = canEdit(user);
   const project = useProject(id);
   const issues = useIssues(`projectId=${id}`);
-  const [view, setView] = useState<"board" | "list" | "overview">(() => {
+  const [view, setView] = useState<"board" | "list" | "overview" | "ask">(() => {
     try {
       return (localStorage.getItem("delivery-view") as "board" | "list" | null) ?? "board";
     } catch {
@@ -384,6 +385,7 @@ export function ProjectPage({ id }: { id: string }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [portalOpen, setPortalOpen] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(false);
   const [q, setQ] = useState("");
   useNewIssueShortcut(() => setNewOpen("todo"), editable && !!project.data);
   const setIssues = (f: (prev: Issue[]) => Issue[]) => issues.setData((d) => f(d ?? []));
@@ -393,7 +395,7 @@ export function ProjectPage({ id }: { id: string }) {
   const pickView = (v: typeof view) => {
     setView(v);
     try {
-      if (v !== "overview") localStorage.setItem("delivery-view", v);
+      if (v === "board" || v === "list") localStorage.setItem("delivery-view", v);
     } catch {
       /* bez pamćenja */
     }
@@ -460,6 +462,11 @@ export function ProjectPage({ id }: { id: string }) {
           )}
         </div>
         <div className="flex gap-2 sm:ml-auto">
+          {p && (
+            <button onClick={() => setStatusOpen(true)} className={btnSecondary} title="AI summary for the team or the client">
+              <Sparkles size={13} /> Status update
+            </button>
+          )}
           {editable && p && (
             <button onClick={() => setPortalOpen(true)} className={btnSecondary} title="Read-only page for the client">
               <Globe size={13} /> Client portal
@@ -485,6 +492,7 @@ export function ProjectPage({ id }: { id: string }) {
               ["board", "Board", SquareKanban],
               ["list", "List", LayoutList],
               ["overview", "Overview", FolderKanban],
+              ["ask", "Ask AI", MessagesSquare],
             ] as const
           ).map(([v, l, Icon]) => (
             <button key={v} onClick={() => pickView(v)} className={`inline-flex h-[28px] items-center gap-1.5 rounded-md px-2.5 ${view === v ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}>
@@ -492,7 +500,7 @@ export function ProjectPage({ id }: { id: string }) {
             </button>
           ))}
         </div>
-        {view !== "overview" && (
+        {(view === "board" || view === "list") && (
           <label className="ml-auto flex h-[32px] w-64 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-faint focus-within:border-accent/55">
             <Search size={13} />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter issues…" className="w-full bg-transparent text-fg outline-none placeholder:text-faint" />
@@ -501,7 +509,9 @@ export function ProjectPage({ id }: { id: string }) {
       </div>
 
       {issues.error && <ErrorNote>{issues.error}</ErrorNote>}
-      {!issues.data ? (
+      {view === "ask" ? (
+        <AskPanel projectId={id} hasRepo={!!p?.repoUrl} />
+      ) : !issues.data ? (
         <div className="h-64 animate-pulse rounded-xl bg-surface-2" />
       ) : view === "board" ? (
         <IssueBoard issues={list} setIssues={setIssues} onOpen={(i) => setSelected(i.id)} onNew={(s) => setNewOpen(s)} />
@@ -536,6 +546,7 @@ export function ProjectPage({ id }: { id: string }) {
       {sel && <IssueDetail issue={sel} onClose={() => setSelected(null)} onChanged={(i) => setIssues((prev) => prev.map((x) => (x.id === i.id ? i : x)))} onDeleted={(rid) => (setIssues((prev) => prev.filter((x) => x.id !== rid)), setSelected(null))} />}
       {p && <ProjectDialog open={editOpen} onClose={() => setEditOpen(false)} project={p} onSaved={(np) => project.setData(np)} />}
       {p && <PortalDialog open={portalOpen} onClose={() => setPortalOpen(false)} projectId={p.id} projectName={p.name} />}
+      {p && <StatusDialog open={statusOpen} onClose={() => setStatusOpen(false)} projectId={p.id} />}
     </>
   );
 }

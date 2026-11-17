@@ -52,3 +52,11 @@ Tip: u opisu taska napiši odeljak `Done when:` sa stavkama. To ide u brief kao 
 - **Interna cena sata** (Reports → dugme `€20/h`, menja samo vlasnik): koliko firmu košta sat rada, uz izuzetke po osobi. Iz toga se računa trošak.
 - **AI trošak po projektu:** u Edit project izaberi ključ AI Router-a klijenta. Njegov trošak i ušteda idu na taj projekat.
 - **Reports** prikazuje: vrednost, trošak, maržu, potrošen budžet (crveno preko 100%), stvarnu zaradu po satu, sate po nedelji i po osobi, AI uštedu i broj taskova koje su završili agenti. Dugme **CSV** izvozi tabelu za Excel.
+
+## AI asistent (Faza 13)
+- **Ask AI** na projektu (ili **Delivery → Assistant**): pitanja kao „gde je login i kako radi?“. Odgovor dolazi iz koda u GitHub repou projekta i iz taskova, sa linkovima na fajlove.
+  - GitHub token tada treba i dozvolu **Contents: Read** (GitHub → token → Edit → Repository permissions).
+- **Status update** na projektu: kratak izveštaj za tim ili za klijenta, za 7, 14 ili 30 dana; dugme Copy.
+- **Modeli:**
+  - **Auto** (preporučeno) bira besplatni model po pitanju.
+  - **Claude** modeli rade uz Anthropic API ključ (Settings → Integrations, lični ili firme). Pretplata (Pro/Max) važi za agente na GitHub-u, ne za API.
