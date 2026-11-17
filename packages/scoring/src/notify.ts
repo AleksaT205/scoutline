@@ -1,5 +1,10 @@
-const TOKEN = process.env.TELEGRAM_BOT_TOKEN ?? "";
-const CHAT_ID = process.env.TELEGRAM_CHAT_ID ?? "";
+// Podešavanje može da se promeni u radu (Settings → Integrations) — zato promenljive, ne konstante
+let TOKEN = process.env.TELEGRAM_BOT_TOKEN ?? "";
+let CHAT_ID = process.env.TELEGRAM_CHAT_ID ?? "";
+export function setTelegramConfig(c: { token: string; chatId: string }) {
+  TOKEN = c.token;
+  CHAT_ID = c.chatId;
+}
 const DASHBOARD_URL = process.env.DASHBOARD_URL ?? "https://scoutline-app.netlify.app";
 
 export const telegramConfigured = () => Boolean(TOKEN && CHAT_ID);

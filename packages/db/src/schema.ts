@@ -140,6 +140,7 @@ export const users = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   role: userRoleEnum("role").default("member").notNull(),
   tokenVersion: integer("token_version").default(0).notNull(), // povećanje = odjava sa svih uređaja
+  integrations: jsonb("integrations"), // lične integracije (šifrovan GitHub token, izabrani agent)
   lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
   ...timestamps,
 });

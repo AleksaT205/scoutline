@@ -16,6 +16,13 @@ const ago = (iso: string) => {
   return fmtDate(iso);
 };
 
+// Podrazumevani AI agent korisnika (Settings → Integrations), učitan jednom
+let agentPref: Promise<"claude" | "codex"> | null = null;
+const preferredAgent = () =>
+  (agentPref ??= teamFetch<{ agent?: "claude" | "codex" }>("/integrations/me")
+    .then((d) => d.agent ?? "claude")
+    .catch(() => "claude" as const));
+
 // ── Izbornici (status, prioritet, osoba) — isti u kartici, detalju i novom tasku ──
 export function StatusMenu({ value, onChange, disabled, showLabel = true }: { value: IssueStatus; onChange: (s: IssueStatus) => void; disabled?: boolean; showLabel?: boolean }) {
   return (
@@ -430,6 +437,10 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
   const [links, setLinks] = useState<IssueLink[]>([]);
   const [agentBusy, setAgentBusy] = useState<string | null>(null);
   const [repoUrl, setRepoUrl] = useState<string | null | undefined>(undefined);
+  const [firstAgent, setFirstAgent] = useState<"claude" | "codex">("claude");
+  useEffect(() => {
+    void preferredAgent().then(setFirstAgent);
+  }, []);
   useEffect(() => {
     teamFetch<{ links: IssueLink[] }>(`/delivery/issues/${issue.id}/links`)
       .then((d) => setLinks(d.links))
@@ -621,13 +632,13 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
               {issue.agent && <span className="rounded-full bg-accent-soft px-2 py-px text-[11px] text-accent">Working: {issue.agent === "codex" ? "Codex" : "Claude"}</span>}
               {editable && (
                 <div className="ml-auto flex gap-1.5">
-                  {(["claude", "codex"] as const).map((a) => (
+                  {(firstAgent === "codex" ? (["codex", "claude"] as const) : (["claude", "codex"] as const)).map((a) => (
                     <button
                       key={a}
                       disabled={!!agentBusy || !repoUrl}
                       title={repoUrl ? `Opens a GitHub issue in the project repo with a short brief and @${a}` : "Add the project's GitHub repo first (Edit project)"}
                       onClick={() => void handToAgent(a)}
-                      className="inline-flex h-[28px] items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 text-[12px] font-medium hover:bg-surface-2 disabled:opacity-40"
+                      className={`inline-flex h-[28px] items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium disabled:opacity-40 ${a === firstAgent ? "bg-fg text-bg hover:opacity-90" : "border border-line bg-surface hover:bg-surface-2"}`}
                     >
                       {agentBusy === a ? <Loader2 size={12} className="animate-spin" /> : null}
                       {issue.agent === a ? "Ask again" : `Assign to ${a === "claude" ? "Claude" : "Codex"}`}
@@ -637,6 +648,7 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
               )}
             </div>
             {repoUrl === null && <p className="mt-1.5 text-[12px] text-faint">Connect a GitHub repo to the project to hand tasks to Claude or Codex and to link pull requests automatically.</p>}
+            {repoUrl && <p className="mt-1.5 text-[12px] text-faint">Opens a GitHub issue in the project repo with a short brief, using your GitHub (Settings → Integrations) or the workspace token. The repo needs the Claude app / Codex connected once.</p>}
             {links.length > 0 && (
               <ul className="mt-2 space-y-1">
                 {links.map((l) => (

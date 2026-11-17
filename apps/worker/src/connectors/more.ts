@@ -1,4 +1,5 @@
 import { type Connector, type RawItem, USER_AGENT, getJson, htmlToText, toEur } from "./types.js";
+import { rt } from "../runtime.js";
 
 const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000);
 
@@ -96,10 +97,10 @@ const sam: Connector = {
   kind: "api",
   intervalMinutes: 24 * 60,
   defaultType: "tender",
-  enabled: () => Boolean(process.env.SAM_API_KEY),
+  enabled: () => Boolean(rt.samKey),
   async fetch() {
     const url = new URL("https://api.sam.gov/opportunities/v2/search");
-    url.searchParams.set("api_key", process.env.SAM_API_KEY ?? "");
+    url.searchParams.set("api_key", rt.samKey);
     url.searchParams.set("postedFrom", fmtUs(daysAgo(2)));
     url.searchParams.set("postedTo", fmtUs(new Date()));
     url.searchParams.set("ptype", "o,k,p,r");

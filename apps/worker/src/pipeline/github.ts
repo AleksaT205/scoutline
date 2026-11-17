@@ -1,6 +1,7 @@
 import { and, eq, inArray, isNotNull, sql } from "drizzle-orm";
 import { issueEvents, issueLinks, issues, projects, type Db } from "@radar/db";
 import { parseRepo, type IssueStatus } from "@radar/shared";
+import { rt } from "../runtime.js";
 
 /**
  * GitHub sinhronizacija (Faza 11), bez webhook-a — worker na 5 min čita repo svakog projekta:
@@ -9,7 +10,7 @@ import { parseRepo, type IssueStatus } from "@radar/shared";
  * - (opciono, po projektu) novi GitHub issues → Inbox (triage).
  * Treba GITHUB_TOKEN sa pristupom tim repoima (Pull requests: read, Issues: read & write).
  */
-const TOKEN = () => process.env.GITHUB_TOKEN ?? "";
+const TOKEN = () => rt.githubToken; // Settings → Integrations (ili GITHUB_TOKEN)
 export const githubConfigured = () => Boolean(TOKEN());
 
 async function gh<T>(path: string): Promise<T> {

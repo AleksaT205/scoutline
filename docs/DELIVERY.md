@@ -28,7 +28,7 @@ Kad projekat ima **GitHub repo** (Edit → GitHub repo), worker na 5 minuta prov
 - Otvoren PR šalje task u **In Review**, draft PR u **In Progress**, a spojen PR u **Done**. Status se nikad ne vraća unazad.
 - Opcija **Import new GitHub issues into the Inbox** (u Edit project) dovodi nove GitHub issue-e u Inbox.
 
-**Podešavanje (jednom):** GitHub → Settings → Developer settings → **Fine-grained tokens**:
+**Podešavanje (jednom):** najlakše u aplikaciji — **Settings → Integrations** (vlasnik: GitHub firme; svako: svoj GitHub). Token se pravi ovako — GitHub → Settings → Developer settings → **Fine-grained tokens**:
 1. Repository access: repoi projekata (i `scoutline`, za stranicu Tasks).
 2. Permissions: **Issues: Read and write**, **Pull requests: Read**, Metadata: Read.
 3. U Coolify-ju postavi `GITHUB_TOKEN=…`. Isti token koristi i API i worker. Zatim **Redeploy**.

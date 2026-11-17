@@ -1,7 +1,8 @@
 import { createHash, randomBytes } from "node:crypto";
 import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { and, asc, count, desc, eq, gte, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
-import { customers, cycles, issueEvents, issueLinks, issues, projectPortals, projects, type Db } from "@radar/db";
+import { customers, cycles, issueEvents, issueLinks, issues, projectPortals, projects, userGithubToken, type Db } from "@radar/db";
+import { runtime } from "./runtime.js";
 import { AGENTS, CYCLE_DAYS, parseRepo, type Agent } from "@radar/shared";
 import { sendTelegramText } from "@radar/scoring";
 
@@ -58,9 +59,8 @@ export async function ensureCycles(db: Db, force = false) {
 }
 
 // ── GitHub (za predaju agentu) ──
-async function gh<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const token = process.env.GITHUB_TOKEN ?? "";
-  if (!token) throw new Error("GitHub isn't connected: add GITHUB_TOKEN on the server (with access to this repo).");
+async function gh<T>(token: string, path: string, init: RequestInit = {}): Promise<T> {
+  if (!token) throw new Error("GitHub isn't connected: add your GitHub token in Settings → Integrations (or the workspace token).");
   const res = await fetch(`${process.env.GITHUB_API_URL ?? "https://api.github.com"}${path}`, {
     ...init,
     headers: {
@@ -173,15 +173,17 @@ export function deliveryPlusRoutes(getDb: () => Db, g: Guards) {
     const key = `${p.key}-${i.number}`;
     const full = `${repo.owner}/${repo.repo}`;
     const body = contextPack(i, key, p, agent);
+    // Lični token korisnika (issue ide pod njegovim imenom, sa pristupom njegovim repoima), inače token firme
+    const token = (await userGithubToken(db, actor(c).id)) ?? (await runtime(db)).githubToken;
     try {
       const [existing] = await db.select().from(issueLinks).where(and(eq(issueLinks.issueId, id), eq(issueLinks.kind, "gh_issue"), eq(issueLinks.repo, full))).limit(1);
       let url: string;
       if (existing) {
         // Već postoji GitHub issue → samo novi komentar sa pominjanjem agenta
-        await gh(`/repos/${full}/issues/${existing.number}/comments`, { method: "POST", body: JSON.stringify({ body }) });
+        await gh(token, `/repos/${full}/issues/${existing.number}/comments`, { method: "POST", body: JSON.stringify({ body }) });
         url = existing.url;
       } else {
-        const created = await gh<{ number: number; html_url: string; title: string }>(`/repos/${full}/issues`, { method: "POST", body: JSON.stringify({ title: `[${key}] ${i.title}`, body }) });
+        const created = await gh<{ number: number; html_url: string; title: string }>(token, `/repos/${full}/issues`, { method: "POST", body: JSON.stringify({ title: `[${key}] ${i.title}`, body }) });
         url = created.html_url;
         await db.insert(issueLinks).values({ issueId: id, kind: "gh_issue", repo: full, number: created.number, url, title: created.title, state: "open" }).onConflictDoNothing();
       }

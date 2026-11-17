@@ -25,6 +25,11 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 
 ## Urađeno
 
+- **17. 11. 2026. — Integrations (aplikacija nezavisna od Coolify-ja)**
+  - Settings → **Integrations**: lično (svako svoj GitHub token, proveren pre čuvanja; podrazumevani agent Claude/Codex) i firma (vlasnik: GitHub, Telegram, Email-in, SAM.gov) sa „Test connection“.
+  - Tajne šifrovane (AES-256-GCM, ključ `SECRETS_KEY` ili izveden iz `SESSION_SECRET`/`API_TOKEN` — ako se promeni, tajne se unose ponovo); vrednost iz aplikacije ima prednost nad env. API i worker ih čitaju u radu (bez redeploy-a); izvori se uključuju sami kad se podese.
+  - „Assign to Claude/Codex“ i novi taskovi idu pod ličnim GitHub nalogom korisnika (inače token firme). Migracija 0010.
+
 - **17. 11. 2026. — Faza 12 (izveštaji)**
   - Baza: `time_entries` (ko, koliko, kad, naplativo), `projects.billing` (fixed/hourly) + `hourly_rate_eur`, `clients.project_id` (AI Router ključ → projekat). Migracija 0009.
   - API: `/delivery/time` (unos, lista, brisanje svog), `/delivery/rates` (interna cena sata, po osobi; menja vlasnik), `/delivery/projects/:id/ai-client`, `/delivery/reports?days=` (profitabilnost po projektu do danas; vreme po osobi/nedelji, AI i agenti za period).

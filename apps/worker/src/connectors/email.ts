@@ -2,19 +2,14 @@ import { ImapFlow } from "imapflow";
 import { simpleParser } from "mailparser";
 import { parseEmail } from "./email-parse.js";
 import type { Connector, RawItem } from "./types.js";
+import { rt } from "../runtime.js";
 
 /**
  * Email-in preko IMAP-a (npr. poseban Gmail sa „App password“). Čita nepročitane mejlove iz IMAP_MAILBOX,
  * pravi oglase i označava mejl kao pročitan. Uputstvo: docs/EMAIL-IN.md.
  */
-const cfg = () => ({
-  host: process.env.IMAP_HOST ?? "",
-  port: Number(process.env.IMAP_PORT ?? 993),
-  secure: (process.env.IMAP_SECURE ?? "true") !== "false",
-  user: process.env.IMAP_USER ?? "",
-  pass: process.env.IMAP_PASSWORD ?? "",
-  mailbox: process.env.IMAP_MAILBOX ?? "INBOX",
-});
+// Podešavanje: Settings → Integrations (ili IMAP_* na serveru)
+const cfg = () => rt.imap;
 export const emailConfigured = () => {
   const c = cfg();
   return Boolean(c.host && c.user && c.pass);
@@ -25,7 +20,9 @@ const MAX_PER_RUN = 40;
 export const emailIn: Connector = {
   id: "email",
   // U nazivu je adresa — tim u dashboard-u vidi gde da prosleđuje obaveštenja
-  name: process.env.IMAP_USER ? `Email-in · ${process.env.IMAP_USER}` : "Email-in",
+  get name() {
+    return rt.imap.user ? `Email-in · ${rt.imap.user}` : "Email-in";
+  },
   kind: "email",
   intervalMinutes: Number(process.env.IMAP_INTERVAL_MINUTES ?? 10),
   defaultType: "project",

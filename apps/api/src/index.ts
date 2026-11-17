@@ -4,6 +4,7 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { createDb } from "@radar/db";
 import { createApp } from "./app.js";
 import { startWatchdog } from "./monitor.js";
+import { refreshRuntime } from "./runtime.js";
 
 // Migracije baze se pokreću pri svakom startu (bezbedno — primenjuje samo nove).
 // src/ i dist/ su na istoj dubini, pa ista relativna putanja radi u razvoju i posle build-a.
@@ -13,6 +14,10 @@ const migrationsFolder =
 const db = createDb();
 await migrate(db, { migrationsFolder });
 console.log("baza: migracije primenjene");
+
+// Integracije (Settings → Integrations, inače env) — osvežavaju se na minut
+await refreshRuntime(db).catch((e) => console.warn("[integrations]", (e as Error).message));
+setInterval(() => void refreshRuntime(db).catch(() => undefined), 60_000);
 
 const app = createApp(() => db);
 startWatchdog(() => db);

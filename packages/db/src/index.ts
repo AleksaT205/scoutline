@@ -3,6 +3,7 @@ import postgres from "postgres";
 import * as schema from "./schema.js";
 
 export * from "./schema.js";
+export * from "./integrations.js";
 export { schema };
 
 export function createDb(url = process.env.DATABASE_URL) {

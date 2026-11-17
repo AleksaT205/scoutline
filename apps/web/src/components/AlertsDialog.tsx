@@ -117,7 +117,7 @@ export function AlertsDialog({ open, onClose }: { open: boolean; onClose: () => 
           <div className="space-y-4">
             {!telegram && (
               <div className="rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-[12.5px] text-warning">
-                Telegram isn’t connected on the server yet — add TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID in Coolify.
+                Telegram isn’t connected yet — the owner can add the bot in Settings → Integrations.
               </div>
             )}
             <Toggle on={alerts.enabled} onChange={(enabled) => set({ enabled })} label={alerts.enabled ? "Alerts on" : "Alerts paused"} />

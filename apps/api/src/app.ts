@@ -14,6 +14,7 @@ import { llmProxy, routerAdmin } from "./router.js";
 import { deliveryRoutes } from "./delivery.js";
 import { deliveryPlusRoutes, portalRoutes } from "./delivery-plus.js";
 import { reportRoutes } from "./reports.js";
+import { integrationRoutes } from "./integrations.js";
 
 type Tier = "T1" | "T2" | "T3" | "DOMESTIC";
 type LeadRow = { lead: typeof leads.$inferSelect; raw: typeof rawItems.$inferSelect; source: string };
@@ -194,8 +195,10 @@ export function createApp(getDb: () => Db) {
   app.route("/portal", portalRoutes(getDb));
   // Faza 12: vreme i izveštaji (profitabilnost, AI)
   app.route("/delivery", reportRoutes(getDb, a));
+  // Settings → Integrations: ključevi firme (vlasnik) i lični GitHub token (svako)
+  app.route("/integrations", integrationRoutes(getDb, a));
   app.use("/dev/*", a.require("member"));
-  app.route("/dev/tasks", devTasks());
+  app.route("/dev/tasks", devTasks(getDb));
 
   // GET /share/:token — javni prikaz samo za čitanje (bez beleški, email nacrta i izmena)
   app.get("/share/:token", async (c) => {

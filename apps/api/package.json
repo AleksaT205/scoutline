@@ -15,7 +15,8 @@
     "@radar/scoring": "workspace:*",
     "@radar/shared": "workspace:*",
     "drizzle-orm": "^0.45.4",
-    "hono": "^4.13.19"
+    "hono": "^4.13.19",
+    "imapflow": "^2.12.1"
   },
   "devDependencies": {
     "tsup": "^9.0.0",

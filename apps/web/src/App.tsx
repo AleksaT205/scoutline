@@ -212,7 +212,7 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
           ) : page === "tasks" ? (
             <TasksPage />
           ) : page === "settings" || page === "team" ? (
-            <SettingsPage initialTab={page === "team" ? "team" : "profile"} onOpenAlerts={() => setAlertsOpen(true)} />
+            <SettingsPage initialTab={page === "team" ? "team" : window.location.hash.startsWith("#/settings/integrations") ? "integrations" : "profile"} onOpenAlerts={() => setAlertsOpen(true)} />
           ) : page === "router" ? (
             <RouterPage />
           ) : page === "overview" ? (

@@ -2,8 +2,9 @@ import { useCallback, useEffect, useState } from "react";
 import { BellRing, Check, Copy, Link2, Loader2, Trash2, UserPlus } from "lucide-react";
 import { getSessionUser, setSession, useSessionUser, type SessionUser } from "../lib/session";
 import { teamFetch } from "../lib/team";
+import { IntegrationsSettings } from "./IntegrationsSettings";
 
-type Tab = "profile" | "team" | "shares" | "alerts";
+type Tab = "profile" | "team" | "shares" | "alerts" | "integrations";
 interface Member { id: string; email: string; name: string; role: SessionUser["role"]; lastLoginAt: string | null }
 interface Invite { id: string; email: string | null; role: string; expiresAt: string }
 interface Share { id: string; label: string; minScore: number; expiresAt: string | null; lastViewedAt: string | null; createdAt: string }
@@ -273,6 +274,7 @@ export function SettingsPage({ initialTab = "profile", onOpenAlerts }: { initial
   const tabs: Array<[Tab, string]> = [
     ["profile", "Profile"],
     ["team", "Team"],
+    ["integrations", "Integrations"],
     ["shares", "View-only links"],
     ["alerts", "Notifications"],
   ];
@@ -280,7 +282,7 @@ export function SettingsPage({ initialTab = "profile", onOpenAlerts }: { initial
     <>
       <div className="mb-5">
         <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-        <p className="mt-0.5 text-[13.5px] text-muted">Your profile, team access and sharing.</p>
+        <p className="mt-0.5 text-[13.5px] text-muted">Your profile, team access, integrations and sharing.</p>
       </div>
       <div className="mb-4 inline-flex rounded-lg border border-line bg-surface p-0.5 text-[13px]">
         {tabs.map(([k, label]) => (
@@ -290,6 +292,7 @@ export function SettingsPage({ initialTab = "profile", onOpenAlerts }: { initial
         ))}
       </div>
       {tab === "profile" && <Profile />}
+      {tab === "integrations" && <IntegrationsSettings />}
       {tab === "team" && (role === "viewer" ? <Card title="Team" sub="Only owners and members can see the team." children={null} /> : <Team />)}
       {tab === "shares" && (role === "viewer" ? <Card title="View-only links" sub="Viewers can't create links." children={null} /> : <Shares />)}
       {tab === "alerts" && (

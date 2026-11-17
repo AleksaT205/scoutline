@@ -8,6 +8,7 @@ import { aiConfigured } from "@radar/scoring";
 import { telegramConfigured } from "@radar/scoring";
 import { ingest, lastSuccess, notifyNew, purgeExpired, registerSources, scorePending } from "./pipeline/run.js";
 import { githubConfigured, syncGithub } from "./pipeline/github.js";
+import { refreshRuntime } from "./runtime.js";
 
 const GITHUB_EVERY_MS = 5 * 60_000;
 let githubAt = 0;
@@ -17,9 +18,13 @@ const SCORE_BATCH = Number(process.env.SCORE_BATCH ?? 10);
 const ENABLED = (process.env.SOURCES ?? CONNECTORS.map((c) => c.id).join(",")).split(",");
 
 const db = createDb();
-// Izvor bez podešavanja (npr. Email-in bez IMAP naloga, SAM.gov bez ključa) se ne pokreće
-const connectors = CONNECTORS.filter((c) => ENABLED.includes(c.id) && (c.enabled?.() ?? true));
+// Izvor bez podešavanja (npr. Email-in bez IMAP naloga, SAM.gov bez ključa) se ne pokreće.
+// Podešavanja mogu da se promene u aplikaciji, pa se lista proverava na svaki krug.
+await refreshRuntime(db);
+const activeConnectors = () => CONNECTORS.filter((c) => ENABLED.includes(c.id) && (c.enabled?.() ?? true));
+const connectors = activeConnectors();
 const skipped = CONNECTORS.filter((c) => c.enabled && !c.enabled()).map((c) => c.id);
+const registered = new Set(connectors.map((c) => c.id));
 const lastRun = new Map<string, number>();
 let busy = false;
 
@@ -27,7 +32,15 @@ async function tick() {
   if (busy) return;
   busy = true;
   try {
-    for (const c of connectors) {
+    await refreshRuntime(db);
+    const now = activeConnectors();
+    const fresh = now.filter((c) => !registered.has(c.id));
+    if (fresh.length) {
+      await registerSources(db, fresh);
+      fresh.forEach((c) => registered.add(c.id));
+      console.log(`[worker] uključeni izvori: ${fresh.map((c) => c.id).join(", ")}`);
+    }
+    for (const c of now) {
       const due = Date.now() - (lastRun.get(c.id) ?? 0) >= c.intervalMinutes * 60_000;
       if (!due) continue;
       lastRun.set(c.id, Date.now());
