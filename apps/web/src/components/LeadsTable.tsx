@@ -25,7 +25,15 @@ function SortButton({ k, label, sort, onSort }: { k: SortKey; label: string; sor
   );
 }
 
-export function LeadsTable({ leads, selectedId, onSelect, sort, onSort }: { leads: UiLead[]; selectedId?: string; onSelect: (id: string) => void; sort?: { by: SortKey; dir: "asc" | "desc" }; onSort?: (k: SortKey) => void }) {
+export function LeadsTable({ leads, selectedId, onSelect, sort, onSort, loading }: { leads: UiLead[]; selectedId?: string; onSelect: (id: string) => void; sort?: { by: SortKey; dir: "asc" | "desc" }; onSort?: (k: SortKey) => void; loading?: boolean }) {
+  if (loading)
+    return (
+      <div className="space-y-2 rounded-xl border border-line bg-surface p-3" aria-busy="true">
+        {Array.from({ length: 8 }, (_, i) => (
+          <div key={i} className="h-11 animate-pulse rounded-lg bg-surface-2" />
+        ))}
+      </div>
+    );
   if (leads.length === 0) {
     return (
       <div className="grid place-items-center rounded-xl border border-dashed border-line bg-surface px-6 py-16 text-center">

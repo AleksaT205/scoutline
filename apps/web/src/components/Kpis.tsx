@@ -62,7 +62,15 @@ const inRange = (l: UiLead, from: number, to: number) => {
 };
 const pctChange = (now: number, before: number) => (before === 0 ? (now === 0 ? 0 : null) : Math.round(((now - before) / before) * 100));
 
-export function Kpis({ leads }: { leads: UiLead[] }) {
+export function Kpis({ leads, loading }: { leads: UiLead[]; loading?: boolean }) {
+  if (loading)
+    return (
+      <section className="mb-5 grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4" aria-busy="true">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="h-[92px] animate-pulse rounded-xl border border-line bg-surface sm:h-[118px]" />
+        ))}
+      </section>
+    );
   const live = leads.some((l) => l.createdAt);
   const now = Date.now();
 

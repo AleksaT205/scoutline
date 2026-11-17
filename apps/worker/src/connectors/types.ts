@@ -36,14 +36,37 @@ export interface Connector {
 
 export const USER_AGENT = "Mozilla/5.0 (compatible; ScoutlineBot/0.1; job-board aggregator)";
 
+/**
+ * fetch sa ponovnim pokušajem: mrežna greška, 429 ili 5xx → pauza (3 s, 8 s) pa ponovo.
+ * Greška sadrži pravi uzrok (npr. ECONNRESET), ne samo „fetch failed“.
+ */
+export async function fetchRetry(url: string, init: RequestInit = {}, tries = 3): Promise<Response> {
+  let last = "";
+  for (let i = 0; i < tries; i++) {
+    if (i) await new Promise((r) => setTimeout(r, i === 1 ? 3000 : 8000));
+    try {
+      const res = await fetch(url, { ...init, signal: AbortSignal.timeout(30_000) });
+      if ((res.status === 429 || res.status >= 500) && i < tries - 1) {
+        last = `HTTP ${res.status}`;
+        continue;
+      }
+      return res;
+    } catch (e) {
+      const err = e as Error & { cause?: { code?: string; message?: string } };
+      last = err.cause?.code ?? err.cause?.message ?? err.message;
+    }
+  }
+  throw new Error(`${new URL(url).host}: ${last} (after ${tries} tries)`);
+}
+
 export async function getJson<T>(url: string): Promise<T> {
-  const res = await fetch(url, { headers: { "User-Agent": USER_AGENT, Accept: "application/json" }, signal: AbortSignal.timeout(30_000) });
+  const res = await fetchRetry(url, { headers: { "User-Agent": USER_AGENT, Accept: "application/json" } });
   if (!res.ok) throw new Error(`${url} → HTTP ${res.status}`);
   return (await res.json()) as T;
 }
 
 export async function getText(url: string): Promise<string> {
-  const res = await fetch(url, { headers: { "User-Agent": USER_AGENT }, signal: AbortSignal.timeout(30_000) });
+  const res = await fetchRetry(url, { headers: { "User-Agent": USER_AGENT } });
   if (!res.ok) throw new Error(`${url} → HTTP ${res.status}`);
   return res.text();
 }

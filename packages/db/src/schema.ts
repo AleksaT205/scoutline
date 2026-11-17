@@ -50,7 +50,7 @@ export const rawItems = pgTable(
     payload: jsonb("payload"),
     ...timestamps,
   },
-  (t) => [uniqueIndex("raw_items_url_hash_idx").on(t.urlHash)],
+  (t) => [uniqueIndex("raw_items_url_hash_idx").on(t.urlHash), index("raw_items_source_idx").on(t.sourceId)],
 );
 
 export const companies = pgTable("companies", {
@@ -94,7 +94,7 @@ export const leads = pgTable(
     status: statusEnum("status").default("new").notNull(),
     ...timestamps,
   },
-  (t) => [index("leads_score_idx").on(t.score), index("leads_status_idx").on(t.status)],
+  (t) => [index("leads_score_idx").on(t.score), index("leads_status_idx").on(t.status), index("leads_raw_item_idx").on(t.rawItemId)],
 );
 
 /** Istorija: promene statusa, beleške, poslati email-ovi. */

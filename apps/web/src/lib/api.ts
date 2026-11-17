@@ -72,9 +72,10 @@ export function useLeads(): LeadsState {
         ]);
         if (!alive) return;
         const items = (l.items ?? []) as UiLead[];
-        setState({ leads: items, live: items.length > 0, newToday: s.newToday, total: s.total, aiCostUsd: s.aiCostUsd, loadedAt: Date.now() });
+        // live = podaci su sa servera (i kad ih još nema) — probni podaci se više ne prikazuju
+        setState({ leads: items, live: true, newToday: s.newToday, total: s.total, aiCostUsd: s.aiCostUsd, loadedAt: Date.now() });
       } catch {
-        if (alive) setState({ leads: [], live: false });
+        if (alive) setState((cur) => (cur.leads ? cur : { leads: [], live: false })); // greška mreže: zadrži poslednje učitane
       }
     };
     void load();

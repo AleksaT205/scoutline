@@ -1,6 +1,6 @@
 import { parse } from "csv-parse/sync";
 import { XMLParser } from "fast-xml-parser";
-import { IT_TENDER, type Connector, type RawItem, USER_AGENT, getJson, getText, htmlToText, iso2, toEur } from "./types.js";
+import { IT_TENDER, type Connector, type RawItem, USER_AGENT, fetchRetry, getJson, getText, htmlToText, iso2, toEur } from "./types.js";
 
 /** Datum za API-je: pre N dana. */
 const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000);
@@ -54,7 +54,9 @@ function makeTed(id: string, name: string, countries: string[] | null, days: num
     const out: RawItem[] = [];
     let token: string | undefined;
     for (let page = 0; page < 3; page++) {
-      const res = await fetch("https://api.ted.europa.eu/v3/notices/search", {
+      // Mala pauza između stranica i ponovni pokušaj — TED ponekad prekine vezu kad zahtevi idu jedan za drugim
+      if (page) await new Promise((r) => setTimeout(r, 1500));
+      const res = await fetchRetry("https://api.ted.europa.eu/v3/notices/search", {
         method: "POST",
         headers: { "Content-Type": "application/json", "User-Agent": USER_AGENT },
         body: JSON.stringify({
@@ -65,9 +67,8 @@ function makeTed(id: string, name: string, countries: string[] | null, days: num
           paginationMode: "ITERATION",
           ...(token ? { iterationNextToken: token } : {}),
         }),
-        signal: AbortSignal.timeout(30_000),
       });
-      if (!res.ok) throw new Error(`TED → HTTP ${res.status}`);
+      if (!res.ok) throw new Error(`TED → HTTP ${res.status}: ${(await res.text()).slice(0, 160)}`);
       const data = (await res.json()) as { notices?: Notice[]; iterationNextToken?: string };
       for (const n of data.notices ?? []) {
         const titles = (n["notice-title"] ?? {}) as Record<string, string>;

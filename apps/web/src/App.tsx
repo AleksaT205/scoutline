@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { BellRing, Menu, Moon, Plus, RefreshCw, Search, Sun } from "lucide-react";
-import { DEMO_LEADS } from "./data/demo";
 import { useApiStatus, useLeads } from "./lib/api";
 import { Sidebar } from "./components/Sidebar";
 import { Kpis } from "./components/Kpis";
@@ -129,6 +128,12 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
   const api = useLeads();
   const [menuOpen, setMenuOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
+  // „Add lead“ sa bilo koje stranice (npr. Sources) otvara prozor na mestu
+  useEffect(() => {
+    const open = () => setAddOpen(true);
+    window.addEventListener("open-add-lead", open);
+    return () => window.removeEventListener("open-add-lead", open);
+  }, []);
   const [alertsOpen, setAlertsOpen] = useState(false);
   const [, forceTick] = useState(0);
   useEffect(() => {
@@ -140,14 +145,21 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
   const [sheet, setSheet] = useState(false); // detalj leada na telefonu
 
   // Pravi leadovi iz API-ja; dok ih nema, prikazuju se primeri.
-  const allLeads = api.live && api.leads ? api.leads : DEMO_LEADS;
+  // Bez probnih podataka: dok se učitava prikazuje se skeleton, a ne lažni brojevi
+  const loading = api.leads === null;
+  const allLeads = api.leads ?? [];
   const leads = useMemo(() => applyFilters(allLeads, filters), [allLeads, filters]);
+  const PAGE_SIZE = 50;
+  const [pageNo, setPage] = useState(0);
+  useEffect(() => setPage(0), [filters]); // novi filter/sort → prva strana
+  const pages = Math.max(1, Math.ceil(leads.length / PAGE_SIZE));
+  const pageLeads = useMemo(() => leads.slice(Math.min(pageNo, pages - 1) * PAGE_SIZE, (Math.min(pageNo, pages - 1) + 1) * PAGE_SIZE), [leads, pageNo, pages]);
   // Izabrani lead ostaje otvoren i kad ga filter više ne prikazuje (npr. posle „Won“ — da se vidi „Create project“)
-  const selected = leads.find((l) => l.id === selectedId) ?? allLeads.find((l) => l.id === selectedId) ?? leads[0];
+  const selected = leads.find((l) => l.id === selectedId) ?? allLeads.find((l) => l.id === selectedId) ?? pageLeads[0];
 
   return (
     <div className="lg:grid lg:min-h-screen lg:grid-cols-[232px_1fr]">
-      <Sidebar status={status} open={menuOpen} onClose={() => setMenuOpen(false)} leadCount={api.live ? (api.total ?? allLeads.length) : allLeads.length} aiCostUsd={api.aiCostUsd} page={page} />
+      <Sidebar status={status} open={menuOpen} onClose={() => setMenuOpen(false)} leadCount={loading ? undefined : (api.total ?? allLeads.length)} aiCostUsd={api.aiCostUsd} page={page} />
 
       <main className="min-w-0">
         <header className="sticky top-0 z-20 flex h-14 items-center gap-3 border-b border-line bg-bg/80 px-4 backdrop-blur-md sm:px-6">
@@ -290,19 +302,20 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
             </div>
           </div>
 
-          {!api.live && api.leads !== null && (
-            <div className="mb-4 flex items-center gap-2 rounded-lg border border-accent/30 bg-accent-soft px-3 py-2 text-[12.5px] text-muted">
-              <span className="rounded bg-accent px-1.5 py-px text-[11px] font-medium text-white">Preview</span>
-              Showing sample data. Live leads appear here as soon as the first sources sync.
+          {!loading && allLeads.length === 0 && (
+            <div className="mb-4 rounded-lg border border-line bg-surface px-3 py-2 text-[12.5px] text-muted">
+              {api.live ? "No leads yet — sources sync every 30–60 minutes (or use Sources → Run now)." : "Can't reach the server right now — retrying automatically."}
             </div>
           )}
 
-          <Kpis leads={allLeads} />
+          <Kpis leads={allLeads} loading={loading} />
           <Filters value={filters} onChange={setFilters} all={allLeads} shown={leads.length} />
 
           <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
+            <div className="min-w-0">
             <LeadsTable
-              leads={leads}
+              leads={pageLeads}
+              loading={loading}
               sort={{ by: filters.sortBy, dir: filters.sortDir }}
               onSort={(k) => setFilters({ ...filters, sortBy: k, sortDir: filters.sortBy === k ? (filters.sortDir === "desc" ? "asc" : "desc") : k === "source" ? "asc" : "desc" })}
               selectedId={selected?.id}
@@ -311,6 +324,32 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
                 setSheet(true);
               }}
             />
+            {!loading && leads.length > PAGE_SIZE && (
+              <nav className="mt-3 flex flex-wrap items-center gap-2 text-[12.5px] text-muted" aria-label="Pagination">
+                <span className="num">
+                  {Math.min(pageNo, pages - 1) * PAGE_SIZE + 1}–{Math.min(leads.length, (Math.min(pageNo, pages - 1) + 1) * PAGE_SIZE)} of {leads.length}
+                </span>
+                <div className="ml-auto flex items-center gap-1">
+                  <button disabled={pageNo === 0} onClick={() => (setPage((p) => Math.max(0, p - 1)), window.scrollTo({ top: 0, behavior: "smooth" }))} className="h-[30px] rounded-md border border-line bg-surface px-2.5 hover:bg-surface-2 disabled:opacity-40">
+                    ← Prev
+                  </button>
+                  {Array.from({ length: pages }, (_, i) => i)
+                    .filter((i) => i === 0 || i === pages - 1 || Math.abs(i - pageNo) <= 1)
+                    .map((i, k, arr) => (
+                      <span key={i} className="flex items-center gap-1">
+                        {k > 0 && i - arr[k - 1]! > 1 && <span className="px-1 text-faint">…</span>}
+                        <button onClick={() => (setPage(i), window.scrollTo({ top: 0, behavior: "smooth" }))} className={`num h-[30px] min-w-[30px] rounded-md px-2 ${i === pageNo ? "bg-fg font-medium text-bg" : "border border-line bg-surface hover:bg-surface-2"}`} aria-current={i === pageNo ? "page" : undefined}>
+                          {i + 1}
+                        </button>
+                      </span>
+                    ))}
+                  <button disabled={pageNo >= pages - 1} onClick={() => (setPage((p) => Math.min(pages - 1, p + 1)), window.scrollTo({ top: 0, behavior: "smooth" }))} className="h-[30px] rounded-md border border-line bg-surface px-2.5 hover:bg-surface-2 disabled:opacity-40">
+                    Next →
+                  </button>
+                </div>
+              </nav>
+            )}
+            </div>
             {selected && (
               <div className="hidden xl:block">
                 <LeadDetail lead={selected} live={api.live} onUpdated={api.update} />
@@ -343,6 +382,8 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
           api.add(lead);
           setFilters(freshFilters({ types: new Set(LEAD_TYPES), minScore: 0 }));
           setSelectedId(lead.id);
+          setPage(0);
+          if (page !== "leads") setSheet(true); // na drugoj stranici: ostani tu, lead se vidi na Leads
         }}
       />
     </div>

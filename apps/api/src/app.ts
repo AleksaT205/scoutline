@@ -338,15 +338,21 @@ export function createApp(getDb: () => Db) {
       id: string; name: string; kind: string; enabled: boolean; interval_minutes: number; last_success_at: string | null; last_error: string | null; run_requested_at: string | null;
       items: number; leads: number; leads_24h: number; good: number;
     }>(sql`
+      -- Prvo saberi po izvoru (brzo), pa spoji sa izvorima — bez množenja redova kroz dva LEFT JOIN-a
+      with ri as (select source_id, count(*)::int as items from raw_items group by source_id),
+           ld as (
+             select r.source_id,
+                    count(*) filter (where l.status <> 'hidden')::int as leads,
+                    count(*) filter (where l.status <> 'hidden' and l.created_at >= ${dayAgo}::timestamptz)::int as leads_24h,
+                    count(*) filter (where l.status <> 'hidden' and l.score >= 70)::int as good
+             from leads l join raw_items r on r.id = l.raw_item_id
+             group by r.source_id)
       select s.id, s.name, s.kind, s.enabled, s.interval_minutes, s.last_success_at, s.last_error, s.run_requested_at,
-             count(distinct r.id)::int as items,
-             count(l.id) filter (where l.status <> 'hidden')::int as leads,
-             count(l.id) filter (where l.status <> 'hidden' and l.created_at >= ${dayAgo}::timestamptz)::int as leads_24h,
-             count(l.id) filter (where l.status <> 'hidden' and l.score >= 70)::int as good
+             coalesce(ri.items, 0) as items, coalesce(ld.leads, 0) as leads, coalesce(ld.leads_24h, 0) as leads_24h, coalesce(ld.good, 0) as good
       from sources s
-      left join raw_items r on r.source_id = s.id
-      left join leads l on l.raw_item_id = r.id
-      group by s.id order by leads desc`);
+      left join ri on ri.source_id = s.id
+      left join ld on ld.source_id = s.id
+      order by leads desc`);
     return c.json({
       items: [...rows].map((r) => ({
         id: r.id,

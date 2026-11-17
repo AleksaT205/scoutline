@@ -4,7 +4,7 @@ import { onlySpace, useSessionUser } from "../lib/session";
 import { useOrganization } from "../lib/org";
 import type { ApiStatus } from "../lib/api";
 
-const prospecting = (leadCount: number) => [
+const prospecting = (leadCount: number | undefined) => [
   { label: "Overview", icon: LayoutGrid, href: "#/overview" },
   { label: "Leads", icon: Search, count: leadCount, href: "#/" },
   { label: "Pipeline", icon: Kanban, href: "#/pipeline" },
@@ -72,7 +72,7 @@ function StatusCard({ status, aiCostUsd }: { status: ApiStatus; aiCostUsd?: numb
   );
 }
 
-export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: { status: ApiStatus; open: boolean; onClose: () => void; leadCount: number; aiCostUsd?: number; page: string }) {
+export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: { status: ApiStatus; open: boolean; onClose: () => void; leadCount?: number; aiCostUsd?: number; page: string }) {
   const inbox = useInboxCount(DELIVERY_PAGES.includes(page));
   const only = onlySpace(useSessionUser()); // korisnik sa pristupom samo jednom delu nema prekidač
   const org = useOrganization();

@@ -120,9 +120,9 @@ export function SourcesPage() {
           <h1 className="text-2xl font-semibold tracking-tight">Sources</h1>
           <p className="mt-0.5 text-[13.5px] text-muted">Where leads come from. Every source uses an official API, open data, RSS or your own email alerts — and respects its terms.</p>
         </div>
-        <a href="#/" className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2 sm:ml-auto">
+        <button onClick={() => window.dispatchEvent(new Event("open-add-lead"))} className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] border border-line bg-surface px-3 text-[13px] font-medium hover:bg-surface-2 sm:ml-auto">
           <Plus size={14} /> Add a lead manually
-        </a>
+        </button>
       </div>
 
       {error && <div className="mb-4 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[12.5px] text-danger">{error}</div>}
@@ -297,7 +297,7 @@ export function SourcesPage() {
         </div>
       </div>
       <p className="mt-4 text-[12px] text-faint">
-        Domestic job boards (Infostud, HelloWorld…) don’t allow automated reading — add those leads with “Add lead” (link or pasted text).
+        Infostud and the Serbian procurement portal don’t allow automated reading — use Email-in alerts (Settings → Integrations) or “Add lead”.
       </p>
     </>
   );
