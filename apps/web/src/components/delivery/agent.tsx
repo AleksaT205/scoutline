@@ -34,6 +34,7 @@ interface Run {
   status: "working" | "pr_open" | "merged" | "closed" | "failed" | "replied" | "queued";
   minutes: number;
   sessions: number;
+  model?: string;
   pr: { number: number; url: string; title: string; state: string; branch: string } | null;
 }
 interface Agg {
@@ -177,7 +178,7 @@ const headOf = (md: string) => {
   return m ? { done: /finished/i.test(m[1]!), took: m[2]?.trim() ?? null, job: m[3] ?? null } : null;
 };
 const MODEL_OPTIONS = [
-  ["", "Auto"],
+  ["", "Model: Auto"],
   ["sonnet", "Sonnet"],
   ["opus", "Opus · strongest"],
   ["haiku", "Haiku · fastest"],
@@ -513,9 +514,11 @@ function BuildPanel({ projectId }: { projectId: string }) {
     setError(null);
     setNote(null);
     try {
-      const r = await teamFetch<{ number: number; note?: string | null; effort?: string; effortAuto?: boolean }>(`/delivery/projects/${projectId}/agent/runs?${repoQ(repo)}`, { method: "POST", body: JSON.stringify({ prompt, model: model || undefined, effort: effort || undefined }) });
+      const r = await teamFetch<{ number: number; note?: string | null; effort?: string; effortAuto?: boolean; model?: string; modelAuto?: boolean }>(`/delivery/projects/${projectId}/agent/runs?${repoQ(repo)}`, { method: "POST", body: JSON.stringify({ prompt, model: model || undefined, effort: effort || undefined }) });
       setPrompt("");
-      setNote([r.effort ? `Effort: ${r.effort[0]!.toUpperCase()}${r.effort.slice(1)}${r.effortAuto ? " (picked automatically)" : ""}.` : "", r.note ?? ""].filter(Boolean).join(" ") || null);
+      const cap = (x: string) => `${x[0]!.toUpperCase()}${x.slice(1)}`;
+      const auto = [r.modelAuto && "model", r.effortAuto && "effort"].filter(Boolean).join(" and ");
+      setNote([r.model ? `Model: ${cap(r.model)}` : "", r.effort ? `Effort: ${cap(r.effort)}` : ""].filter(Boolean).join(" · ") + (auto ? ` (${auto} picked automatically).` : ".") + (r.note ? ` ${r.note}` : ""));
       setSel(r.number);
       await runs.reload();
     } catch (e) {
@@ -607,6 +610,7 @@ function BuildPanel({ projectId }: { projectId: string }) {
                   </span>
                   <span className="w-full text-[11.5px] text-faint sm:w-auto">
                     {r.by ?? "—"} · {ago(r.createdAt)}
+                    {r.model && r.model !== "default" ? ` · ${r.model[0]!.toUpperCase()}${r.model.slice(1)}` : ""}
                     {r.minutes ? ` · ${r.minutes} min` : ""}
                   </span>
                 </button>

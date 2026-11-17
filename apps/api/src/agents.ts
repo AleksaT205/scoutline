@@ -38,6 +38,8 @@ export function autoEffort(text: string): Effort {
   if (/\?\s*$/.test(t) || /^(what|how|where|why|which|who|is|are|can|kako|gde|šta|sta|zašto|zasto|koji|koja|dokle|da li|ima li)\b/.test(t)) return "low";
   return "medium";
 }
+/** Auto model po effort-u: običan rad i pitanja → Sonnet, veliki zadaci (High/Max) → Opus. */
+const autoModel = (e: Effort): Model => (e === "high" || e === "max" ? "opus" : "sonnet");
 const pickEffort = (v: unknown, text: string): Effort => (EFFORTS.includes(v as Effort) ? (v as Effort) : autoEffort(text));
 const withEffort = (text: string, e: Effort) => (EFFORT_WORD[e] ? `${text}\n\n(${EFFORT_WORD[e]})` : text);
 type Model = (typeof MODELS)[number];
@@ -562,7 +564,7 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     if (!tok) return c.json({ error: "No GitHub token yet — add yours in Settings → Integrations." }, 400);
     const input = (await c.req.json().catch(() => ({}))) as { prompt?: string; model?: string; effort?: string };
     const prompt = (input.prompt ?? "").trim().slice(0, 8000);
-    const model = MODELS.includes(input.model as Model) ? (input.model as Model) : null;
+    const chosenModel = MODELS.includes(input.model as Model) ? (input.model as Model) : null;
     if (prompt.length < 3) return c.json({ error: "Describe what Claude should do." }, 400);
     const blocked = await useMyClaude(c, tok, r.full);
     if (blocked) return c.json({ error: blocked }, 400);
@@ -570,6 +572,7 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     const first = prompt.split("\n")[0]!.replace(/\s+/g, " ").trim();
     const title = first.length > 90 ? `${first.slice(0, 87)}…` : first;
     const effort = pickEffort(input.effort, prompt);
+    const model: Model = chosenModel ?? autoModel(effort);
     const body = [
       `@claude ${withEffort(prompt, effort)}`,
       "",
@@ -582,8 +585,8 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
       `<sub>Started from Scoutline by ${actor(c).name}</sub>`,
     ].join("\n");
     try {
-      const created = await gh<GhIssue>(tok, `/repos/${r.full}/issues`, { method: "POST", body: JSON.stringify({ title, body, labels: [LABEL, ...(model ? [`model:${model}`] : [])] }) });
-      return c.json({ number: created.number, url: created.html_url, note, effort, effortAuto: !EFFORTS.includes(input.effort as Effort) }, 201);
+      const created = await gh<GhIssue>(tok, `/repos/${r.full}/issues`, { method: "POST", body: JSON.stringify({ title, body, labels: [LABEL, `model:${model}`] }) });
+      return c.json({ number: created.number, url: created.html_url, note, effort, effortAuto: !EFFORTS.includes(input.effort as Effort), model, modelAuto: !chosenModel }, 201);
     } catch (e) {
       return c.json({ error: (e as Error).message }, 502);
     }
@@ -604,7 +607,7 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     // Ako postoji PR, odgovor ide tamo (Claude onda menja isti PR), inače na issue
     const target = Number.isInteger(b.pr) && b.pr! > 0 ? b.pr! : n;
     try {
-      if (b.model !== undefined) await setModel(tok, r.full, target, MODELS.includes(b.model as Model) ? (b.model as Model) : null);
+      if (b.model !== undefined) await setModel(tok, r.full, target, MODELS.includes(b.model as Model) ? (b.model as Model) : autoModel(pickEffort(b.effort, text)));
       await gh(tok, `/repos/${r.full}/issues/${target}/comments`, { method: "POST", body: JSON.stringify({ body: `@claude ${withEffort(text, pickEffort(b.effort, text))}\n\n<sub>From Scoutline by ${actor(c).name}</sub>` }) });
       return c.json({ ok: true, note });
     } catch (e) {
@@ -666,7 +669,7 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
       "",
       await projectContext(r.p),
     ].join("\n");
-    const claudeArgs = [model ? `--model ${model}` : "", `--settings '{"includeCoAuthoredBy":false}'`].filter(Boolean).join(" ");
+    const claudeArgs = [`--model ${model ?? autoModel(effort)}`, `--settings '{"includeCoAuthoredBy":false}'`].filter(Boolean).join(" ");
     const command = [
       `mkdir -p ${folder} && cd ${folder} && { [ -d ${dir}/.git ] || git clone https://github.com/${r.full}.git; } && cd ${dir} \\`,
       `  && git fetch origin && git checkout ${main} && git pull --ff-only \\`,
