@@ -1,4 +1,4 @@
-import { BarChart3, Building2, CircleDot, FolderKanban, Inbox, MessagesSquare, Kanban, LayoutGrid, RefreshCcw, Route, Rss, Search, Settings, Users, X } from "lucide-react";
+import { BarChart3, Building2, CircleDot, FolderKanban, Inbox, MessagesSquare, Kanban, LayoutGrid, RefreshCcw, Rss, Search, Settings, Users, X } from "lucide-react";
 import { useInboxCount } from "../lib/delivery";
 import { onlySpace, useSessionUser } from "../lib/session";
 import { useOrganization } from "../lib/org";
@@ -11,7 +11,6 @@ const prospecting = (leadCount: number | undefined) => [
   { group: "Find work", label: "Pipeline", icon: Kanban, href: "#/pipeline", page: "pipeline" },
   { group: "Insights", label: "Overview", icon: LayoutGrid, href: "#/overview", page: "overview" },
   { group: "Insights", label: "Sources", icon: Rss, href: "#/sources", page: "sources" },
-  { group: "AI Ops", label: "AI Router", icon: Route, href: "#/router", page: "router" },
 ];
 const delivery = [
   { group: "Work", label: "Projects", icon: FolderKanban, href: "#/delivery", page: "projects" },
