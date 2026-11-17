@@ -20,6 +20,7 @@ export interface WorkspaceIntegrations {
   sam?: { apiKey?: Secret };
   anthropic?: { apiKey?: Secret }; // Claude za AI asistenta (trošak ide firmi)
   figma?: { token?: Secret }; // Figma (pregled dizajna u taskovima)
+  claudeCode?: { token?: Secret }; // Claude Code token (pretplata) za agente na GitHub-u — upisuje se kao secret u repo
 }
 
 export interface UserIntegrations {
@@ -28,6 +29,7 @@ export interface UserIntegrations {
   agent?: "claude" | "codex";
   anthropicKey?: Secret; // lični Claude ključ za AI asistenta (trošak ide toj osobi)
   figmaToken?: Secret; // lični Figma token
+  claudeCodeToken?: Secret; // lični Claude Code token (claude setup-token) — rad koji pokrene ide na njegovu pretplatu
 }
 
 const key = () => createHash("sha256").update(process.env.SECRETS_KEY || `scoutline-secrets:${process.env.SESSION_SECRET || process.env.API_TOKEN || "dev"}`).digest();
@@ -121,4 +123,15 @@ export async function readUserIntegrations(db: Db, userId: string): Promise<User
 export async function userGithubToken(db: Db, userId: string | null | undefined): Promise<string | null> {
   if (!userId) return null;
   return decryptSecret((await readUserIntegrations(db, userId)).githubToken);
+}
+
+/** Claude Code token za agenta: lični → firme → env (CLAUDE_CODE_OAUTH_TOKEN). Vraća i čiji je (za prikaz). */
+export async function claudeCodeTokenFor(db: Db, userId: string | null | undefined): Promise<{ token: string; owner: "personal" | "workspace" | "server" } | null> {
+  if (userId) {
+    const mine = decryptSecret((await readUserIntegrations(db, userId)).claudeCodeToken);
+    if (mine) return { token: mine, owner: "personal" };
+  }
+  const w = decryptSecret((await readWorkspaceIntegrations(db).catch(() => ({}) as WorkspaceIntegrations)).claudeCode?.token);
+  if (w) return { token: w, owner: "workspace" };
+  return process.env.CLAUDE_CODE_OAUTH_TOKEN ? { token: process.env.CLAUDE_CODE_OAUTH_TOKEN, owner: "server" } : null;
 }

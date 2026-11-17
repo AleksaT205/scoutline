@@ -264,7 +264,13 @@ export function assistantRoutes(getDb: () => Db, g: Guards) {
     const a = actor(c);
     const month = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1));
     const rows = await getDb()
-      .select({ provider: aiMessages.provider, mine: sql<number>`coalesce(sum(case when ${aiMessages.userId} = ${a.id ?? "00000000-0000-0000-0000-000000000000"} then ${aiMessages.tokensIn} + ${aiMessages.tokensOut} else 0 end),0)::int`, total: sql<number>`coalesce(sum(${aiMessages.tokensIn} + ${aiMessages.tokensOut}),0)::int`, n: sql<number>`count(*)::int` })
+      .select({
+        provider: aiMessages.provider,
+        mine: sql<number>`coalesce(sum(case when ${aiMessages.userId} = ${a.id ?? "00000000-0000-0000-0000-000000000000"} then ${aiMessages.tokensIn} + ${aiMessages.tokensOut} else 0 end),0)::int`,
+        mineN: sql<number>`coalesce(sum(case when ${aiMessages.userId} = ${a.id ?? "00000000-0000-0000-0000-000000000000"} then 1 else 0 end),0)::int`,
+        total: sql<number>`coalesce(sum(${aiMessages.tokensIn} + ${aiMessages.tokensOut}),0)::int`,
+        n: sql<number>`count(*)::int`,
+      })
       .from(aiMessages)
       .where(gte(aiMessages.createdAt, month))
       .groupBy(aiMessages.provider);

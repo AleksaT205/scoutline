@@ -64,6 +64,7 @@ export function integrationRoutes(getDb: () => Db, g: Guards) {
       sam: { apiKey: view(w.sam?.apiKey), source: rt.source.sam },
       anthropic: { apiKey: view(w.anthropic?.apiKey), source: rt.source.anthropic },
       figma: { token: view(w.figma?.token), source: rt.source.figma },
+      claudeCode: { token: view(w.claudeCode?.token), source: w.claudeCode?.token ? "app" : process.env.CLAUDE_CODE_OAUTH_TOKEN ? "server" : "none" },
     });
   });
 
@@ -88,6 +89,7 @@ export function integrationRoutes(getDb: () => Db, g: Guards) {
     if (b.sam) w.sam = { apiKey: nextSecret(w.sam?.apiKey, b.sam.apiKey) };
     if (b.anthropic) w.anthropic = { apiKey: nextSecret(w.anthropic?.apiKey, b.anthropic.apiKey) };
     if (b.figma) w.figma = { token: nextSecret(w.figma?.token, b.figma.token) };
+    if (b.claudeCode) w.claudeCode = { token: nextSecret(w.claudeCode?.token, b.claudeCode.token) };
     await writeWorkspaceIntegrations(db, w);
     await refreshRuntime(db);
     return c.json({ ok: true });
@@ -141,14 +143,14 @@ export function integrationRoutes(getDb: () => Db, g: Guards) {
     const a = actor(c);
     if (!a.id) return c.json({ account: false });
     const u = await readUserIntegrations(getDb(), a.id);
-    return c.json({ account: true, github: { ...view(u.githubToken), login: u.githubLogin ?? null }, agent: u.agent ?? "claude", anthropic: view(u.anthropicKey), figma: view(u.figmaToken) });
+    return c.json({ account: true, github: { ...view(u.githubToken), login: u.githubLogin ?? null }, agent: u.agent ?? "claude", anthropic: view(u.anthropicKey), figma: view(u.figmaToken), claudeCode: view(u.claudeCodeToken) });
   });
 
   // PUT /integrations/me { githubToken?: string | null, agent?: "claude" | "codex" }
   app.put("/me", g.require("viewer"), async (c) => {
     const a = actor(c);
     if (!a.id) return c.json({ error: "Sign in with your own account to connect personal integrations." }, 400);
-    const b = (await c.req.json().catch(() => ({}))) as { githubToken?: string | null; agent?: string; anthropicKey?: string | null; figmaToken?: string | null };
+    const b = (await c.req.json().catch(() => ({}))) as { githubToken?: string | null; agent?: string; anthropicKey?: string | null; figmaToken?: string | null; claudeCodeToken?: string | null };
     const db = getDb();
     const u: UserIntegrations = await readUserIntegrations(db, a.id);
     if (b.githubToken !== undefined) {
@@ -172,13 +174,19 @@ export function integrationRoutes(getDb: () => Db, g: Guards) {
       if (k) u.anthropicKey = encryptSecret(k);
       else delete u.anthropicKey;
     }
+    if (b.claudeCodeToken !== undefined) {
+      const k = typeof b.claudeCodeToken === "string" ? b.claudeCodeToken.trim() : "";
+      if (k && !/^sk-ant-/.test(k)) return c.json({ error: "That doesn't look like a Claude Code token — run `claude setup-token` and paste the sk-ant-… value." }, 400);
+      if (k) u.claudeCodeToken = encryptSecret(k);
+      else delete u.claudeCodeToken;
+    }
     if (b.figmaToken !== undefined) {
       const k = typeof b.figmaToken === "string" ? b.figmaToken.trim() : "";
       if (k) u.figmaToken = encryptSecret(k);
       else delete u.figmaToken;
     }
     await db.update(users).set({ integrations: u, updatedAt: new Date() }).where(eq(users.id, a.id));
-    return c.json({ ok: true, github: { ...view(u.githubToken), login: u.githubLogin ?? null }, agent: u.agent ?? "claude", anthropic: view(u.anthropicKey), figma: view(u.figmaToken) });
+    return c.json({ ok: true, github: { ...view(u.githubToken), login: u.githubLogin ?? null }, agent: u.agent ?? "claude", anthropic: view(u.anthropicKey), figma: view(u.figmaToken), claudeCode: view(u.claudeCodeToken) });
   });
 
   return app;

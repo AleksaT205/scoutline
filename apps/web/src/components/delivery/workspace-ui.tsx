@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, Copy, ExternalLink, Loader2, PenTool, Pencil, Plus, Sparkles, Terminal, Trash2, X } from "lucide-react";
+import { Check, Copy, ExternalLink, Loader2, PenTool, Pencil, Plus, Sparkles, Terminal, Trash2, X, Play } from "lucide-react";
 import { teamFetch } from "../../lib/team";
 import { canEdit, useSessionUser } from "../../lib/session";
 import { Dialog, ErrorNote, btnPrimary, btnSecondary, field } from "./parts";
@@ -249,13 +249,32 @@ export function RunLocallyView({ projectId, repo }: { projectId: string; repo: s
   return (
     <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] [&>*]:min-w-0">
       <section className="space-y-2 rounded-xl border border-line bg-surface p-4">
-        <div className="text-[13px] font-semibold">Open the code</div>
-        <p className="text-[12px] text-muted">A web app can't start programs on your computer, so these open your editor and clone the repo for you.</p>
+        <div className="text-[13px] font-semibold">Run it in the browser</div>
+        <p className="text-[12px] text-muted">Nothing to install — the project starts in a new tab with a live preview.</p>
+        <a href={d.links.stackblitz} target="_blank" rel="noreferrer" className="flex items-center gap-2.5 rounded-lg bg-fg px-3 py-2.5 text-bg hover:opacity-90">
+          <Play size={14} />
+          <span className="min-w-0 flex-1">
+            <span className="block text-[13px] font-medium">Run in StackBlitz</span>
+            <span className="block text-[11.5px] opacity-70">Websites and Node apps run right in the browser · private repos ask you to sign in with GitHub once</span>
+          </span>
+        </a>
+        {[
+          ["codespaces", "Run in GitHub Codespaces", d.devcontainer ? "Full cloud machine (uses the repo's devcontainer)" : "Full cloud machine with a terminal — for bigger projects"],
+          ["codesandbox", "Open in CodeSandbox", "Another in-browser option"],
+        ].map(([k = "", label, hint]) => (
+          <a key={k} href={d.links[k]} target="_blank" rel="noreferrer" className="flex items-center gap-2.5 rounded-lg border border-line bg-bg px-3 py-2 hover:border-accent/50">
+            <ExternalLink size={13} className="text-faint" />
+            <span className="min-w-0 flex-1">
+              <span className="block text-[13px] font-medium">{label}</span>
+              <span className="block text-[11.5px] text-faint">{hint}</span>
+            </span>
+          </a>
+        ))}
+        <div className="pt-2 text-[13px] font-semibold">Open in your editor</div>
         {[
           ["vscode", "Open in VS Code", "Clones and opens the repo"],
           ["cursor", "Open in Cursor", "Same, in Cursor"],
-          ["codespaces", "Run in GitHub Codespaces", d.devcontainer ? "Cloud dev environment (uses the repo's devcontainer)" : "Cloud dev environment, nothing to install"],
-          ["githubDev", "Browse in github.dev", "Quick read-only editor in the browser"],
+          ["githubDev", "Browse in github.dev", "Quick editor in the browser (no running)"],
         ].map(([k = "", label, hint]) => (
           <a key={k} href={d.links[k]} target={k === "vscode" || k === "cursor" ? undefined : "_blank"} rel="noreferrer" className="flex items-center gap-2.5 rounded-lg border border-line bg-bg px-3 py-2 hover:border-accent/50">
             <ExternalLink size={13} className="text-faint" />

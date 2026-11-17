@@ -25,6 +25,12 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 
 ## Urađeno
 
+- **17. 11. 2026. — Faza 16 (Claude Code iz aplikacije)**
+  - Povezivanje repoa GitHub linkom + **Set up automatically** (workflow `claude.yml` i secret `CLAUDE_CODE_OAUTH_TOKEN`, šifrovano libsodium-om); checklist šta fali.
+  - **Ask AI → Build with Claude**: prompt → GitHub issue `@claude` → Claude radi u Actions → PR; status, Claude-ovi komentari, odgovor Claude-u, **Preview** grane (StackBlitz), **Merge**.
+  - Potrošnja: sesije i minuti po osobi (mesec); Ask AI chat pokazuje pitanja i tokene. Svako svoj Claude Code token (Settings → Integrations), firma može zajednički.
+  - **Run locally**: StackBlitz/Codespaces/CodeSandbox u browseru, VS Code/Cursor, komande + „Open localhost“. Owner nalog iz env-a (`OWNER_EMAIL`/`OWNER_PASSWORD`), demo login, Sample project. Uputstvo: DELIVERY.md.
+
 - **17. 11. 2026. — Pipeline i izvori za Srbiju/region**
   - Pipeline: pretraga u svim fazama, filter tipa i ocene, „Show 25 more“, klik otvara lead u bočnom panelu.
   - Novi izvori: TED · Srbija i region, Svetska banka (RS/BA/ME/MK/XK), HelloWorld.rs i Startit poslovi (hiring), Netokracija, Forbes Srbija, Bizlife (investicije). Odbijeni izvori i razlozi u SOURCES.md.

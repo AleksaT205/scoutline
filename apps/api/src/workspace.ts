@@ -316,6 +316,9 @@ export function workspaceRoutes(getDb: () => Db, g: Guards) {
       cursor: `cursor://vscode.git/clone?url=${encodeURIComponent(clone)}`,
       codespaces: `https://codespaces.new/${r.full}`,
       githubDev: `https://github.dev/${r.full}`,
+      // Pokretanje u browseru (bez instalacije): StackBlitz radi Node i obične sajtove u samom browseru
+      stackblitz: `https://stackblitz.com/github/${r.full}`,
+      codesandbox: `https://codesandbox.io/p/github/${r.full}`,
       github: `https://github.com/${r.full}`,
     };
     const steps: Array<{ label: string; cmd: string }> = [{ label: "Clone", cmd: `git clone ${clone} && cd ${dir}` }];

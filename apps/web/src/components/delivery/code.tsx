@@ -4,6 +4,7 @@ import { teamFetch } from "../../lib/team";
 import { canEdit, useSessionUser } from "../../lib/session";
 import { fmtDate } from "../../lib/delivery";
 import { ErrorNote, field } from "./parts";
+import { ClaudeSetup, previewUrl } from "./agent";
 import { RunLocallyView, SkillsView } from "./workspace-ui";
 
 /** Faza 14 — tab „Code“: GitHub iz aplikacije (analitika, PR-ovi, grane, Actions, deploy). */
@@ -230,6 +231,9 @@ function PullsView({ projectId, repo }: { projectId: string; repo: string }) {
                 <span>
                   {p.author} · {p.branch} → {p.base} · {ago(p.createdAt)}
                 </span>
+                <a href={previewUrl(repo, p.branch)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 text-accent hover:underline" title="Run this branch in the browser (StackBlitz)">
+                  ▶ Preview
+                </a>
                 {p.draft && <span className="text-faint">draft</span>}
               </div>
               <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11.5px]">
@@ -572,7 +576,7 @@ export function CodeTab({ projectId, initialSection }: { projectId: string; init
               }
             }}
           >
-            <input className={`${inp} num h-[30px] w-44`} value={adding.repo} onChange={(e) => setAdding({ ...adding, repo: e.target.value })} placeholder="owner/repo" />
+            <input className={`${inp} num h-[30px] w-56`} value={adding.repo} onChange={(e) => setAdding({ ...adding, repo: e.target.value })} placeholder={list.length ? "owner/repo or GitHub link" : "Paste a GitHub link…"} aria-label="GitHub repo link or owner/repo" />
             <input className={`${inp} h-[30px] w-36`} value={adding.label} onChange={(e) => setAdding({ ...adding, label: e.target.value })} placeholder="Label (optional)" aria-label="Repo label, e.g. frontend" />
             <button disabled={!adding.repo.trim()} className={small}>
               <Plus size={12} /> {list.length ? "Add repo" : "Link repo"}
@@ -582,9 +586,10 @@ export function CodeTab({ projectId, initialSection }: { projectId: string; init
       </div>
       {err && <ErrorNote>{err}</ErrorNote>}
       {list.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-line px-6 py-12 text-center text-[13px] text-muted">Link a GitHub repo to see activity, pull requests, branches, Actions and deploys here.</div>
+        <div className="rounded-xl border border-dashed border-line px-6 py-12 text-center text-[13px] text-muted">Paste the GitHub link above — you'll get activity, pull requests, branches, Actions, run-in-browser and Claude, all from here.</div>
       ) : (
         <>
+          {repo && <ClaudeSetup key={repo} projectId={projectId} repo={repo} compact />}
           <div className="-mx-1 overflow-x-auto px-1">
             <div className="inline-flex rounded-lg border border-line bg-surface p-0.5">
               {(

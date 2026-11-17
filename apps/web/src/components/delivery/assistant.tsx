@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Check, Copy, FileCode2, Loader2, MessagesSquare, Send, Sparkles, Wand2 } from "lucide-react";
+import { useCached } from "../../lib/cache";
 import { teamFetch } from "../../lib/team";
 import { useProjects } from "../../lib/delivery";
 import { Dialog, ErrorNote, Menu, btnPrimary } from "./parts";
@@ -63,7 +64,7 @@ export function ModelPicker({ value, onChange }: { value: string; onChange: (v: 
   );
 }
 
-function Md({ text }: { text: string }) {
+export function Md({ text }: { text: string }) {
   // Jednostavan prikaz: naslovi, liste, `kod`, **bold** — bez spoljne biblioteke
   const html = text
     .replace(/&/g, "&amp;")
@@ -81,6 +82,33 @@ function Md({ text }: { text: string }) {
 const SUGGESTIONS = ["Where is the login handled and how does it work?", "Which issues are blocked or overdue?", "How is this project deployed?", "What should we work on next?"];
 
 /** Chat sa projektom: odgovori iz repoa i taskova, sa linkovima na fajlove. */
+/** Potrošnja Ask AI ovog meseca: moja pitanja i tokeni, i koliko je išlo na Claude ključ (plaća se) a koliko na besplatne modele. */
+function AskUsage({ refreshKey }: { refreshKey: number }) {
+  const u = useCached<{ usage: Array<{ provider: string; mine: number; mineN: number; total: number; n: number }> }>("/assistant/usage", { staleMs: 5_000 });
+  useEffect(() => {
+    if (refreshKey) void u.reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
+  const rows = u.data?.usage ?? [];
+  if (!rows.length) return null;
+  const sum = (k: "mine" | "mineN" | "total" | "n", p?: string) => rows.filter((r) => !p || r.provider === p).reduce((a, r) => a + (r[k] ?? 0), 0);
+  const k = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(n >= 10_000 ? 0 : 1)}k` : String(n));
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 border-b border-line bg-bg px-4 py-1.5 text-[11.5px] text-muted">
+      <span className="font-medium text-fg">This month</span>
+      <span>
+        You: <span className="num text-fg">{sum("mineN")}</span> questions · <span className="num text-fg">{k(sum("mine"))}</span> tokens
+      </span>
+      <span>
+        Team: <span className="num">{sum("n")}</span> · <span className="num">{k(sum("total"))}</span> tokens
+      </span>
+      <span title="Claude answers use an API key (billed per token). Free models cost nothing.">
+        Claude key: <span className="num text-fg">{k(sum("total", "anthropic"))}</span> tokens · free models: <span className="num">{k(sum("total", "free"))}</span>
+      </span>
+    </div>
+  );
+}
+
 export function AskPanel({ projectId, hasRepo }: { projectId?: string; hasRepo?: boolean }) {
   const [turns, setTurns] = useState<Turn[]>([]);
   const [q, setQ] = useState("");
@@ -136,6 +164,7 @@ export function AskPanel({ projectId, hasRepo }: { projectId?: string; hasRepo?:
           <ModelPicker value={model} onChange={setModel} />
         </span>
       </div>
+      <AskUsage refreshKey={turns.length} />
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4" style={{ maxHeight: 560 }}>
         {turns.length === 0 && (
           <div className="py-6 text-center">

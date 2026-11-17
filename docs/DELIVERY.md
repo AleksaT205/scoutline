@@ -91,3 +91,14 @@ Tip: u opisu taska napiši odeljak `Done when:` sa stavkama. To ide u brief kao 
 - **Preview po PR-u:** uključi Deploy Previews u Netlify-u ili Preview Deployments u Coolify-ju; link se pojavi na PR-u u Code → Pull requests.
 - **Figma u tasku:** u detalju taska nalepi link na frame (desni klik → Copy link).
   - Za sličicu treba Figma token (Settings → Integrations): Figma → Settings → Security → Personal access tokens, scope *File content: read*.
+
+
+## Claude Code iz aplikacije (Faza 16)
+Sve ide preko GitHub-a i Claude **pretplate** (bez API ključa):
+1. **Settings → Integrations → Your Claude Code token**: `claude setup-token` u terminalu → zalepi token. Svako ubacuje svoj (rad koji pokrene troši njegovu pretplatu); može i zajednički token firme.
+2. Projekat → **Code** → zalepi GitHub link → **Set up automatically**: Scoutline upiše `.github/workflows/claude.yml` (Claude sam otvara PR, bez co-author linija) i secret `CLAUDE_CODE_OAUTH_TOKEN`. Jednom instaliraj Claude GitHub app (najbolje „All repositories“).
+3. Projekat → **Ask AI → Build with Claude**: opiši zadatak → GitHub issue sa `@claude` → Claude radi u Actions → PR. U aplikaciji: status (radi / PR ready / merged), Claude-ovi komentari, odgovor Claude-u (ide na PR), **Preview** grane u browseru (StackBlitz), **Merge**.
+4. Potrošnja: sesije i minuti po osobi ovog meseca (pretplata nema cenu po pozivu; limiti su na claude.ai/settings/usage). Ask AI chat pokazuje pitanja i tokene (Claude ključ vs besplatni modeli).
+5. **Run locally**: StackBlitz (u browseru), Codespaces, VS Code/Cursor, komande + dugme „Open localhost“.
+
+GitHub token treba: Contents, Issues, Pull requests, Actions, Workflows, Secrets — Read and write. Sesije se ne čuvaju u bazi: to su GitHub issue-i sa oznakom `scoutline`.

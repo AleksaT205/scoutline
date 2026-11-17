@@ -21,6 +21,7 @@ interface Workspace {
   sam: { apiKey: SecretView; source: Source };
   anthropic: { apiKey: SecretView; source: Source };
   figma: { token: SecretView; source: Source };
+  claudeCode?: { token: SecretView; source: Source };
 }
 interface Mine {
   account: boolean;
@@ -28,6 +29,7 @@ interface Mine {
   agent?: "claude" | "codex";
   anthropic?: SecretView;
   figma?: SecretView;
+  claudeCode?: SecretView;
 }
 
 const input = "h-[34px] w-full rounded-lg border border-line bg-bg px-3 text-[13px] outline-none placeholder:text-faint focus:border-accent/60 disabled:opacity-60";
@@ -71,7 +73,7 @@ function IntegrationCard({
   source: Source;
   fields: Field[];
   canEdit: boolean;
-  section: "github" | "telegram" | "imap" | "sam" | "anthropic" | "figma";
+  section: "github" | "telegram" | "imap" | "sam" | "anthropic" | "figma" | "claudeCode";
   test?: "github" | "telegram" | "imap";
   help?: React.ReactNode;
   onSaved: () => void;
@@ -241,7 +243,7 @@ function MyIntegrations() {
         )}
       </form>
       <p className="mt-2 text-[12px] leading-relaxed text-faint">
-        GitHub → Settings → Developer settings → Fine-grained tokens → your repos → permissions <b className="text-muted">Issues: Read and write</b>, <b className="text-muted">Pull requests: Read</b>. Stored encrypted; nobody can see it after saving.
+        GitHub → Settings → Developer settings → Fine-grained tokens → your repos (or All repositories) → permissions: <b className="text-muted">Contents, Issues, Pull requests, Actions, Workflows, Secrets — Read and write</b>. Then “Set up automatically” on a project does the rest. Stored encrypted; nobody can see it after saving.
       </p>
       <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-line pt-4">
         <Bot size={15} className="text-accent" />
@@ -254,6 +256,17 @@ function MyIntegrations() {
           ))}
         </div>
         <span className="text-[12px] text-faint">Shown first on every issue. Uses your own subscription through GitHub.</span>
+      </div>
+      <div className="mt-4 border-t border-line pt-4">
+        <div className="flex flex-wrap items-center gap-2 text-[13px]">
+          <span className="font-medium">Your Claude Code token</span>
+          <span className="text-[12px] text-faint">for “Build with Claude” and “Assign to Claude” — work you start runs on your Claude Pro/Max subscription</span>
+          {me.claudeCode?.set && <span className="rounded-full bg-success-soft px-2 py-0.5 text-[11px] font-medium text-success ring-1 ring-inset ring-success/30">Saved {me.claudeCode.hint}</span>}
+        </div>
+        <ClaudeKeyForm saved={!!me.claudeCode?.set} busy={busy} placeholder="sk-ant-oat…" onSave={(k) => void put({ claudeCodeToken: k }, k ? "Claude Code token saved — use “Set up automatically” on a project's Code tab." : "Claude Code token removed.")} />
+        <p className="mt-1.5 text-[12px] text-faint">
+          In a terminal run <code className="num text-muted">claude setup-token</code>, sign in, and paste the token here. To switch accounts, paste a new one. Scoutline copies it into the repo (secret <code className="num">CLAUDE_CODE_OAUTH_TOKEN</code>) when you start a task.
+        </p>
       </div>
       <div className="mt-4 border-t border-line pt-4">
         <div className="flex flex-wrap items-center gap-2 text-[13px]">
@@ -402,6 +415,19 @@ export function IntegrationsSettings() {
                 fields={[{ key: "apiKey", label: "Anthropic API key", placeholder: "sk-ant-…", secret: w.anthropic.apiKey }]}
                 help="Without it, the Assistant uses the free models (Groq, Gemini, OpenRouter). console.anthropic.com → API keys."
               />
+              {w.claudeCode && (
+                <IntegrationCard
+                  icon={<Bot size={15} />}
+                  title="Claude Code for agents (workspace)"
+                  desc="Optional. A shared Claude Code token for people who haven't added their own — tasks then run on this subscription."
+                  source={w.claudeCode.source}
+                  canEdit={w.canEdit}
+                  section="claudeCode"
+                  onSaved={load}
+                  fields={[{ key: "token", label: "Claude Code token", placeholder: "sk-ant-oat…", secret: w.claudeCode.token }]}
+                  help="claude setup-token in a terminal → paste. Personal tokens (above) take priority."
+                />
+              )}
               <IntegrationCard
                 icon={<Plug size={15} />}
                 title="Figma (workspace)"

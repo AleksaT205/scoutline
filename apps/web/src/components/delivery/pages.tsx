@@ -9,7 +9,8 @@ import { flag } from "../ui";
 import { Avatar, Dialog, ErrorNote, Menu, PROJECT_STATUS_META, ProgressRing, btnPrimary, btnSecondary, field } from "./parts";
 import { IssueBoard, IssueDetail, IssueList, NewIssueDialog } from "./issues";
 import { PortalDialog } from "./more";
-import { AskPanel, StatusDialog } from "./assistant";
+import { StatusDialog } from "./assistant";
+import { ProjectAI } from "./agent";
 import { CodeTab } from "./code";
 
 function PageHead({ title, sub, children }: { title: React.ReactNode; sub?: React.ReactNode; children?: React.ReactNode }) {
@@ -602,7 +603,7 @@ export function ProjectPage({ id }: { id: string }) {
       {view === "code" ? (
         <CodeTab key={codeSection ?? "code"} projectId={id} initialSection={codeSection} />
       ) : view === "ask" ? (
-        <AskPanel projectId={id} hasRepo={!!p?.repoUrl} />
+        <ProjectAI projectId={id} hasRepo={!!p?.repoUrl} />
       ) : !issues.data ? (
         <div className="h-64 animate-pulse rounded-xl bg-surface-2" />
       ) : view === "board" ? (
