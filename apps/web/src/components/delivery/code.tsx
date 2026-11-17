@@ -8,7 +8,7 @@ import { ClaudeSetup, PreviewButton } from "./agent";
 import { TerminalView } from "./terminal";
 import { useHashParam } from "../../lib/hashParams";
 import { askConfirm } from "../../lib/confirm";
-import { btnSecondary, btnSm, segItem } from "../../lib/ui";
+import { btnSecondary, btnSm, segItem, Select } from "../../lib/ui";
 import { PrFiles } from "./pr-files";
 import { RunLocallyView, SkillsView } from "./workspace-ui";
 
@@ -679,14 +679,14 @@ export function CodeTab({ projectId, initialSection }: { projectId: string; init
         <div className="flex flex-wrap items-center gap-2 px-3 py-2.5">
           <GitBranch size={14} className="shrink-0 text-faint" />
           {list.length > 1 ? (
-            <select value={repo} onChange={(e) => setRepo(e.target.value)} className="h-[28px] min-w-0 max-w-full rounded-md border border-line bg-bg px-2 text-[12px]" aria-label="Repository">
+            <Select value={repo} onChange={(e) => setRepo(e.target.value)} className="h-[28px] min-w-0 max-w-full rounded-md border border-line bg-bg px-2 text-[12px]" aria-label="Repository">
               {list.map((r) => (
                 <option key={r.full} value={r.full}>
                   {r.full}
                   {r.label ? ` · ${r.label}` : ""}
                 </option>
               ))}
-            </select>
+            </Select>
           ) : (
             <span className={`min-w-0 truncate text-[13px] font-medium ${repo ? "num" : ""}`}>{repo || "No repo linked yet"}</span>
           )}

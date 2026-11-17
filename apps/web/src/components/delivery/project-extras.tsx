@@ -4,7 +4,7 @@ import { useCached } from "../../lib/cache";
 import { teamFetch } from "../../lib/team";
 import { askConfirm } from "../../lib/confirm";
 import { canEdit, useSessionUser } from "../../lib/session";
-import { Badge, Segmented, btnPrimary, btnSecondary, btnSm, field, input } from "../../lib/ui";
+import { Badge, Segmented, btnPrimary, btnSecondary, btnSm, field, input, Select } from "../../lib/ui";
 import { Md } from "./assistant";
 
 /** Projekat → Overview: dokumentacija, release notes, zdravlje sajta i fakture. */
@@ -398,7 +398,7 @@ export function InvoicesCard({ projectId }: { projectId: string }) {
               <span className="num font-medium">#{inv.number}</span>
               <span className="text-faint">{fmtDay(inv.issuedAt)}</span>
               <span className="num">{eur(inv.totalEur)}</span>
-              <select
+              <Select
                 value={inv.status}
                 onChange={async (e) => {
                   await teamFetch(`/delivery/invoices/${inv.id}`, { method: "PATCH", body: JSON.stringify({ status: e.target.value }) });
@@ -410,7 +410,7 @@ export function InvoicesCard({ projectId }: { projectId: string }) {
                 <option value="draft">Draft</option>
                 <option value="sent">Sent</option>
                 <option value="paid">Paid</option>
-              </select>
+              </Select>
               {inv.status !== "paid" && Date.parse(inv.dueAt) < Date.now() && inv.status === "sent" && <Badge tone="danger">Overdue</Badge>}
               <span className="ml-auto flex gap-1.5">
                 <button onClick={() => setPrintId(inv.id)} className={btnSm}>

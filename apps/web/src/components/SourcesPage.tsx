@@ -3,6 +3,7 @@ import { useCached } from "../lib/cache";
 import { AlertTriangle, CheckCircle2, ExternalLink, Loader2, Mail, Pause, Play, Plus, Rss } from "lucide-react";
 import { teamFetch } from "../lib/team";
 import { canEdit, useSessionUser } from "../lib/session";
+import { Select } from "../lib/ui";
 
 interface Source {
   id: string;
@@ -159,7 +160,7 @@ export function SourcesPage() {
               </div>
               {controllable(s) && canEdit(user) && (
                 <div className="mt-2.5 flex items-center gap-1.5">
-                  <select
+                  <Select
                     value={s.intervalMinutes}
                     onChange={(e) => void act(s.id, `/sources/${s.id}`, { method: "PATCH", body: JSON.stringify({ intervalMinutes: Number(e.target.value) }) }, { intervalMinutes: Number(e.target.value) })}
                     className="h-[34px] flex-1 rounded-md border border-line bg-bg px-2 text-[13px] outline-none"
@@ -170,7 +171,7 @@ export function SourcesPage() {
                         {every(m)}
                       </option>
                     ))}
-                  </select>
+                  </Select>
                   <button onClick={() => void act(s.id, `/sources/${s.id}`, { method: "PATCH", body: JSON.stringify({ enabled: !s.enabled }) }, { enabled: !s.enabled })} className={`grid size-[34px] place-items-center rounded-lg border border-line ${s.enabled ? "text-muted" : "bg-warning/10 text-warning"}`} aria-label={s.enabled ? "Pause" : "Resume"}>
                     {s.enabled ? <Pause size={13} /> : <Play size={13} />}
                   </button>
@@ -236,7 +237,7 @@ export function SourcesPage() {
                     <td className="hidden px-3 py-2.5 text-muted md:table-cell">
                       {controllable(s) && canEdit(user) ? (
                         <div className="flex items-center gap-1.5">
-                          <select
+                          <Select
                             value={s.intervalMinutes}
                             onChange={(e) => void act(s.id, `/sources/${s.id}`, { method: "PATCH", body: JSON.stringify({ intervalMinutes: Number(e.target.value) }) }, { intervalMinutes: Number(e.target.value) })}
                             className="h-[28px] cursor-pointer rounded-md border border-line bg-bg px-1.5 text-[12px] text-fg outline-none focus:border-accent/60"
@@ -247,7 +248,7 @@ export function SourcesPage() {
                                 {every(m)}
                               </option>
                             ))}
-                          </select>
+                          </Select>
                           <button
                             onClick={() => void act(s.id, `/sources/${s.id}`, { method: "PATCH", body: JSON.stringify({ enabled: !s.enabled }) }, { enabled: !s.enabled })}
                             className={`grid size-7 place-items-center rounded-md border border-line ${s.enabled ? "text-muted hover:text-fg" : "bg-warning/10 text-warning"}`}

@@ -7,6 +7,7 @@ import { cycleLabel, fmtDate, inboxChanged, patchIssue, useCycles, useIssues, ty
 import { Dialog, ErrorNote, ProgressRing, StatusIcon, btnPrimary, btnSecondary, field } from "./parts";
 import { askConfirm } from "../../lib/confirm";
 import { IssueDetail, IssueList } from "./issues";
+import { Select } from "../../lib/ui";
 
 const ago = (iso: string) => {
   const m = Math.round((Date.now() - Date.parse(iso)) / 60_000);
@@ -152,7 +153,7 @@ function CycleLength({ onChanged }: { onChanged: () => void }) {
   return (
     <label className="inline-flex items-center gap-2 text-[13px] text-muted" title="Applies to cycles that haven't started yet">
       Cycle length
-      <select
+      <Select
         disabled={!owner || busy}
         value={days}
         onChange={async (e) => {
@@ -173,7 +174,7 @@ function CycleLength({ onChanged }: { onChanged: () => void }) {
             {d / 7} week{d > 7 ? "s" : ""}
           </option>
         ))}
-      </select>
+      </Select>
     </label>
   );
 }

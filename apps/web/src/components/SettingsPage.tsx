@@ -6,7 +6,7 @@ import { IntegrationsSettings } from "./IntegrationsSettings";
 import { useHashParam } from "../lib/hashParams";
 import { askConfirm } from "../lib/confirm";
 import { OrganizationSettings } from "./OrganizationSettings";
-import { input } from "../lib/ui";
+import { input, Select } from "../lib/ui";
 import { SystemSettings } from "./SystemSettings";
 import { SetupSettings } from "./SetupSettings";
 
@@ -136,13 +136,13 @@ function Team() {
               </div>
               {isOwner && u.id !== me?.id ? (
                 <div className="flex w-full items-center gap-2 sm:w-auto">
-                  <select value={u.role} onChange={(e) => act(() => teamFetch(`/team/users/${u.id}`, { method: "PATCH", body: JSON.stringify({ role: e.target.value }) }))} className="h-[34px] w-[96px] shrink-0 rounded-lg border border-line bg-bg px-2 text-[12px] sm:h-[28px] sm:w-auto">
+                  <Select value={u.role} onChange={(e) => act(() => teamFetch(`/team/users/${u.id}`, { method: "PATCH", body: JSON.stringify({ role: e.target.value }) }))} className="h-[34px] w-[96px] shrink-0 rounded-lg border border-line bg-bg px-2 text-[12px] sm:h-[28px] sm:w-auto">
                     <option value="owner">Owner</option>
                     <option value="member">Member</option>
                     <option value="viewer">Viewer</option>
-                  </select>
+                  </Select>
                   {u.role !== "owner" && (
-                    <select
+                    <Select
                       value={(u as { access?: string }).access ?? "all"}
                       onChange={(e) => act(() => teamFetch(`/team/users/${u.id}`, { method: "PATCH", body: JSON.stringify({ access: e.target.value }) }))}
                       className="h-[34px] min-w-0 flex-1 rounded-lg border border-line bg-bg px-2 text-[12px] sm:h-[28px] sm:flex-none"
@@ -152,7 +152,7 @@ function Team() {
                       <option value="all">Sales + Delivery</option>
                       <option value="sales">Sales only</option>
                       <option value="delivery">Delivery only</option>
-                    </select>
+                    </Select>
                   )}
                   <button onClick={async () => (await askConfirm(`Remove ${u.name} from the team?`)) && act(() => teamFetch(`/team/users/${u.id}`, { method: "DELETE" }))} className="grid size-[34px] shrink-0 place-items-center rounded-lg text-faint hover:bg-surface-2 hover:text-danger sm:size-[28px]" aria-label={`Remove ${u.name}`}>
                     <Trash2 size={14} />
@@ -204,11 +204,11 @@ function Team() {
         <Card title="Invite a teammate" sub="Creates a one-time link valid for 7 days. Send it on Slack, email or Telegram.">
           <div className="flex flex-wrap gap-2">
             <input className={`${field} max-w-xs flex-1`} type="email" placeholder="Email (optional)" value={email} onChange={(e) => setEmail(e.target.value)} />
-            <select value={role} onChange={(e) => setRole(e.target.value)} className="h-[34px] rounded-lg border border-line bg-bg px-2 text-[13px]" title={ROLE_HINT[role]}>
+            <Select value={role} onChange={(e) => setRole(e.target.value)} className="h-[34px] rounded-lg border border-line bg-bg px-2 text-[13px]" title={ROLE_HINT[role]}>
               <option value="member">Member — {ROLE_HINT.member}</option>
               <option value="viewer">Viewer — {ROLE_HINT.viewer}</option>
               <option value="owner">Owner — {ROLE_HINT.owner}</option>
-            </select>
+            </Select>
             <button
               onClick={() =>
                 act(async () => {
@@ -264,11 +264,11 @@ function Shares() {
           Min score
           <input className="h-[34px] w-16 rounded-lg border border-line bg-bg px-2 text-[13px]" type="number" min={0} max={100} value={minScore} onChange={(e) => setMinScore(e.target.value)} />
         </label>
-        <select value={days} onChange={(e) => setDays(e.target.value)} className="h-[34px] rounded-lg border border-line bg-bg px-2 text-[13px]">
+        <Select value={days} onChange={(e) => setDays(e.target.value)} className="h-[34px] rounded-lg border border-line bg-bg px-2 text-[13px]">
           <option value="7">Expires in 7 days</option>
           <option value="30">Expires in 30 days</option>
           <option value="0">Never expires</option>
-        </select>
+        </Select>
         <button
           onClick={async () => {
             setMsg(null);

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { ExternalLink, Loader2, Play, Terminal as TerminalIcon, Trash2 } from "lucide-react";
 import { teamFetch } from "../../lib/team";
 import { canEdit, useSessionUser } from "../../lib/session";
+import { Select } from "../../lib/ui";
 
 /**
  * Terminal u Scoutline-u: komanda se izvršava u GitHub Actions (čista Linux mašina sa repoom i Node 20).
@@ -151,14 +152,14 @@ export function TerminalView({ projectId, repo }: { projectId: string; repo: str
           }}
         >
           <div className="flex flex-wrap gap-2">
-            <select value={ref} onChange={(e) => setRef(e.target.value)} className="h-[34px] max-w-[200px] rounded-lg border border-line bg-bg px-2 font-mono text-[13px]" aria-label="Branch">
+            <Select value={ref} onChange={(e) => setRef(e.target.value)} className="h-[34px] max-w-[200px] rounded-lg border border-line bg-bg px-2 font-mono text-[13px]" aria-label="Branch">
               <option value="">{branches[0] ? `${branches[0]} (default)` : "default branch"}</option>
               {branches.slice(1).map((b) => (
                 <option key={b} value={b}>
                   {b}
                 </option>
               ))}
-            </select>
+            </Select>
             <label className="flex h-[34px] min-w-[220px] flex-1 items-center gap-2 rounded-lg border border-line bg-bg px-3 font-mono focus-within:border-accent/60">
               <span className="text-faint">$</span>
               <input

@@ -15,6 +15,7 @@ import { useHashParam, useOptionalHashParam } from "../../lib/hashParams";
 import { askConfirm } from "../../lib/confirm";
 import { DocsCard, InvoicesCard, ReleaseNotesCard, SiteHealthCard } from "./project-extras";
 import { CodeTab } from "./code";
+import { Select } from "../../lib/ui";
 
 function PageHead({ title, sub, children }: { title: React.ReactNode; sub?: React.ReactNode; children?: React.ReactNode }) {
   return (
@@ -124,7 +125,7 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
           </label>
           <label>
             <span className={label}>Client</span>
-            <select className={`${field} h-[34px]`} value={f.customerId} onChange={set("customerId")}>
+            <Select className={`${field} h-[34px]`} value={f.customerId} onChange={set("customerId")}>
               <option value="">No client</option>
               {(customers.data ?? []).map((c) => (
                 <option key={c.id} value={c.id}>
@@ -132,7 +133,7 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
                 </option>
               ))}
               <option value="__new">+ New client…</option>
-            </select>
+            </Select>
           </label>
           {f.customerId === "__new" ? (
             <label>
@@ -142,21 +143,21 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
           ) : (
             <label>
               <span className={label}>Status</span>
-              <select className={`${field} h-[34px]`} value={f.status} onChange={set("status")}>
+              <Select className={`${field} h-[34px]`} value={f.status} onChange={set("status")}>
                 {PROJECT_STATUSES.map((s) => (
                   <option key={s} value={s}>
                     {PROJECT_STATUS_META[s].label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
           )}
           <label>
             <span className={label}>Billing</span>
-            <select className={`${field} h-[34px]`} value={f.billing} onChange={set("billing")}>
+            <Select className={`${field} h-[34px]`} value={f.billing} onChange={set("billing")}>
               <option value="fixed">Fixed price (budget)</option>
               <option value="hourly">Hourly (time × rate)</option>
-            </select>
+            </Select>
           </label>
           {f.billing === "hourly" ? (
             <label>
@@ -175,14 +176,14 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
           </label>
           <label>
             <span className={label}>Project lead</span>
-            <select className={`${field} h-[34px]`} value={f.ownerId} onChange={set("ownerId")}>
+            <Select className={`${field} h-[34px]`} value={f.ownerId} onChange={set("ownerId")}>
               <option value="">Nobody yet</option>
               {members.map((m) => (
                 <option key={m.id} value={m.id}>
                   {m.name}
                 </option>
               ))}
-            </select>
+            </Select>
           </label>
           <label>
             <span className={label}>GitHub repo (optional)</span>
@@ -195,7 +196,7 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
           {aiClients.length > 0 && (
             <label className="sm:col-span-2">
               <span className={label}>AI Router key (its AI cost and savings count toward this project)</span>
-              <select className={`${field} h-[34px]`} value={f.aiClientId} onChange={set("aiClientId")}>
+              <Select className={`${field} h-[34px]`} value={f.aiClientId} onChange={set("aiClientId")}>
                 <option value="">None</option>
                 {aiClients.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -203,7 +204,7 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
                     {c.projectId && c.projectId !== project?.id ? " (linked to another project)" : ""}
                   </option>
                 ))}
-              </select>
+              </Select>
             </label>
           )}
           {f.repoUrl.trim() && (

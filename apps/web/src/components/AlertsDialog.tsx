@@ -3,6 +3,7 @@ import { BellRing, Check, Loader2, Lock, Send, X } from "lucide-react";
 import { LEAD_TYPES, SERVICE_CATEGORIES, type AlertSettings } from "@radar/shared";
 import { getTeamToken, setTeamToken, teamFetch } from "../lib/team";
 import { CATEGORY_LABEL, TYPE_META } from "./ui";
+import { Select } from "../lib/ui";
 
 const MARKETS: Array<{ key: AlertSettings["markets"][number]; label: string }> = [
   { key: "T1", label: "Tier 1" },
@@ -162,7 +163,7 @@ export function AlertsDialog({ open, onClose }: { open: boolean; onClose: () => 
                 <Toggle on={alerts.remoteOnly} onChange={(remoteOnly) => set({ remoteOnly })} label="Only remote-friendly" />
                 <label className="inline-flex items-center gap-2 text-[13px] text-muted">
                   Posted within
-                  <select
+                  <Select
                     value={alerts.maxAgeHours}
                     onChange={(e) => set({ maxAgeHours: Number(e.target.value) })}
                     className="h-[28px] rounded-lg border border-line bg-bg px-2 text-[13px] text-fg outline-none"
@@ -171,7 +172,7 @@ export function AlertsDialog({ open, onClose }: { open: boolean; onClose: () => 
                     <option value={24}>24 hours</option>
                     <option value={48}>48 hours</option>
                     <option value={168}>7 days</option>
-                  </select>
+                  </Select>
                 </label>
               </div>
             </div>

@@ -3,6 +3,7 @@ import { ListPlus, Loader2 } from "lucide-react";
 import { load } from "../../lib/cache";
 import { teamFetch } from "../../lib/team";
 import { Dialog, ErrorNote, btnPrimary, btnSecondary } from "./parts";
+import { Select } from "../../lib/ui";
 
 /**
  * Taskovi iz chata: iz Claude-ovog odgovora izvuče stavke liste (1. … / - … / - [ ] …),
@@ -97,10 +98,10 @@ function CreateTasksDialog({ projectId, text, onClose }: { projectId: string; te
       </div>
       <div className="flex flex-wrap items-center justify-end gap-2 border-t border-line px-4 py-3">
         {done === null && (
-          <select value={status} onChange={(e) => setStatus(e.target.value as "todo" | "backlog")} className="mr-auto h-[34px] rounded-md border border-line bg-surface px-2 text-[13px]" aria-label="Column">
+          <Select value={status} onChange={(e) => setStatus(e.target.value as "todo" | "backlog")} className="mr-auto h-[34px] rounded-md border border-line bg-surface px-2 text-[13px]" aria-label="Column">
             <option value="todo">Add to Todo</option>
             <option value="backlog">Add to Backlog</option>
-          </select>
+          </Select>
         )}
         <button type="button" onClick={onClose} className={btnSecondary}>
           {done !== null ? "Close" : "Cancel"}

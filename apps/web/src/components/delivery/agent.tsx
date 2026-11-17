@@ -11,6 +11,7 @@ import { askConfirm } from "../../lib/confirm";
 import { VoiceButton } from "../../lib/voice";
 import { PrFiles } from "./pr-files";
 import { AskPanel, Md } from "./assistant";
+import { Select } from "../../lib/ui";
 
 /**
  * Faza 16 — Claude Code iz aplikacije: „Build with Claude“ (prompt → Claude radi u repou → PR),
@@ -208,7 +209,7 @@ const savedModel = () => {
 };
 function ModelSelect({ value, onChange, className = "" }: { value: string; onChange: (v: string) => void; className?: string }) {
   return (
-    <select
+    <Select
       value={value}
       onChange={(e) => {
         onChange(e.target.value);
@@ -227,7 +228,7 @@ function ModelSelect({ value, onChange, className = "" }: { value: string; onCha
           {l}
         </option>
       ))}
-    </select>
+    </Select>
   );
 }
 const EFFORT_OPTIONS = [
@@ -247,7 +248,7 @@ const savedEffort = () => {
 /** Koliko Claude razmišlja pre rada. Auto: pitanje → Low, rad → Medium, redizajn/refaktor → High. */
 function EffortSelect({ value, onChange, className = "" }: { value: string; onChange: (v: string) => void; className?: string }) {
   return (
-    <select
+    <Select
       value={value}
       onChange={(e) => {
         onChange(e.target.value);
@@ -266,7 +267,7 @@ function EffortSelect({ value, onChange, className = "" }: { value: string; onCh
           {l}
         </option>
       ))}
-    </select>
+    </Select>
   );
 }
 /** Dugme samo sa ikonicom, iste visine kao polja (34px). */
@@ -553,14 +554,14 @@ function BuildPanel({ projectId }: { projectId: string }) {
         {(repos.data?.repos.length ?? 0) > 1 && (
           <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2.5">
             <span className="text-[13px] text-muted">Repository</span>
-            <select value={repo} onChange={(e) => (setRepo(e.target.value), setSel(null))} className="ml-auto h-[28px] rounded-md border border-line bg-bg px-2 text-[12px]" aria-label="Repository">
+            <Select value={repo} onChange={(e) => (setRepo(e.target.value), setSel(null))} className="ml-auto h-[28px] rounded-md border border-line bg-bg px-2 text-[12px]" aria-label="Repository">
               {repos.data!.repos.map((r) => (
                 <option key={r.full} value={r.full}>
                   {r.full}
                   {r.label ? ` · ${r.label}` : ""}
                 </option>
               ))}
-            </select>
+            </Select>
           </div>
         )}
         {summary && <UsageBar s={summary} />}
