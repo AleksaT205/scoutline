@@ -8,5 +8,8 @@ export default defineConfig({
   platform: "node",
   clean: true,
   noExternal: [/.*/],
-  banner: { js: "import { createRequire } from 'module'; const require = createRequire(import.meta.url);" },
+  // require/__dirname/__filename ne postoje u ESM-u — neki paketi (npr. libsodium) ih koriste
+  banner: {
+    js: "import { createRequire as __cr } from 'module'; import { fileURLToPath as __fu } from 'url'; import { dirname as __dn } from 'path'; const require = __cr(import.meta.url); const __filename = __fu(import.meta.url); const __dirname = __dn(__filename);",
+  },
 });
