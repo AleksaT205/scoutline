@@ -171,6 +171,8 @@ const tidy = (md: string) =>
   md
     .replace(/^\*\*Claude (finished|is working)[^*]*\*\*[^\n]*\n?/i, "")
     .replace(/<details><summary>Project context from Scoutline<\/summary>[\s\S]*?<\/details>/, "")
+    .replace(/^\s*[·•]\s*branch\s+`?[\w./-]+`?\s*$/gim, "")
+    .replace(/\s*•?\s*\[Create PR ➔\]\([^)]*\)/g, "")
     .replace(/^(\s*)[-*] \[x\]\s*/gim, "$1✓ ")
     .replace(/^(\s*)[-*] \[ \]\s*/gm, "$1○ ")
     .replace(/\n{3,}/g, "\n\n");
@@ -655,6 +657,7 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
   const att = useImageAttachments(projectId);
   const [model, setModel] = useState<string | null>(null); // null = isti kao do sad
   const [effort, setEffort] = useState(savedEffort);
+  const [onPr, setOnPr] = useState(false); // podrazumevano: razgovor ostaje u Scoutline-u, PR je čist
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const end = useRef<HTMLDivElement>(null);
@@ -669,7 +672,8 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
     setBusy("reply");
     setMsg(null);
     try {
-      const r = await teamFetch<{ note?: string | null }>(`/delivery/projects/${projectId}/agent/runs/${run.number}/reply?${repoQ(repo)}`, { method: "POST", body: JSON.stringify({ text: reply, pr: pr?.state === "open" ? pr.number : undefined, ...(model !== null ? { model } : {}), effort: effort || undefined, images: att.ids }) });
+      const open = pr?.state === "open";
+      const r = await teamFetch<{ note?: string | null }>(`/delivery/projects/${projectId}/agent/runs/${run.number}/reply?${repoQ(repo)}`, { method: "POST", body: JSON.stringify({ text: reply, pr: open ? pr.number : undefined, branch: open ? pr.branch : undefined, onPr: open && onPr, ...(model !== null ? { model } : {}), effort: effort || undefined, images: att.ids }) });
       setReply("");
       att.clear();
       setMsg({ ok: true, text: r.note ?? "Sent — Claude picks it up in a minute." });
@@ -775,6 +779,7 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
                 const clean = c.body
                   .replace(/^@claude\s*/, "")
                   .replace(/\n*<sub>From Scoutline by [^<]+<\/sub>\s*$/, "")
+                  .replace(/\n*<sub>Code changes go to PR #[\s\S]*?<\/sub>/, "")
                   .replace(/\n*<sub>Images: download[\s\S]*?<\/sub>/, "")
                   .replace(/\n*\((think|think hard|ultrathink)\)/, "");
                 const parts = splitImages(clean);
@@ -814,6 +819,12 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
           <AttachButton onFiles={att.add} />
           <ModelSelect value={model ?? t.data?.issue.model ?? ""} onChange={setModel} />
           <EffortSelect value={effort} onChange={setEffort} />
+          {pr?.state === "open" && (
+            <label className="inline-flex h-[32px] items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 text-[12px] text-muted" title="Off: the message stays in this conversation and the PR only has the code. On: it's posted as a comment on the pull request.">
+              <input type="checkbox" checked={onPr} onChange={(e) => setOnPr(e.target.checked)} className="accent-[var(--accent)]" />
+              Post on PR
+            </label>
+          )}
           <button disabled={busy === "reply" || (!reply.trim() && !att.ids.length) || att.uploading} className={btnPrimary} aria-label="Send to Claude">
             {busy === "reply" ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
           </button>

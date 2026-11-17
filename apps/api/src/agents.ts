@@ -28,7 +28,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const LABEL = "scoutline";
 const SECRET = "CLAUDE_CODE_OAUTH_TOKEN";
 const WORKFLOW_PATH = ".github/workflows/claude.yml";
-const MARKER = "# scoutline:claude-v6";
+const MARKER = "# scoutline:claude-v7";
 const MODELS = ["sonnet", "opus", "haiku"] as const;
 const EFFORTS = ["low", "medium", "high", "max"] as const;
 type Effort = (typeof EFFORTS)[number];
@@ -49,7 +49,7 @@ type Model = (typeof MODELS)[number];
 export const APP_INSTALL_URL = "https://github.com/apps/claude/installations/new";
 
 /**
- * Workflow koji Scoutline upisuje u repo. Claude sam otvara PR (gh pr create).
+ * Workflow koji Scoutline upisuje u repo. Claude samo commit-uje i push-uje; granu imenuje i PR otvara Scoutline (autor = korisnik).
  * Nigde u git-u nema „Claude“: autor commit-a je vlasnik (bot_name/bot_id), grane su feature/…, bez co-author linija.
  */
 export const claudeWorkflow = (author?: { login: string; id: number } | null) => `${MARKER}
@@ -99,7 +99,7 @@ ${author ? `          bot_name: "${author.login}"\n          bot_id: "${author.i
           claude_args: |
             --max-turns 40
             \${{ (contains(toJSON(github.event.issue.labels), '"model:opus"') || contains(toJSON(github.event.pull_request.labels), '"model:opus"')) && '--model opus' || ((contains(toJSON(github.event.issue.labels), '"model:haiku"') || contains(toJSON(github.event.pull_request.labels), '"model:haiku"')) && '--model haiku' || ((contains(toJSON(github.event.issue.labels), '"model:sonnet"') || contains(toJSON(github.event.pull_request.labels), '"model:sonnet"')) && '--model sonnet' || '')) }}
-            --allowedTools "Bash(npm *),Bash(npx *),Bash(pnpm *),Bash(git *),Bash(gh pr create:*),Bash(gh pr view:*),Bash(curl *),Read"
+            --allowedTools "Bash(npm *),Bash(npx *),Bash(pnpm *),Bash(git *),Bash(gh pr view:*),Bash(curl *),Read"
       # Potrošnja za Scoutline (tokeni, koraci, trajanje, cena na API-ju) — samo brojevi, bez sadržaja
       - name: Scoutline usage
         if: always()
@@ -444,6 +444,61 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     if (runs[0]?.conclusion === "failure") return "failed";
     return runs.length ? "replied" : "queued";
   };
+  /**
+   * Claude (GitHub akcija) sam imenuje granu („feature/issue-9-20261117-1415“) i ne otvara PR uvek.
+   * Kad sesija završi: grana se preimenuje po standardu (feature/pzs-1-align-header-logo), a PR otvara
+   * Scoutline korisnikovim tokenom — autor PR-a je korisnik, ne bot. Otvoren PR GitHub sam prebaci na novo ime.
+   */
+  const uglyBranch = (n: number, ref: string) => new RegExp(`(^|/)issue-${n}-\\d{8}-\\d{4}$`).test(ref);
+  const finished = new Map<string, string>(); // repo#n → oznaka poslednje obrađene sesije (da se ne proverava stalno)
+  const finishRun = async (tok: string, full: string, projectKey: string, issue: GhIssue, pr: GhPull | null, stamp: string): Promise<GhPull | null> => {
+    const n = issue.number;
+    const k = `${full}#${n}`;
+    if (finished.get(k) === stamp) return null;
+    finished.set(k, stamp);
+    if (pr && (pr.state !== "open" || !uglyBranch(n, pr.head.ref))) return null;
+    try {
+      const enc = (b: string) => b.split("/").map(encodeURIComponent).join("/");
+      const repo = await gh<{ default_branch: string }>(tok, `/repos/${full}`);
+      let from = pr?.head.ref ?? null;
+      let commits: Array<{ commit: { message: string } }> = [];
+      if (!from) {
+        const refs = (
+          await Promise.all(["feature", "claude", "fix"].map((pre) => gh<Array<{ ref: string }>>(tok, `/repos/${full}/git/matching-refs/heads/${pre}/issue-${n}-`).catch(() => [] as Array<{ ref: string }>)))
+        )
+          .flat()
+          .map((x) => x.ref.replace(/^refs\/heads\//, ""))
+          .filter((b) => uglyBranch(n, b))
+          .sort()
+          .reverse();
+        for (const b of refs) {
+          const cmp = await gh<{ ahead_by: number; commits: Array<{ commit: { message: string } }> }>(tok, `/repos/${full}/compare/${enc(repo.default_branch)}...${enc(b)}`).catch(() => null);
+          if (cmp && cmp.ahead_by > 0) {
+            from = b;
+            commits = cmp.commits;
+            break;
+          }
+        }
+        if (!from) return null; // samo pitanje — nema izmena
+      }
+      // Ključ taska (npr. PZS-1) ako je sesija pokrenuta iz taska
+      const head = (issue.body ?? "").split("\n---\n")[0] ?? "";
+      const num = new RegExp(`\\b${projectKey}-(\\d+)\\b`, "i").exec(head)?.[1];
+      const firstCommit = commits[0]?.commit.message.split("\n")[0]?.trim();
+      const title = pr?.title ?? firstCommit ?? issue.title;
+      let name = branchName({ key: num ? projectKey : null, number: num ? Number(num) : null, title: title.replace(/^\[[^\]]+\]\s*/, "") });
+      if ((await ghFetch(tok, `/repos/${full}/branches/${enc(name)}`)).ok) name = `${name}-${n}`;
+      await gh(tok, `/repos/${full}/branches/${enc(from)}/rename`, { method: "POST", body: JSON.stringify({ new_name: name }) });
+      if (pr) return { ...pr, head: { ref: name } };
+      const prTitle = num ? `[${projectKey.toUpperCase()}-${num}] ${title}` : title;
+      const list = commits.map((x) => `- ${x.commit.message.split("\n")[0]}`).slice(0, 15).join("\n");
+      const body = `${list ? `${list}\n\n` : ""}Closes #${n}`;
+      return await gh<GhPull>(tok, `/repos/${full}/pulls`, { method: "POST", body: JSON.stringify({ title: prTitle.slice(0, 120), head: name, base: repo.default_branch, body }) });
+    } catch (e) {
+      console.warn(`[agent] finish #${n} in ${full}: ${(e as Error).message}`);
+      return null;
+    }
+  };
   const pullView = (p: GhPull | null) => (p ? { number: p.number, url: p.html_url, title: p.title, state: p.merged_at ? "merged" : p.state, branch: p.head.ref } : null);
 
   app.get("/projects/:id/agent/runs", g.readGuard, async (c) => {
@@ -463,8 +518,13 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
         issues
           .filter((i) => !i.pull_request)
           .map(async (i) => {
-            const pr = matchPull(pulls, i.number);
+            let pr = matchPull(pulls, i.number);
             const mine = wf.workflow_runs.filter((w) => (w.display_title === i.title || (pr && w.display_title === pr.title)) && w.conclusion !== "skipped");
+            const busy = mine.some((w) => w.status === "in_progress" || w.status === "queued" || w.status === "waiting");
+            if (!busy && mine[0] && i.state === "open" && Date.now() - Date.parse(mine[0].updated_at) < 14 * 86_400_000) {
+              const done = await finishRun(tok, r.full, r.p.key, i, pr, `${mine[0].id}:${mine[0].updated_at}`);
+              if (done) pr = done;
+            }
             const model = ((i as GhIssue & { labels?: Array<{ name: string }> }).labels ?? []).find((l) => l.name.startsWith("model:"))?.name.slice(6) ?? "default";
             const usage = { in: 0, out: 0, cost: 0, turns: 0, known: 0 };
             const sessionList: Array<{ id: number; at: string; minutes: number; status: string; conclusion: string | null; url: string; tokens: number | null; cost: number | null; turns: number | null }> = [];
@@ -598,7 +658,7 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
       `@claude ${withEffort(prompt, effort)}${images}`,
       "",
       "---",
-      "When you're done: commit to a new branch and open a pull request with `gh pr create` (short English title, summary of the changes, and `Closes #<this issue>`). Keep changes focused. If this is only a question, answer in a comment and don't change files.",
+      "When you're done: commit (short English commit message that says what changed) and push your branch. Don't open a pull request and don't rename the branch — Scoutline names the branch and opens the PR. Keep changes focused. If this is only a question, answer in a comment and don't change files.",
       "Git hygiene: never mention Claude, AI, assistants or co-authors anywhere in git — not in commit messages, branch names, PR titles or PR descriptions — and no “Generated with …” footers. Write them as the developer would.",
       "",
       await projectContext(r.p),
@@ -619,17 +679,21 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     if (!r || !Number.isInteger(n)) return c.json({ error: "Not found." }, 404);
     const tok = await ghToken(c);
     if (!tok) return c.json({ error: "No GitHub token yet." }, 400);
-    const b = (await c.req.json().catch(() => ({}))) as { text?: string; pr?: number; model?: string; effort?: string; images?: unknown };
+    const b = (await c.req.json().catch(() => ({}))) as { text?: string; pr?: number; onPr?: boolean; branch?: string; model?: string; effort?: string; images?: unknown };
     const text = ((b.text ?? "").trim() || (Array.isArray(b.images) && b.images.length ? "See the attached image(s)." : "")).slice(0, 8000);
     if (!text) return c.json({ error: "Write a message for Claude." }, 400);
     const blocked = await useMyClaude(c, tok, r.full);
     if (blocked) return c.json({ error: blocked }, 400);
     const note = null;
-    // Ako postoji PR, odgovor ide tamo (Claude onda menja isti PR), inače na issue
-    const target = Number.isInteger(b.pr) && b.pr! > 0 ? b.pr! : n;
+    // Razgovor ostaje u tasku (issue) — PR sadrži samo opis i kod. Na PR samo ako je korisnik to izabrao.
+    const hasPr = Number.isInteger(b.pr) && b.pr! > 0;
+    const target = hasPr && b.onPr ? b.pr! : n;
+    const branch = typeof b.branch === "string" && /^[\w./-]{1,200}$/.test(b.branch) ? b.branch : null;
+    // Ako PR postoji a pišemo u task: Claude menja istu granu (bez nove grane i novog PR-a)
+    const where = hasPr && !b.onPr && branch ? `\n\n<sub>Code changes go to PR #${b.pr} — check out \`${branch}\`, commit and push there; no new branch or PR.</sub>` : "";
     try {
       if (b.model !== undefined) await setModel(tok, r.full, target, MODELS.includes(b.model as Model) ? (b.model as Model) : autoModel(pickEffort(b.effort, text)));
-      await gh(tok, `/repos/${r.full}/issues/${target}/comments`, { method: "POST", body: JSON.stringify({ body: `@claude ${withEffort(text, pickEffort(b.effort, text))}${await imageBlock(c, r.p.id, b.images)}\n\n<sub>From Scoutline by ${actor(c).name}</sub>` }) });
+      await gh(tok, `/repos/${r.full}/issues/${target}/comments`, { method: "POST", body: JSON.stringify({ body: `@claude ${withEffort(text, pickEffort(b.effort, text))}${await imageBlock(c, r.p.id, b.images)}${where}\n\n<sub>From Scoutline by ${actor(c).name}</sub>` }) });
       return c.json({ ok: true, note });
     } catch (e) {
       return c.json({ error: (e as Error).message }, 502);
