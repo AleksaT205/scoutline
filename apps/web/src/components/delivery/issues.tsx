@@ -494,6 +494,13 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
     setAgentBusy(agent);
     setError(null);
     try {
+      if (agent === "claude") {
+        // Claude: razgovor u Scoutline-u (bez GitHub issue-a) → otvori ga na projektu
+        const r = await teamFetch<{ id: string; projectId: string; repo: string }>(`/delivery/issues/${issue.id}/claude`, { method: "POST", body: "{}" });
+        onChanged({ ...issue, agent, status: ["done", "canceled", "in_review", "in_progress"].includes(issue.status) ? issue.status : "in_progress", updatedAt: new Date().toISOString() });
+        window.location.hash = `#/delivery/projects/${r.projectId}?view=ask&ai=build&run=${r.id}`;
+        return;
+      }
       await teamFetch(`/delivery/issues/${issue.id}/agent`, { method: "POST", body: JSON.stringify({ agent }) });
       onChanged({ ...issue, agent, status: issue.status === "done" || issue.status === "canceled" ? issue.status : "in_progress", updatedAt: new Date().toISOString() });
     } catch (e) {
@@ -667,7 +674,7 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
                     <button
                       key={a}
                       disabled={!!agentBusy || !repoUrl}
-                      title={repoUrl ? `Opens a GitHub issue in the project repo with a short brief and @${a}` : "Add the project's GitHub repo first (Edit project)"}
+                      title={!repoUrl ? "Add the project's GitHub repo first (Edit project)" : a === "claude" ? "Starts Build with Claude for this task — the conversation stays in Scoutline, the PR is opened under your name" : "Opens a GitHub issue in the project repo with a short brief and @codex"}
                       onClick={() => void handToAgent(a)}
                       className={`inline-flex h-[28px] items-center gap-1.5 rounded-md px-2.5 text-[12px] font-medium disabled:opacity-40 ${a === firstAgent ? "bg-fg text-bg hover:opacity-90" : "border border-line bg-surface hover:bg-surface-2"}`}
                     >

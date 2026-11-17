@@ -397,3 +397,51 @@ export const attachments = pgTable(
   },
   (t) => [index("attachments_project_idx").on(t.projectId)],
 );
+
+/**
+ * Rad AI agenta u repou (Build with Claude). Razgovor se čuva ovde — na GitHub-u nema issue-a ni bot komentara.
+ * Jedan red = jedan razgovor; svaka poruka korisnika pokreće workflow „Scoutline agent“ (dispatchId u run-name).
+ */
+export const agentRuns = pgTable(
+  "agent_runs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id")
+      .references(() => projects.id, { onDelete: "cascade" })
+      .notNull(),
+    repo: text("repo").notNull(),
+    title: text("title").notNull(),
+    status: text("status").notNull().default("queued"), // queued | working | done | failed
+    model: text("model"),
+    branch: text("branch").notNull(),
+    base: text("base"),
+    prNumber: integer("pr_number"),
+    prUrl: text("pr_url"),
+    dispatchId: text("dispatch_id"), // trenutno pokretanje (run-name „agent <id>“)
+    ghRunId: text("gh_run_id"),
+    ghRunUrl: text("gh_run_url"),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    createdById: uuid("created_by_id").references(() => users.id, { onDelete: "set null" }),
+    createdBy: text("created_by"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("agent_runs_project_idx").on(t.projectId, t.createdAt), index("agent_runs_status_idx").on(t.status)],
+);
+
+export const agentMessages = pgTable(
+  "agent_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    runId: uuid("run_id")
+      .references(() => agentRuns.id, { onDelete: "cascade" })
+      .notNull(),
+    role: text("role").notNull(), // user | assistant
+    body: text("body").notNull(),
+    // user: { dispatchId, model, effort, images } · assistant: { ok, cost, tokensIn, tokensOut, turns, ms, steps, commits }
+    meta: jsonb("meta").$type<Record<string, unknown>>().default({}).notNull(),
+    author: text("author"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("agent_messages_run_idx").on(t.runId, t.createdAt)],
+);

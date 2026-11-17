@@ -35,14 +35,14 @@ Kad projekat ima **GitHub repo** (Edit → GitHub repo), worker na 5 minuta prov
 
 ## Predaja taska AI agentu (Claude / Codex)
 U detalju taska klikni **Assign to Claude** ili **Assign to Codex**:
-1. Scoutline otvori GitHub issue `[ACME-12] naslov` u repou projekta, sa kratkim briefom („context pack“: cilj, „gotovo kada“, kontekst projekta, pravila) i sa `@claude` ili `@codex` na kraju.
+1. **Claude:** Scoutline pokrene razgovor u Ask AI → Build with Claude sa briefom taska (ključ `ACME-12` ide u naslov PR-a). **Codex:** Scoutline otvori GitHub issue `[ACME-12] naslov` sa briefom i `@codex` na kraju.
 2. Agent napravi granu i PR. PR naslov počinje sa `ACME-12`, pa ga Scoutline sam poveže.
 3. Kad spojiš PR, task ide u **Done**.
 
 Tip: u opisu taska napiši odeljak `Done when:` sa stavkama. To ide u brief kao kriterijum završetka.
 
 **Šta treba u repou klijentskog projekta:**
-- **Claude:** u Claude Code-u pokreni `/install-github-app` za taj repo. Kopiraj `.github/workflows/claude.yml` iz našeg repoa i dodaj secret `CLAUDE_CODE_OAUTH_TOKEN` (`claude setup-token`). Radi preko pretplate, kao u Fazi 7.
+- **Claude:** projekat → Code → **Set up automatically** (workflow `scoutline-agent.yml` + secret `CLAUDE_CODE_OAUTH_TOKEN` iz `claude setup-token`). Claude GitHub app više ne treba. Radi preko pretplate.
 - **Codex:** chatgpt.com/codex → poveži GitHub → dozvoli pristup repou. Ako `@codex` u issue-u ne pokrene zadatak na tvom nalogu, otvori GitHub issue iz Codex-a ručno; brief je već spreman.
 - `AGENTS.md` / `CLAUDE.md` u repou klijenta smanjuju potrošnju tokena (agent odmah zna strukturu).
 
@@ -67,7 +67,7 @@ Tip: u opisu taska napiši odeljak `Done when:` sa stavkama. To ide u brief kao 
 - **Više repoa:** tab **Code** → „Add repo“ (npr. `acme/web` · frontend).
 - **Code → Activity:** commit-ovi i PR-ovi po nedelji, vreme do spajanja, koliko CI prolazi, ko radi, PR-ovi koji čekaju, milestone-i.
 - **Code → Pull requests:**
-  - **AI review** ostavlja `@claude` komentar na PR-u;
+  - **AI review** pokreće Claude pregled kao razgovor u Scoutline-u (na GitHub-u se ništa ne objavljuje);
   - **Approve** (GitHub ne dozvoljava da odobriš sopstveni PR);
   - **Merge** (squash).
 - **Code → Branches:**
@@ -96,8 +96,8 @@ Tip: u opisu taska napiši odeljak `Done when:` sa stavkama. To ide u brief kao 
 ## Claude Code iz aplikacije (Faza 16)
 Sve ide preko GitHub-a i Claude **pretplate** (bez API ključa):
 1. **Settings → Integrations → Your Claude Code token**: `claude setup-token` u terminalu → zalepi token. Svako ubacuje svoj (rad koji pokrene troši njegovu pretplatu); može i zajednički token firme.
-2. Projekat → **Code** → zalepi GitHub link → **Set up automatically**: Scoutline upiše `.github/workflows/claude.yml` (Claude sam otvara PR, bez co-author linija) i secret `CLAUDE_CODE_OAUTH_TOKEN`. Jednom instaliraj Claude GitHub app (najbolje „All repositories“).
-3. Projekat → **Ask AI → Build with Claude**: opiši zadatak → GitHub issue sa `@claude` → Claude radi u Actions → PR. U aplikaciji: status (radi / PR ready / merged), Claude-ovi komentari, odgovor Claude-u (ide na PR), **Preview** grane u browseru (StackBlitz), **Merge**.
+2. Projekat → **Code** → zalepi GitHub link → **Set up automatically**: Scoutline upiše `.github/workflows/scoutline-agent.yml`, terminal i secret `CLAUDE_CODE_OAUTH_TOKEN`, a stari `claude.yml` ukloni.
+3. Projekat → **Ask AI → Build with Claude**: opiši zadatak → Scoutline pokrene workflow → Claude radi na grani, commit pod tvojim imenom → kad završi, Scoutline (i u pozadini, bez otvorene aplikacije) preimenuje granu po standardu i otvori PR tvojim nalogom. Razgovor se čuva u Scoutline-u — na GitHub-u nema issue-a ni bot komentara. U aplikaciji: status, odgovori sa commit-ima i koracima, nastavak razgovora (menja isti PR), **Preview**, **Merge**.
 4. Potrošnja: sesije i minuti po osobi ovog meseca (pretplata nema cenu po pozivu; limiti su na claude.ai/settings/usage). Ask AI chat pokazuje pitanja i tokene (Claude ključ vs besplatni modeli).
 5. **Run locally**: StackBlitz (u browseru), Codespaces, VS Code/Cursor, komande + dugme „Open localhost“.
 

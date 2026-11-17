@@ -286,6 +286,20 @@ function PullsView({ projectId, repo }: { projectId: string; repo: string }) {
       setBusy(null);
     }
   };
+  // AI pregled PR-a: razgovor u Scoutline-u (bez komentara na GitHub-u), pa otvori Ask AI → Build
+  const aiReview = async (n: number, branch: string) => {
+    setBusy(`${n}:review`);
+    setMsg(null);
+    try {
+      const prompt = `Review pull request #${n} (branch \`${branch}\`). Run \`git fetch origin ${branch}\` and look at \`git diff origin/HEAD...origin/${branch}\`. List bugs, risky changes and missing tests, most important first, with file:line. Don't change any files.`;
+      const r = await teamFetch<{ id: string }>(`/delivery/projects/${projectId}/agent/runs?repo=${encodeURIComponent(repo)}`, { method: "POST", body: JSON.stringify({ prompt, effort: "medium" }) });
+      window.location.hash = `#/delivery/projects/${projectId}?view=ask&ai=build&run=${r.id}`;
+    } catch (e) {
+      setMsg({ ok: false, text: (e as Error).message });
+    } finally {
+      setBusy(null);
+    }
+  };
   const seg = (on: boolean) => `h-[28px] rounded-md px-3 text-[12.5px] ${on ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`;
   const filters = (
     <div className="flex flex-wrap items-center gap-3">
@@ -376,7 +390,7 @@ function PullsView({ projectId, repo }: { projectId: string; repo: string }) {
           </div>
           {canEdit(user) && (p.state ?? "open") === "open" && (
             <div className="mt-2.5 flex flex-wrap gap-1.5 border-t border-line pt-2.5">
-              <button disabled={!!busy} onClick={() => void act(p.number, "review", { agent: "claude" })} className={small} title="Comments @claude on the PR to review it">
+              <button disabled={!!busy} onClick={() => void aiReview(p.number, p.branch)} className={small} title="Claude reviews the PR in Scoutline (Ask AI → Build) — nothing is posted on GitHub">
                 {busy === `${p.number}:review` ? <Loader2 size={12} className="animate-spin" /> : <Bot size={12} />} AI review
               </button>
               <button disabled={!!busy || p.approved} onClick={() => void act(p.number, "approve")} className={small}>

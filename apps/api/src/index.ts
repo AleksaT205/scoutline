@@ -4,6 +4,7 @@ import { migrate } from "drizzle-orm/postgres-js/migrator";
 import { createDb } from "@radar/db";
 import { createApp } from "./app.js";
 import { startWatchdog } from "./monitor.js";
+import { startAgentPoller } from "./agents.js";
 import { refreshRuntime } from "./runtime.js";
 import { ensureEnvOwner } from "./auth.js";
 
@@ -24,5 +25,6 @@ setInterval(() => void refreshRuntime(db).catch(() => undefined), 60_000);
 
 const app = createApp(() => db);
 startWatchdog(() => db);
+startAgentPoller(() => db);
 const port = Number(process.env.PORT ?? 3000);
 serve({ fetch: app.fetch, port }, () => console.log(`radar-api na http://localhost:${port}`));

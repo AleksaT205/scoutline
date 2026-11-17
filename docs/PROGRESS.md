@@ -26,8 +26,8 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 ## Urađeno
 
 - **17. 11. 2026. — Faza 16 (Claude Code iz aplikacije)**
-  - Povezivanje repoa GitHub linkom + **Set up automatically** (workflow `claude.yml` i secret `CLAUDE_CODE_OAUTH_TOKEN`, šifrovano libsodium-om); checklist šta fali.
-  - **Ask AI → Build with Claude**: prompt → GitHub issue `@claude` → Claude radi u Actions → PR; status, Claude-ovi komentari, odgovor Claude-u, **Preview** grane (StackBlitz), **Merge**.
+  - Povezivanje repoa GitHub linkom + **Set up automatically** (workflow `scoutline-agent.yml` i secret `CLAUDE_CODE_OAUTH_TOKEN`, šifrovano libsodium-om); checklist šta fali.
+  - **Ask AI → Build with Claude**: prompt → workflow (bez GitHub issue-a) → Claude radi na grani → Scoutline otvori PR tvojim nalogom (i u pozadini); razgovor u Scoutline-u, odgovor Claude-u, **Preview** grane (StackBlitz), **Merge**.
   - Potrošnja: sesije i minuti po osobi (mesec); Ask AI chat pokazuje pitanja i tokene. Svako svoj Claude Code token (Settings → Integrations), firma može zajednički.
   - **Run locally**: StackBlitz/Codespaces/CodeSandbox u browseru, VS Code/Cursor, komande + „Open localhost“. Owner nalog iz env-a (`OWNER_EMAIL`/`OWNER_PASSWORD`), demo login, Sample project. Uputstvo: DELIVERY.md.
 

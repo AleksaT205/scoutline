@@ -5,7 +5,7 @@ import { teamFetch } from "../../lib/team";
 import { canEdit, useSessionUser } from "../../lib/session";
 import { Dialog, ErrorNote, btnPrimary, btnSecondary } from "./parts";
 import { CreateTasksButton } from "./tasks-from-text";
-import { useHashParam } from "../../lib/hashParams";
+import { useHashParam, useOptionalHashParam } from "../../lib/hashParams";
 import { AttachButton, AttachedThumbs, MessageImages, splitImages, useImageAttachments } from "./attachments";
 import { askConfirm } from "../../lib/confirm";
 import { VoiceButton } from "../../lib/voice";
@@ -29,16 +29,16 @@ interface Setup {
   notes?: string[];
 }
 interface Run {
-  number: number;
+  id: string;
   title: string;
-  url: string;
+  branch?: string;
   createdAt: string;
   by: string | null;
   status: "working" | "pr_open" | "merged" | "closed" | "failed" | "replied" | "queued";
   minutes: number;
   sessions: number;
   model?: string;
-  pr: { number: number; url: string; title: string; state: string; branch: string; branchExists?: boolean | null } | null;
+  pr: { number: number; url: string; title?: string; state: string; branch: string; branchExists?: boolean | null } | null;
 }
 interface Agg {
   runs: number;
@@ -51,7 +51,7 @@ interface Summary {
   month: { runs: number; sessions: number; minutes: number; prs: number; merged: number; tokensIn?: number; tokensOut?: number; cost?: number; turns?: number };
   byPerson: Record<string, Agg>;
   byModel?: Record<string, Agg>;
-  sessions?: Array<{ id: number; at: string; minutes: number; status: string; conclusion: string | null; url: string; tokens: number | null; cost: number | null; turns: number | null; task: string; number: number; by: string | null; model: string }>;
+  sessions?: Array<{ id: number; at: string; minutes: number; status: string; conclusion: string | null; url: string; tokens: number | null; cost: number | null; turns: number | null; task: string; runId: string; by: string | null; model: string }>;
 }
 const fmtTok = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${Math.round(n / 1000)}k` : String(n));
 const fmtUsd = (n: number) => (n >= 10 ? `$${Math.round(n)}` : `$${n.toFixed(2)}`);
@@ -126,12 +126,12 @@ function UsageBar({ s }: { s: Summary }) {
               {s.sessions.map((x) => (
                 <tr key={x.id} className="border-t border-line">
                   <td className="num whitespace-nowrap px-2 py-1.5">
-                    <a href={x.url} target="_blank" rel="noreferrer" className="hover:text-fg" title="Open this session on GitHub">
+                    <a href={x.url} target="_blank" rel="noreferrer" className="hover:text-fg" title="Open the job log on GitHub">
                       {new Date(x.at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
                     </a>
                   </td>
                   <td className="max-w-[280px] truncate px-2 py-1.5 text-fg" title={x.task}>
-                    <span className="num text-faint">#{x.number}</span> {x.task}
+                    {x.task}
                   </td>
                   <td className="px-2 py-1.5">{x.by ?? "—"}</td>
                   <td className="px-2 py-1.5 capitalize">{x.model}</td>
@@ -148,11 +148,20 @@ function UsageBar({ s }: { s: Summary }) {
   );
 }
 
+interface Msg {
+  id: string;
+  role: "user" | "assistant";
+  body: string;
+  author: string | null;
+  createdAt: string;
+  meta: { ok?: boolean; url?: string; cost?: number | null; in?: number | null; out?: number | null; turns?: number | null; ms?: number | null; steps?: string[]; commits?: string[]; model?: string; effort?: string };
+}
 interface Thread {
-  issue: { number: number; title: string; body: string; url: string; state: string; createdAt: string; by: string | null; model: string | null };
-  comments: Array<{ id: number; where: "issue" | "pr"; author: string; bot: boolean; body: string; createdAt: string; updatedAt: string; url: string }>;
+  run: Run & { working: boolean; jobUrl: string | null };
+  messages: Msg[];
   pr: Run["pr"];
 }
+const fmtMin = (ms?: number | null) => (!ms ? "" : ms < 60_000 ? `${Math.max(1, Math.round(ms / 1000))}s` : `${Math.round(ms / 60_000)} min`);
 
 const STATUS: Record<Run["status"], { label: string; cls: string }> = {
   working: { label: "Claude is working", cls: "bg-warning/15 text-warning" },
@@ -417,7 +426,7 @@ export function ClaudeSetup({ projectId, repo, compact }: { projectId: string; r
       </div>
       <ul className="space-y-2">
         <Row ok={d.access} title={d.access ? "Scoutline can reach the repo" : "Scoutline can't reach the repo"} hint={!d.access ? (d.error ?? "Add this repo to your GitHub token's access (Settings → Integrations).") : !d.canPush ? "Read-only access — the token needs write access." : undefined} />
-        <Row ok={d.workflow === "ok"} title={d.workflow === "ok" ? "Claude workflow is in the repo" : d.workflow === "outdated" ? "Claude workflow is an older version" : "Claude workflow is missing"} hint={d.workflow !== "ok" ? "“Set up automatically” adds .github/workflows/claude.yml (opens pull requests, no co-author lines)." : undefined} />
+        <Row ok={d.workflow === "ok"} title={d.workflow === "ok" ? "Automation is in the repo" : d.workflow === "outdated" ? "Automation is an older version" : "Automation is missing"} hint={d.workflow !== "ok" ? "“Set up automatically” adds .github/workflows/scoutline-agent.yml. Nothing on GitHub mentions AI: no issues or bot comments, commits are under your name and Scoutline opens the PR." : undefined} />
         <Row ok={d.terminal === "ok"} warn={d.terminal === "outdated"} title={d.terminal === "ok" ? "Terminal is set up" : "Terminal workflow is missing"} hint={d.terminal !== "ok" ? "Adds .github/workflows/scoutline-terminal.yml so you can run commands from Code → Terminal." : undefined} />
         <Row
           ok={d.secret === true}
@@ -439,20 +448,6 @@ export function ClaudeSetup({ projectId, repo, compact }: { projectId: string; r
                       .
                     </>
                   )
-          }
-        />
-        <Row
-          ok={null}
-          warn
-          title="Claude GitHub app installed on the repo"
-          hint={
-            <>
-              GitHub doesn't let us check this.{" "}
-              <a href={d.appInstallUrl} target="_blank" rel="noreferrer" className="underline">
-                Install or configure the app
-              </a>{" "}
-              — pick “All repositories” once and new repos just work.
-            </>
           }
         />
       </ul>
@@ -507,7 +502,7 @@ function BuildPanel({ projectId }: { projectId: string }) {
   const [anyWorking, setAnyWorking] = useState(false);
   const runs = useCached<{ runs: Run[]; summary: Summary | null; error?: string }>(repo ? `/delivery/projects/${projectId}/agent/runs?${repoQ(repo)}` : null, { staleMs: 5_000, refreshMs: anyWorking ? 15_000 : 60_000 });
   useEffect(() => setAnyWorking(!!runs.data?.runs.some((r) => r.status === "working" || r.status === "queued")), [runs.data]);
-  const [sel, setSel] = useState<number | null>(null);
+  const [sel, setSel] = useOptionalHashParam("run"); // otvoren razgovor ostaje i posle osvežavanja
   const [prompt, setPrompt] = useState("");
   const [model, setModel] = useState(savedModel);
   const [effort, setEffort] = useState(savedEffort);
@@ -523,13 +518,13 @@ function BuildPanel({ projectId }: { projectId: string }) {
     setError(null);
     setNote(null);
     try {
-      const r = await teamFetch<{ number: number; note?: string | null; effort?: string; effortAuto?: boolean; model?: string; modelAuto?: boolean }>(`/delivery/projects/${projectId}/agent/runs?${repoQ(repo)}`, { method: "POST", body: JSON.stringify({ prompt, model: model || undefined, effort: effort || undefined, images: att.ids }) });
+      const r = await teamFetch<{ id: string; note?: string | null; effort?: string; effortAuto?: boolean; model?: string; modelAuto?: boolean }>(`/delivery/projects/${projectId}/agent/runs?${repoQ(repo)}`, { method: "POST", body: JSON.stringify({ prompt, model: model || undefined, effort: effort || undefined, images: att.ids }) });
       setPrompt("");
       att.clear();
       const cap = (x: string) => `${x[0]!.toUpperCase()}${x.slice(1)}`;
       const auto = [r.modelAuto && "model", r.effortAuto && "effort"].filter(Boolean).join(" and ");
       setNote([r.model ? `Model: ${cap(r.model)}` : "", r.effort ? `Effort: ${cap(r.effort)}` : ""].filter(Boolean).join(" · ") + (auto ? ` (${auto} picked automatically).` : ".") + (r.note ? ` ${r.note}` : ""));
-      setSel(r.number);
+      setSel(r.id);
       await runs.reload();
     } catch (e) {
       setError((e as Error).message);
@@ -626,9 +621,8 @@ function BuildPanel({ projectId }: { projectId: string }) {
         ) : (
           <ul className="divide-y divide-line">
             {runs.data.runs.map((r) => (
-              <li key={r.number}>
-                <button onClick={() => setSel(sel === r.number ? null : r.number)} className={`flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-left hover:bg-surface-2 ${sel === r.number ? "bg-surface-2" : ""}`}>
-                  <span className="num text-[12px] text-faint">#{r.number}</span>
+              <li key={r.id}>
+                <button onClick={() => setSel(sel === r.id ? null : r.id)} className={`flex w-full flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-left hover:bg-surface-2 ${sel === r.id ? "bg-surface-2" : ""}`}>
                   <span className="min-w-0 flex-1 truncate text-[13px] font-medium">{r.title}</span>
                   <span className={`inline-flex items-center gap-1 rounded-full px-2 py-px text-[11px] ${STATUS[r.status].cls}`}>
                     {r.status === "working" && <Loader2 size={10} className="animate-spin" />}
@@ -640,7 +634,7 @@ function BuildPanel({ projectId }: { projectId: string }) {
                     {r.minutes ? ` · ${r.minutes} min` : ""}
                   </span>
                 </button>
-                {sel === r.number && (
+                {sel === r.id && (
                   <RunThread
                     projectId={projectId}
                     repo={repo}
@@ -648,7 +642,7 @@ function BuildPanel({ projectId }: { projectId: string }) {
                     onChanged={() => void runs.reload()}
                     onDeleted={() => {
                       setSel(null);
-                      runs.setData((d) => (d ? { ...d, runs: d.runs.filter((x) => x.number !== r.number) } : d));
+                      runs.setData((d) => (d ? { ...d, runs: d.runs.filter((x) => x.id !== r.id) } : d));
                     }}
                   />
                 )}
@@ -663,20 +657,29 @@ function BuildPanel({ projectId }: { projectId: string }) {
 
 function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: string; repo: string; run: Run; onChanged: () => void; onDeleted: () => void }) {
   const user = useSessionUser();
-  const working = run.status === "working" || run.status === "queued";
-  const t = useCached<Thread>(`/delivery/projects/${projectId}/agent/runs/${run.number}?${repoQ(repo)}`, { staleMs: 3_000, refreshMs: working ? 10_000 : 0 });
+  const [live, setLive] = useState(run.status === "working" || run.status === "queued");
+  const t = useCached<Thread>(`/delivery/projects/${projectId}/agent/runs/${run.id}?${repoQ(repo)}`, { staleMs: 3_000, refreshMs: live ? 10_000 : 0 });
+  const working = t.data?.run.working ?? live;
+  useEffect(() => {
+    if (t.data) setLive(t.data.run.working);
+  }, [t.data]);
+  // Kad Claude završi, osveži i listu (status, PR)
+  const wasWorking = useRef(working);
+  useEffect(() => {
+    if (wasWorking.current && !working) onChanged();
+    wasWorking.current = working;
+  }, [working, onChanged]);
   const [reply, setReply] = useState("");
   const att = useImageAttachments(projectId);
   const [model, setModel] = useState<string | null>(null); // null = isti kao do sad
   const [effort, setEffort] = useState(savedEffort);
-  const [onPr, setOnPr] = useState(false); // podrazumevano: razgovor ostaje u Scoutline-u, PR je čist
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const end = useRef<HTMLDivElement>(null);
-  const comments = useMemo(() => t.data?.comments ?? [], [t.data]);
+  const messages = useMemo(() => t.data?.messages ?? [], [t.data]);
   useEffect(() => {
     end.current?.scrollIntoView({ block: "nearest" });
-  }, [comments.length]);
+  }, [messages.length]);
   const pr = t.data?.pr ?? run.pr;
 
   const send = async () => {
@@ -684,11 +687,11 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
     setBusy("reply");
     setMsg(null);
     try {
-      const open = pr?.state === "open";
-      const r = await teamFetch<{ note?: string | null }>(`/delivery/projects/${projectId}/agent/runs/${run.number}/reply?${repoQ(repo)}`, { method: "POST", body: JSON.stringify({ text: reply, pr: open ? pr.number : undefined, branch: open ? pr.branch : undefined, onPr: open && onPr, ...(model !== null ? { model } : {}), effort: effort || undefined, images: att.ids }) });
+      const r = await teamFetch<{ note?: string | null }>(`/delivery/projects/${projectId}/agent/runs/${run.id}/reply?${repoQ(repo)}`, { method: "POST", body: JSON.stringify({ text: reply, ...(model !== null ? { model } : {}), effort: effort || undefined, images: att.ids }) });
       setReply("");
       att.clear();
       setMsg({ ok: true, text: r.note ?? "Sent — Claude picks it up in a minute." });
+      setLive(true);
       await t.reload();
       onChanged();
     } catch (e) {
@@ -719,7 +722,7 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
         <div className="flex flex-wrap items-center gap-2 rounded-lg border border-line bg-surface px-3 py-2 text-[12.5px]">
           {pr.state === "merged" ? <GitMerge size={14} className="text-accent" /> : <GitPullRequest size={14} className={pr.state === "open" ? "text-success" : "text-faint"} />}
           <a href={pr.url} target="_blank" rel="noreferrer" className="min-w-0 flex-1 basis-[60%] truncate hover:underline">
-            <span className="num text-faint">#{pr.number}</span> {pr.title}
+            <span className="num text-faint">#{pr.number}</span> {pr.title ?? pr.branch}
           </a>
           <PreviewButton projectId={projectId} repo={repo} branch={pr.branch} />
           <a href={previewUrl(repo, pr.branch)} target="_blank" rel="noreferrer" className="text-[12px] text-muted hover:text-fg" title="For apps with a build step (React, Next…)">
@@ -755,46 +758,60 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
         </div>
       )}
       <div className="max-h-[460px] space-y-2.5 overflow-y-auto">
-        {t.data && (
-          <div className="ml-auto w-fit max-w-[90%] rounded-2xl rounded-br-md bg-accent-soft px-3.5 py-2 text-[13px]">
-            <div className="mb-0.5 text-[11px] text-muted">{t.data.issue.by ?? "You"} · task</div>
-            <div className="whitespace-pre-wrap">{splitImages(t.data.issue.body).text}</div>
-            <MessageImages urls={splitImages(t.data.issue.body).images} />
-          </div>
-        )}
-        {comments.map((c) =>
-          c.bot ? (
-            <div key={c.id} className="max-w-[95%] rounded-2xl rounded-bl-md border border-line bg-surface px-3.5 py-2">
-              <div className="mb-1 flex items-center gap-1.5 text-[11px] text-muted">
-                <Bot size={12} className="text-accent" /> Claude {c.where === "pr" ? "· on the PR" : ""} · {ago(c.updatedAt)}
-                {headOf(c.body)?.took && <span>· took {headOf(c.body)!.took}</span>}
-                {headOf(c.body)?.job && (
-                  <a href={headOf(c.body)!.job!} target="_blank" rel="noreferrer" className="hover:text-fg">
-                    · view job
+        {messages.map((m) =>
+          m.role === "assistant" ? (
+            <div key={m.id} className="max-w-[95%] rounded-2xl rounded-bl-md border border-line bg-surface px-3.5 py-2">
+              <div className="mb-1 flex flex-wrap items-center gap-x-1.5 text-[11px] text-muted">
+                <Bot size={12} className="text-accent" /> Claude · {ago(m.createdAt)}
+                {m.meta.ms ? <span>· took {fmtMin(m.meta.ms)}</span> : null}
+                {m.meta.ok === false && <span className="text-danger">· stopped</span>}
+                {m.meta.url && (
+                  <a href={m.meta.url} target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 text-faint hover:text-fg" title="Job log on GitHub">
+                    log <ExternalLink size={10} />
                   </a>
                 )}
-                <a href={c.url} target="_blank" rel="noreferrer" className="ml-auto text-faint hover:text-fg" aria-label="Open on GitHub">
-                  <ExternalLink size={11} />
-                </a>
               </div>
               <div className="text-[13px]">
-                <Md text={tidy(c.body)} />
+                <Md text={tidy(m.body)} />
               </div>
-              {canEdit(user) && <div className="mt-1.5 border-t border-line pt-1.5"><CreateTasksButton projectId={projectId} text={tidy(c.body)} /></div>}
+              {(m.meta.commits?.length || m.meta.steps?.length) ? (
+                <details className="mt-1.5 text-[12px] text-muted">
+                  <summary className="cursor-pointer select-none hover:text-fg">
+                    {[m.meta.commits?.length ? `${m.meta.commits.length} commit${m.meta.commits.length > 1 ? "s" : ""}` : "", m.meta.steps?.length ? `${m.meta.steps.length} steps` : ""].filter(Boolean).join(" · ")}
+                  </summary>
+                  {m.meta.commits?.length ? (
+                    <ul className="mt-1 space-y-0.5">
+                      {m.meta.commits.map((c, k) => (
+                        <li key={k} className="flex gap-1.5">
+                          <GitMerge size={11} className="mt-[3px] shrink-0 text-faint" /> <span className="text-fg">{c}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {m.meta.steps?.length ? (
+                    <ul className="num mt-1.5 max-h-40 space-y-0.5 overflow-y-auto text-[11px] text-faint">
+                      {m.meta.steps.map((st, k) => (
+                        <li key={k} className="truncate">
+                          {st}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null}
+                </details>
+              ) : null}
+              {canEdit(user) && (
+                <div className="mt-1.5 border-t border-line pt-1.5">
+                  <CreateTasksButton projectId={projectId} text={tidy(m.body)} />
+                </div>
+              )}
             </div>
           ) : (
-            <div key={c.id} className="ml-auto w-fit max-w-[90%] rounded-2xl rounded-br-md bg-accent-soft px-3.5 py-2 text-[13px]">
+            <div key={m.id} className="ml-auto w-fit max-w-[90%] rounded-2xl rounded-br-md bg-accent-soft px-3.5 py-2 text-[13px]">
               <div className="mb-0.5 text-[11px] text-muted">
-                {c.author} · {ago(c.createdAt)}
+                {m.author ?? "You"} · {ago(m.createdAt)}
               </div>
               {(() => {
-                const clean = c.body
-                  .replace(/^@claude\s*/, "")
-                  .replace(/\n*<sub>From Scoutline by [^<]+<\/sub>\s*$/, "")
-                  .replace(/\n*<sub>Code changes go to PR #[\s\S]*?<\/sub>/, "")
-                  .replace(/\n*<sub>Images: download[\s\S]*?<\/sub>/, "")
-                  .replace(/\n*\((think|think hard|ultrathink)\)/, "");
-                const parts = splitImages(clean);
+                const parts = splitImages(m.body.replace(/\n*<sub>Images: download[\s\S]*?<\/sub>/, ""));
                 return (
                   <>
                     {parts.text && <div className="whitespace-pre-wrap">{parts.text}</div>}
@@ -808,7 +825,7 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
         {!t.data && <div className="h-16 animate-pulse rounded-lg bg-surface-2" />}
         {working && (
           <div className="inline-flex items-center gap-2 text-[12.5px] text-muted">
-            <Loader2 size={13} className="animate-spin" /> Claude is working on GitHub — this updates by itself.
+            <Loader2 size={13} className="animate-spin" /> Claude is working — this updates by itself.
           </div>
         )}
         <div ref={end} />
@@ -833,32 +850,28 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
           </div>
           <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
             <AttachButton onFiles={att.add} className={iconBtn} />
-            <ModelSelect value={model ?? t.data?.issue.model ?? ""} onChange={setModel} className="flex-1 sm:flex-none" />
+            <ModelSelect value={model ?? t.data?.run.model ?? ""} onChange={setModel} className="flex-1 sm:flex-none" />
             <EffortSelect value={effort} onChange={setEffort} className="flex-1 sm:flex-none" />
             <button disabled={busy === "reply" || (!reply.trim() && !att.ids.length) || att.uploading} className={`${btnPrimary} w-[42px] shrink-0 px-0`} aria-label="Send to Claude">
               {busy === "reply" ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
             </button>
           </div>
-          {pr?.state === "open" && (
-            <label className="inline-flex items-center gap-1.5 text-[12px] text-muted" title="Off: the message stays in this conversation and the PR only has the code. On: it's posted as a comment on the pull request.">
-              <input type="checkbox" checked={onPr} onChange={(e) => setOnPr(e.target.checked)} className="accent-[var(--accent)]" />
-              Also post on the PR
-            </label>
-          )}
         </form>
       )}
       {msg && <p className={`text-[12px] ${msg.ok ? "text-success" : "text-danger"}`}>{msg.text}</p>}
       <div className="flex flex-wrap items-center gap-3 text-[11.5px] text-faint">
-        <a href={run.url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:text-fg">
-          Open on GitHub <ExternalLink size={11} />
-        </a>
+        {t.data?.run.jobUrl && (
+          <a href={t.data.run.jobUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 hover:text-fg">
+            Job log <ExternalLink size={11} />
+          </a>
+        )}
         {canEdit(user) && (
           <button
             onClick={async () => {
-              if (!await askConfirm("Delete this conversation? It's closed on GitHub and removed from this list (any pull request stays).")) return;
+              if (!await askConfirm("Delete this conversation? It's removed from Scoutline. The branch and any pull request stay on GitHub.")) return;
               setBusy("delete");
               try {
-                await teamFetch(`/delivery/projects/${projectId}/agent/runs/${run.number}/delete?${repoQ(repo)}`, { method: "POST", body: "{}" });
+                await teamFetch(`/delivery/projects/${projectId}/agent/runs/${run.id}/delete?${repoQ(repo)}`, { method: "POST", body: "{}" });
                 onDeleted();
               } catch (e) {
                 setMsg({ ok: false, text: (e as Error).message });
