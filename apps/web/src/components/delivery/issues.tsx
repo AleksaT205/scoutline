@@ -433,6 +433,15 @@ function eventText(e: IssueEvent, names: Record<string, string>) {
   }
 }
 
+/** Istorija bez šuma: ono što je autor podesio odmah pri pravljenju taska (prioritet, procena, sprint…) ne ispisuje se posebno. */
+function visibleEvents(events: IssueEvent[]): IssueEvent[] {
+  const created = events.find((e) => e.type === "created");
+  if (!created) return events;
+  const t0 = Date.parse(created.createdAt);
+  const setup = new Set(["priority", "estimate", "cycle", "assignee", "title"]);
+  return events.filter((e) => !setup.has(e.type) || e.actor !== created.actor || Date.parse(e.createdAt) - t0 > 3 * 60_000);
+}
+
 export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: Issue; onClose: () => void; onChanged: (i: Issue) => void; onDeleted: (id: string) => void }) {
   const user = useSessionUser();
   const editable = canEdit(user);
@@ -551,7 +560,7 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-4">
+        <div className="flex-1 overflow-y-auto px-5 pt-4 pb-20">
           <textarea
             value={title}
             readOnly={!editable}
@@ -638,7 +647,8 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
               )}
             </div>
           </div>
-          {/* AI agent i GitHub */}
+          {/* AI agent i GitHub — samo kad projekat ima repo (bez repoa je to samo šum) */}
+          {(repoUrl || issue.agent || links.some((l) => l.kind !== "figma")) && (
           <div className="mt-3 rounded-xl border border-line bg-bg p-3">
             <div className="flex flex-wrap items-center gap-2 text-[12.5px]">
               <Bot size={14} className="text-accent" />
@@ -661,7 +671,6 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
                 </div>
               )}
             </div>
-            {repoUrl === null && <p className="mt-1.5 text-[12px] text-faint">Connect a GitHub repo to the project to hand tasks to Claude or Codex and to link pull requests automatically.</p>}
             {repoUrl && editable && (
               <div className="mt-2">
                 <button
@@ -711,6 +720,7 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
               </ul>
             )}
           </div>
+          )}
           <FigmaBox issueId={issue.id} links={links} onChanged={() => void loadLinks()} />
           <TimeBox issueId={issue.id} />
           {error && (
@@ -722,7 +732,7 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
           {/* Aktivnost */}
           <div className="mt-6 text-[12px] font-medium uppercase tracking-wider text-faint">Activity</div>
           <ol className="mt-2 space-y-3">
-            {(events ?? []).map((e) =>
+            {visibleEvents(events ?? []).map((e) =>
               e.type === "comment" ? (
                 <li key={e.id} className="rounded-xl border border-line bg-bg p-3">
                   <div className="mb-1 flex items-center gap-2 text-[12px]">

@@ -321,12 +321,21 @@ export function FigmaBox({ issueId, links, onChanged }: { issueId: string; links
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
   const figma = links.filter((l) => l.kind === "figma");
+  const [adding, setAdding] = useState(false);
+  if (!figma.length && !canEdit(user)) return null;
+  // Bez linka: samo mali red „Design · + Link Figma frame“; polje se otvori na klik
+  const open = figma.length > 0 || adding;
   return (
-    <div className="mt-3 rounded-xl border border-line bg-bg p-3">
+    <div className={`mt-3 rounded-xl border border-line bg-bg ${open ? "p-3" : "px-3 py-2"}`}>
       <div className="flex items-center gap-2 text-[12.5px]">
         <PenTool size={14} className="text-accent" />
         <span className="font-medium">Design</span>
-        <span className="text-[11.5px] text-faint">{figma.length ? `${figma.length} Figma frame(s)` : "link a Figma frame"}</span>
+        {figma.length > 0 && <span className="text-[11.5px] text-faint">{figma.length} Figma frame{figma.length > 1 ? "s" : ""}</span>}
+        {!open && (
+          <button onClick={() => setAdding(true)} className="ml-auto inline-flex items-center gap-1 text-[12px] text-muted hover:text-fg">
+            <Plus size={12} /> Link Figma frame
+          </button>
+        )}
       </div>
       <div className="mt-2 space-y-2">
         {figma.map((l) => (
@@ -352,7 +361,7 @@ export function FigmaBox({ issueId, links, onChanged }: { issueId: string; links
           </div>
         ))}
       </div>
-      {canEdit(user) && (
+      {canEdit(user) && open && (
         <form
           className="mt-2 flex gap-1.5"
           onSubmit={async (e) => {
@@ -370,7 +379,7 @@ export function FigmaBox({ issueId, links, onChanged }: { issueId: string; links
             }
           }}
         >
-          <input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Paste a Figma link (right-click a frame → Copy link)" className="h-[30px] min-w-0 flex-1 rounded-md border border-line bg-surface px-2 text-[12.5px] outline-none placeholder:text-faint focus:border-accent/60" />
+          <input autoFocus={adding && !figma.length} value={url} onChange={(e) => setUrl(e.target.value)} placeholder="Paste a Figma link (right-click a frame → Copy link)" className="h-[30px] min-w-0 flex-1 rounded-md border border-line bg-surface px-2 text-[12.5px] outline-none placeholder:text-faint focus:border-accent/60" />
           <button disabled={busy || !url.trim()} className={small}>
             {busy ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Add
           </button>

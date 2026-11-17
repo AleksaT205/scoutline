@@ -37,7 +37,7 @@ export function TimeBox({ issueId }: { issueId: string }) {
       <div className="flex items-center gap-2 text-[12.5px]">
         <Clock size={14} className="text-accent" />
         <span className="font-medium">Time</span>
-        <span className="num text-muted">{total ? fmtMinutes(total) : "nothing logged"}</span>
+        {total ? <span className="num text-muted">{fmtMinutes(total)}</span> : <span className="text-faint">nothing logged yet</span>}
       </div>
       {editable && (
         <form
@@ -86,7 +86,7 @@ export function TimeBox({ issueId }: { issueId: string }) {
                     await teamFetch(`/delivery/time/${e.id}`, { method: "DELETE" }).catch((err) => setError((err as Error).message));
                     void load();
                   }}
-                  className="text-faint opacity-0 hover:text-danger group-hover:opacity-100"
+                  className="text-faint hover:text-danger sm:opacity-0 sm:group-hover:opacity-100"
                   aria-label="Delete time entry"
                 >
                   <X size={12} />
