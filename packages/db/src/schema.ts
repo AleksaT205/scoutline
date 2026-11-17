@@ -20,6 +20,8 @@ export const sources = pgTable("sources", {
   kind: sourceKindEnum("kind").notNull(),
   enabled: boolean("enabled").default(true).notNull(),
   intervalMinutes: integer("interval_minutes").default(60).notNull(),
+  customInterval: boolean("custom_interval").default(false).notNull(), // raspored menjan u aplikaciji — worker ga ne vraća
+  runRequestedAt: timestamp("run_requested_at", { withTimezone: true }), // „Run now“ iz aplikacije
   lastSuccessAt: timestamp("last_success_at", { withTimezone: true }),
   lastError: text("last_error"),
   ...timestamps,
@@ -139,6 +141,7 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   passwordHash: text("password_hash").notNull(),
   role: userRoleEnum("role").default("member").notNull(),
+  access: text("access").default("all").notNull(), // all | sales | delivery — koji deo aplikacije vidi
   tokenVersion: integer("token_version").default(0).notNull(), // povećanje = odjava sa svih uređaja
   integrations: jsonb("integrations"), // lične integracije (šifrovan GitHub token, izabrani agent)
   lastLoginAt: timestamp("last_login_at", { withTimezone: true }),

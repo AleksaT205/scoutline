@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, ExternalLink, Mail, Plus, Rss } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ExternalLink, Loader2, Mail, Pause, Play, Plus, Rss } from "lucide-react";
 import { API_URL } from "../lib/api";
-import { authHeaders } from "../lib/team";
+import { authHeaders, teamFetch } from "../lib/team";
+import { canEdit, useSessionUser } from "../lib/session";
 
 interface Source {
   id: string;
@@ -11,6 +12,7 @@ interface Source {
   intervalMinutes: number;
   lastSuccessAt: string | null;
   lastError: string | null;
+  runRequestedAt?: string | null;
   items: number;
   leads: number;
   leads24h: number;
@@ -59,9 +61,28 @@ function every(min: number) {
   return min < 60 ? `every ${min} min` : `every ${min / 60} h`;
 }
 
+const SCHEDULES = [15, 30, 60, 180, 360, 720, 1440];
+/** Izvori kojima se upravlja (ne ručni unos i ne pod-izvori Email-in-a — njih pokreće „Email-in“). */
+const controllable = (s: { id: string; kind: string }) => s.kind !== "manual" && !s.id.startsWith("email-");
+
 export function SourcesPage() {
+  const user = useSessionUser();
   const [items, setItems] = useState<Source[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
+  const act = async (id: string, path: string, init: RequestInit, patch: Partial<Source>) => {
+    setBusy(id);
+    setItems((cur) => cur?.map((x) => (x.id === id ? { ...x, ...patch } : x)) ?? cur);
+    try {
+      await teamFetch(path, init);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(null);
+      setTimeout(() => setTick((t) => t + 1), 1500);
+    }
+  };
 
   useEffect(() => {
     let alive = true;
@@ -71,12 +92,14 @@ export function SourcesPage() {
         .then((d: { items: Source[] }) => alive && (setItems(d.items), setError(null)))
         .catch(() => alive && setError("Can't load sources — the backend may be offline."));
     void load();
-    const id = setInterval(load, 60_000);
+    // Dok čeka „Run now“, osvežava se češće
+    const id = setInterval(load, items?.some((s) => s.runRequestedAt) ? 10_000 : 60_000);
     return () => {
       alive = false;
       clearInterval(id);
     };
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tick, items?.some((s) => s.runRequestedAt)]);
 
   const healthy = items?.filter((s) => !s.lastError && s.kind !== "manual").length ?? 0;
   const automatic = items?.filter((s) => s.kind !== "manual").length ?? 0;
@@ -97,20 +120,72 @@ export function SourcesPage() {
 
       {error && <div className="mb-4 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[12.5px] text-danger">{error}</div>}
 
-      <section className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <section className="mb-5 grid grid-cols-3 gap-2 sm:gap-3">
         {[
           ["Healthy sources", items ? `${healthy} / ${automatic}` : "—"],
           ["Leads total", items ? total.toLocaleString() : "—"],
           ["New in last 24 h", items ? today.toLocaleString() : "—"],
         ].map(([label, value]) => (
-          <div key={label} className="rounded-xl border border-line bg-surface px-4 py-4">
-            <div className="text-[12.5px] text-muted">{label}</div>
-            <div className="num mt-1.5 text-[28px] font-semibold leading-tight tracking-tight">{value}</div>
+          <div key={label} className="rounded-xl border border-line bg-surface px-3 py-3 sm:px-4 sm:py-4">
+            <div className="truncate text-[11.5px] text-muted sm:text-[12.5px]">{label}</div>
+            <div className="num mt-1 text-[20px] font-semibold leading-tight tracking-tight sm:mt-1.5 sm:text-[28px]">{value}</div>
           </div>
         ))}
       </section>
 
-      <div className="overflow-hidden rounded-xl border border-line bg-surface">
+      {/* Telefon: kartice */}
+      <ul className="space-y-2 md:hidden">
+        {(items ?? []).map((s) => {
+          const meta = META[s.id];
+          return (
+            <li key={s.id} className="rounded-xl border border-line bg-surface p-3">
+              <div className="flex items-center gap-2">
+                <span className="grid size-7 place-items-center rounded-md bg-surface-2 text-muted ring-1 ring-line">{s.kind === "email" ? <Mail size={13} /> : <Rss size={13} />}</span>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[14px] font-medium">{s.name}</div>
+                  <div className="truncate text-[12px] text-muted">{meta?.note ?? s.kind}</div>
+                </div>
+                {s.kind !== "manual" && (!s.enabled ? <Pause size={14} className="text-warning" /> : s.lastError ? <AlertTriangle size={14} className="text-danger" /> : <CheckCircle2 size={14} className="text-success" />)}
+              </div>
+              <div className="mt-2.5 grid grid-cols-3 gap-2 border-t border-line pt-2 text-center">
+                {[
+                  ["Leads", s.leads.toLocaleString()],
+                  ["24 h", s.leads24h ? `+${s.leads24h}` : "0"],
+                  ["70+", String(s.good)],
+                ].map(([l, v]) => (
+                  <div key={l}>
+                    <div className="num text-[15px] font-semibold">{v}</div>
+                    <div className="text-[11px] text-faint">{l}</div>
+                  </div>
+                ))}
+              </div>
+              {controllable(s) && canEdit(user) && (
+                <div className="mt-2.5 flex items-center gap-1.5">
+                  <select
+                    value={s.intervalMinutes}
+                    onChange={(e) => void act(s.id, `/sources/${s.id}`, { method: "PATCH", body: JSON.stringify({ intervalMinutes: Number(e.target.value) }) }, { intervalMinutes: Number(e.target.value) })}
+                    className="h-[32px] flex-1 rounded-md border border-line bg-bg px-2 text-[12.5px] outline-none"
+                    aria-label={`${s.name} schedule`}
+                  >
+                    {[...new Set([...SCHEDULES, s.intervalMinutes])].sort((a, b) => a - b).map((m) => (
+                      <option key={m} value={m}>
+                        {every(m)}
+                      </option>
+                    ))}
+                  </select>
+                  <button onClick={() => void act(s.id, `/sources/${s.id}`, { method: "PATCH", body: JSON.stringify({ enabled: !s.enabled }) }, { enabled: !s.enabled })} className={`grid size-8 place-items-center rounded-md border border-line ${s.enabled ? "text-muted" : "bg-warning/10 text-warning"}`} aria-label={s.enabled ? "Pause" : "Resume"}>
+                    {s.enabled ? <Pause size={13} /> : <Play size={13} />}
+                  </button>
+                  <button disabled={!!s.runRequestedAt} onClick={() => void act(s.id, `/sources/${s.id}/run`, { method: "POST", body: "{}" }, { runRequestedAt: new Date().toISOString() })} className="inline-flex h-8 items-center gap-1 rounded-md border border-line px-2.5 text-[12.5px] font-medium disabled:opacity-60">
+                    {s.runRequestedAt ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />} {s.runRequestedAt ? "Queued" : "Run now"}
+                  </button>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      <div className="hidden overflow-hidden rounded-xl border border-line bg-surface md:block">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-[13px]">
             <thead>
@@ -146,6 +221,10 @@ export function SourcesPage() {
                     <td className="px-3 py-2.5">
                       {s.kind === "manual" ? (
                         <span className="text-muted">—</span>
+                      ) : !s.enabled ? (
+                        <span className="inline-flex items-center gap-1.5 text-warning">
+                          <Pause size={12} /> Paused <span className="text-faint">· {ago(s.lastSuccessAt)}</span>
+                        </span>
                       ) : ok ? (
                         <span className="inline-flex items-center gap-1.5 text-success">
                           <CheckCircle2 size={13} /> OK <span className="text-faint">· {ago(s.lastSuccessAt)}</span>
@@ -156,7 +235,42 @@ export function SourcesPage() {
                         </span>
                       )}
                     </td>
-                    <td className="hidden px-3 py-2.5 text-muted md:table-cell">{every(s.intervalMinutes)}</td>
+                    <td className="hidden px-3 py-2.5 text-muted md:table-cell">
+                      {controllable(s) && canEdit(user) ? (
+                        <div className="flex items-center gap-1.5">
+                          <select
+                            value={s.intervalMinutes}
+                            onChange={(e) => void act(s.id, `/sources/${s.id}`, { method: "PATCH", body: JSON.stringify({ intervalMinutes: Number(e.target.value) }) }, { intervalMinutes: Number(e.target.value) })}
+                            className="h-[28px] cursor-pointer rounded-md border border-line bg-bg px-1.5 text-[12px] text-fg outline-none focus:border-accent/60"
+                            aria-label={`${s.name} schedule`}
+                          >
+                            {[...new Set([...SCHEDULES, s.intervalMinutes])].sort((a, b) => a - b).map((m) => (
+                              <option key={m} value={m}>
+                                {every(m)}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={() => void act(s.id, `/sources/${s.id}`, { method: "PATCH", body: JSON.stringify({ enabled: !s.enabled }) }, { enabled: !s.enabled })}
+                            className={`grid size-7 place-items-center rounded-md border border-line ${s.enabled ? "text-muted hover:text-fg" : "bg-warning/10 text-warning"}`}
+                            title={s.enabled ? "Pause this source" : "Resume this source"}
+                            aria-label={s.enabled ? `Pause ${s.name}` : `Resume ${s.name}`}
+                          >
+                            {s.enabled ? <Pause size={12} /> : <Play size={12} />}
+                          </button>
+                          <button
+                            disabled={busy === s.id || !!s.runRequestedAt}
+                            onClick={() => void act(s.id, `/sources/${s.id}/run`, { method: "POST", body: "{}" }, { runRequestedAt: new Date().toISOString() })}
+                            className="inline-flex h-7 items-center gap-1 rounded-md border border-line px-2 text-[12px] font-medium text-muted hover:bg-surface-2 hover:text-fg disabled:opacity-60"
+                            title="Fetch new posts now (within a minute)"
+                          >
+                            {s.runRequestedAt ? <Loader2 size={12} className="animate-spin" /> : <Play size={11} />} {s.runRequestedAt ? "Queued" : "Run now"}
+                          </button>
+                        </div>
+                      ) : (
+                        <span>{s.enabled ? every(s.intervalMinutes) : "paused"}</span>
+                      )}
+                    </td>
                     <td className="num px-3 py-2.5">{s.leads.toLocaleString()}</td>
                     <td className="num px-3 py-2.5">{s.leads24h ? <span className="text-success">+{s.leads24h}</span> : <span className="text-faint">0</span>}</td>
                     <td className="num hidden px-3 py-2.5 sm:table-cell">{s.good}</td>
@@ -175,28 +289,6 @@ export function SourcesPage() {
           </table>
         </div>
       </div>
-      {items && !items.some((s) => s.id === "email") && (
-        <div className="mt-4 rounded-xl border border-line bg-surface p-5">
-          <div className="mb-1.5 flex items-center gap-2 text-[14px] font-medium">
-            <Mail size={15} className="text-accent" /> Connect Email-in
-          </div>
-          <p className="mb-2.5 text-[13px] text-muted">
-            Upwork, PeoplePerHour, Malt and the Serbian procurement portal have no API, but they email you new matches for saved searches. Send those emails to one inbox and Scoutline turns every
-            project in them into a scored lead. You can also forward any client inquiry there.
-          </p>
-          <ol className="ml-4 list-decimal space-y-1 text-[13px] text-muted">
-            <li>
-              Create a separate Gmail (e.g. <span className="text-fg">leads.yourcompany@gmail.com</span>), turn on 2-Step Verification and create an <b className="text-fg">App password</b>.
-            </li>
-            <li>
-              In Coolify add <code className="num text-fg">IMAP_HOST=imap.gmail.com</code>, <code className="num text-fg">IMAP_USER</code> and <code className="num text-fg">IMAP_PASSWORD</code> (the app password), then
-              Redeploy.
-            </li>
-            <li>On each platform save a search and set alerts to that address.</li>
-          </ol>
-          <p className="mt-3 text-[12.5px] text-faint">Full guide: docs/EMAIL-IN.md</p>
-        </div>
-      )}
       <p className="mt-4 text-[12px] text-faint">
         Domestic job boards (Infostud, HelloWorld…) don’t allow automated reading — add those leads with “Add lead” (link or pasted text).
       </p>

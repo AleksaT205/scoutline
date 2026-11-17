@@ -133,6 +133,19 @@ function Team() {
                     <option value="member">Member</option>
                     <option value="viewer">Viewer</option>
                   </select>
+                  {u.role !== "owner" && (
+                    <select
+                      value={(u as { access?: string }).access ?? "all"}
+                      onChange={(e) => act(() => teamFetch(`/team/users/${u.id}`, { method: "PATCH", body: JSON.stringify({ access: e.target.value }) }))}
+                      className="h-[30px] rounded-lg border border-line bg-bg px-2 text-[12.5px]"
+                      title="Which part of the app this person can use"
+                      aria-label={`${u.name} access`}
+                    >
+                      <option value="all">Sales + Delivery</option>
+                      <option value="sales">Sales only</option>
+                      <option value="delivery">Delivery only</option>
+                    </select>
+                  )}
                   <button onClick={() => window.confirm(`Remove ${u.name} from the team?`) && act(() => teamFetch(`/team/users/${u.id}`, { method: "DELETE" }))} className="text-faint hover:text-danger" aria-label={`Remove ${u.name}`}>
                     <Trash2 size={14} />
                   </button>

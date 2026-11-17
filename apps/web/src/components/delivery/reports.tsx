@@ -220,7 +220,39 @@ export function ReportsPage() {
 
       {/* Profitabilnost po projektu */}
       <div className="mb-2 text-[12px] font-medium uppercase tracking-wider text-faint">Profit by project (to date)</div>
-      <div className="mb-6 overflow-hidden rounded-xl border border-line bg-surface">
+      <ul className="mb-6 space-y-2 md:hidden">
+        {projects.map((p) => (
+          <li key={p.id}>
+            <a href={`#/delivery/projects/${p.id}`} className="block rounded-xl border border-line bg-surface p-3">
+              <div className="flex items-center gap-1.5">
+                <span className="num rounded bg-surface-2 px-1.5 py-px text-[10.5px] text-muted ring-1 ring-line">{p.key}</span>
+                <span className="truncate text-[14px] font-medium">{p.name}</span>
+              </div>
+              <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+                {[
+                  ["Value", p.revenue ? eur2(p.revenue) : "—", ""],
+                  ["Cost", eur2(p.cost), ""],
+                  ["Margin", p.revenue && p.cost > 0 ? eur2(p.margin) : "—", marginCls(p.marginPct)],
+                ].map(([l, v, cls]) => (
+                  <div key={l} className="rounded-lg bg-bg py-1.5">
+                    <div className={`num text-[14px] font-semibold ${cls}`}>{v}</div>
+                    <div className="text-[11px] text-faint">{l}</div>
+                  </div>
+                ))}
+              </div>
+              {p.budgetUsedPct !== null && (
+                <div className="mt-2 flex items-center gap-2 text-[12px] text-muted">
+                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-2">
+                    <div className={`h-full rounded-full ${p.budgetUsedPct > 100 ? "bg-danger" : p.budgetUsedPct > 80 ? "bg-warning" : "bg-accent"}`} style={{ width: `${Math.min(100, p.budgetUsedPct)}%` }} />
+                  </div>
+                  <span className="num">{p.budgetUsedPct}% of budget · {p.hours} h</span>
+                </div>
+              )}
+            </a>
+          </li>
+        ))}
+      </ul>
+      <div className="mb-6 hidden overflow-hidden rounded-xl border border-line bg-surface md:block">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-[13px]">
             <thead>

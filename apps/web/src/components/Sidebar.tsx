@@ -1,5 +1,6 @@
-import { BarChart3, Building2, CircleDot, FolderKanban, Inbox, ListTodo, Kanban, LayoutGrid, RefreshCcw, Route, Rss, Search, Settings, Users, X } from "lucide-react";
+import { BarChart3, Building2, CircleDot, FolderKanban, Inbox, ListTodo, Kanban, LayoutGrid, RefreshCcw, Rss, Search, Settings, Users, X } from "lucide-react";
 import { useInboxCount } from "../lib/delivery";
+import { onlySpace, useSessionUser } from "../lib/session";
 import type { ApiStatus } from "../lib/api";
 
 const prospecting = (leadCount: number) => [
@@ -17,7 +18,6 @@ const delivery = [
   { label: "Reports", icon: BarChart3, href: "#/delivery/reports", page: "reports" },
 ];
 export const DELIVERY_PAGES = ["inbox", "issues", "projects", "project", "cycles", "clients", "reports"];
-const aiOps = [{ label: "AI Router", icon: Route, href: "#/router" }];
 const formatCost = (v?: number) => (v === undefined ? "—" : v > 0 && v < 0.01 ? `$${v.toFixed(4)}` : `$${v.toFixed(2)}`);
 
 const workspace = [
@@ -66,18 +66,13 @@ function StatusCard({ status, aiCostUsd }: { status: ApiStatus; aiCostUsd?: numb
         {title}
       </div>
       <div>{detail}</div>
-      <div className="mt-0.5">
-        <span title="Calculated at the providers' list prices. Free tiers (Groq, Gemini free, OpenRouter :free) are not billed — your real bill stays $0.">
-          AI usage (list price): <b className="num font-medium text-fg">{formatCost(aiCostUsd)}</b>
-        </span>
-        <div className="text-[11px] text-faint">Free tiers → billed $0</div>
-      </div>
     </div>
   );
 }
 
 export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: { status: ApiStatus; open: boolean; onClose: () => void; leadCount: number; aiCostUsd?: number; page: string }) {
   const inbox = useInboxCount(DELIVERY_PAGES.includes(page));
+  const only = onlySpace(useSessionUser()); // korisnik sa pristupom samo jednom delu nema prekidač
   return (
     <>
       {open && <div className="fixed inset-0 z-30 bg-black/40 lg:hidden" onClick={onClose} />}
@@ -100,6 +95,7 @@ export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: {
           </button>
         </div>
         {/* Prostor: prodaja (leadovi) ili isporuka (projekti) — kao timovi u Linear-u */}
+        {!only && (
         <div className="grid grid-cols-2 rounded-lg border border-line bg-surface p-0.5 text-[12.5px]" role="tablist" aria-label="Workspace area">
           {(
             [
@@ -112,6 +108,7 @@ export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: {
             </a>
           ))}
         </div>
+        )}
         {DELIVERY_PAGES.includes(page) ? (
           <nav className="flex flex-col gap-0.5">
             <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wider text-faint">Delivery</div>
@@ -127,12 +124,6 @@ export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: {
             ))}
           </nav>
         )}
-        <nav className="flex flex-col gap-0.5">
-          <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wider text-faint">AI Ops</div>
-          {aiOps.map((i) => (
-            <NavItem key={i.label} {...i} active={page === "router"} />
-          ))}
-        </nav>
         <nav className="flex flex-col gap-0.5">
           <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wider text-faint">Workspace</div>
           {workspace.map((i) => (

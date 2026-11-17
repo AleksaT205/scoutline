@@ -15,6 +15,7 @@ import { deliveryRoutes } from "./delivery.js";
 import { deliveryPlusRoutes, portalRoutes } from "./delivery-plus.js";
 import { reportRoutes } from "./reports.js";
 import { integrationRoutes } from "./integrations.js";
+import { notificationRoutes } from "./notifications.js";
 
 type Tier = "T1" | "T2" | "T3" | "DOMESTIC";
 type LeadRow = { lead: typeof leads.$inferSelect; raw: typeof rawItems.$inferSelect; source: string };
@@ -68,6 +69,11 @@ export function createApp(getDb: () => Db) {
       allowHeaders: ["Content-Type", "Authorization"],
     }),
   );
+
+  // Mora pre ruta (Hono izvršava redom registracije)
+  // Pristup po delu aplikacije (Settings → Team): Sales korisnik ne vidi Delivery i obrnuto
+  app.use("/delivery/*", a.space("delivery"));
+  for (const p of ["/leads", "/leads/*", "/pipeline", "/sources", "/sources/*", "/analytics", "/stats"]) app.use(p, a.space("sales"));
 
   const selectLeads = () =>
     getDb()
@@ -197,6 +203,7 @@ export function createApp(getDb: () => Db) {
   app.route("/delivery", reportRoutes(getDb, a));
   // Settings → Integrations: ključevi firme (vlasnik) i lični GitHub token (svako)
   app.route("/integrations", integrationRoutes(getDb, a));
+  app.route("/notifications", notificationRoutes(getDb, a.readGuard));
   app.use("/dev/*", a.require("member"));
   app.route("/dev/tasks", devTasks(getDb));
 
@@ -293,15 +300,35 @@ export function createApp(getDb: () => Db) {
     return c.json({ lead: toUiLead(row!) }, 201);
   });
 
+  // PATCH /sources/:id { intervalMinutes?, enabled? } — raspored i pauza (član tima)
+  app.patch("/sources/:id", a.require("member"), async (c) => {
+    const b = (await c.req.json().catch(() => ({}))) as { intervalMinutes?: unknown; enabled?: unknown };
+    const set: Partial<typeof sources.$inferInsert> = { updatedAt: new Date() };
+    if (b.intervalMinutes !== undefined) {
+      const m = Math.round(Number(b.intervalMinutes));
+      if (!Number.isFinite(m) || m < 10 || m > 7 * 24 * 60) return c.json({ error: "Schedule must be between 10 minutes and 7 days." }, 400);
+      set.intervalMinutes = m;
+      set.customInterval = true;
+    }
+    if (typeof b.enabled === "boolean") set.enabled = b.enabled;
+    const [row] = await getDb().update(sources).set(set).where(eq(sources.id, c.req.param("id")!)).returning({ id: sources.id });
+    return row ? c.json({ ok: true }) : c.json({ error: "Source not found." }, 404);
+  });
+  // POST /sources/:id/run — „Run now“: worker ga pokreće u sledećem krugu (do 1 min)
+  app.post("/sources/:id/run", a.require("member"), async (c) => {
+    const [row] = await getDb().update(sources).set({ runRequestedAt: new Date() }).where(eq(sources.id, c.req.param("id")!)).returning({ id: sources.id });
+    return row ? c.json({ ok: true }) : c.json({ error: "Source not found." }, 404);
+  });
+
   // GET /sources — stanje svakog izvora + broj leadova
   app.get("/sources", a.readGuard, async (c) => {
     const db = getDb();
     const dayAgo = new Date(Date.now() - 86_400_000).toISOString();
     const rows = await db.execute<{
-      id: string; name: string; kind: string; enabled: boolean; interval_minutes: number; last_success_at: string | null; last_error: string | null;
+      id: string; name: string; kind: string; enabled: boolean; interval_minutes: number; last_success_at: string | null; last_error: string | null; run_requested_at: string | null;
       items: number; leads: number; leads_24h: number; good: number;
     }>(sql`
-      select s.id, s.name, s.kind, s.enabled, s.interval_minutes, s.last_success_at, s.last_error,
+      select s.id, s.name, s.kind, s.enabled, s.interval_minutes, s.last_success_at, s.last_error, s.run_requested_at,
              count(distinct r.id)::int as items,
              count(l.id) filter (where l.status <> 'hidden')::int as leads,
              count(l.id) filter (where l.status <> 'hidden' and l.created_at >= ${dayAgo}::timestamptz)::int as leads_24h,
@@ -319,6 +346,7 @@ export function createApp(getDb: () => Db) {
         intervalMinutes: r.interval_minutes,
         lastSuccessAt: r.last_success_at,
         lastError: r.last_error,
+        runRequestedAt: r.run_requested_at,
         items: r.items,
         leads: r.leads,
         leads24h: r.leads_24h,

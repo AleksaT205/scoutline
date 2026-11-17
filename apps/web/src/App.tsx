@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Bell, BellRing, Menu, Moon, Plus, RefreshCw, Search, Sun } from "lucide-react";
+import { BellRing, Menu, Moon, Plus, RefreshCw, Search, Sun } from "lucide-react";
 import { DEMO_LEADS } from "./data/demo";
 import { useApiStatus, useLeads } from "./lib/api";
 import { Sidebar } from "./components/Sidebar";
@@ -20,9 +20,10 @@ import { ClientsPage, MyIssuesPage, ProjectPage, ProjectsPage } from "./componen
 import { CyclesPage, InboxPage } from "./components/delivery/more";
 import { ReportsPage } from "./components/delivery/reports";
 import { PortalPage } from "./components/PortalPage";
+import { NotificationsBell } from "./components/NotificationsBell";
 import { SharePage } from "./components/SharePage";
 import { AcceptInvitePage, LoginPage, SetupPage } from "./components/AuthPages";
-import { clearSession, useSessionUser } from "./lib/session";
+import { clearSession, getSessionToken, onlySpace, setSession, useSessionUser, type SessionUser } from "./lib/session";
 import { API_URL } from "./lib/api";
 
 type Theme = "light" | "dark";
@@ -78,6 +79,19 @@ export function App() {
   const hash = useHash();
   const user = useSessionUser();
   const [hasUsers, setHasUsers] = useState<boolean | null>(null);
+  // Osveži podatke o nalogu (uloga, pristup) sa servera
+  useEffect(() => {
+    const token = getSessionToken();
+    if (!token) return;
+    fetch(`${API_URL}/auth/me`, { headers: { Authorization: `Bearer ${token}` } })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { user?: SessionUser } | null) => {
+        const cur = user;
+        if (d?.user && (d.user.access !== cur?.access || d.user.role !== cur?.role || d.user.name !== cur?.name)) setSession(token, d.user);
+      })
+      .catch(() => undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   useEffect(() => {
     fetch(`${API_URL}/auth/state`)
       .then((r) => (r.ok ? r.json() : { hasUsers: false }))
@@ -90,6 +104,18 @@ export function App() {
   if (hash.startsWith("#/invite/")) return <AcceptInvitePage token={hash.slice("#/invite/".length)} onDone={() => (window.location.hash = "#/")} />;
   if (hash.startsWith("#/setup")) return <SetupPage onDone={() => (window.location.hash = "#/")} />;
   if (hasUsers && !user?.id) return <LoginPage />;
+  // Korisnik sa pristupom samo jednom delu aplikacije ide tamo
+  const only = onlySpace(user);
+  const delivery = ["issues", "projects", "project", "clients", "inbox", "cycles", "reports"].includes(pageOf(hash));
+  const salesOnlyPage = ["leads", "pipeline", "sources", "overview", "router"].includes(pageOf(hash));
+  if (only === "delivery" && salesOnlyPage) {
+    window.location.hash = "#/delivery/issues";
+    return null;
+  }
+  if (only === "sales" && delivery) {
+    window.location.hash = "#/";
+    return null;
+  }
   return <Dashboard page={pageOf(hash)} projectId={hash.startsWith("#/delivery/projects/") ? hash.slice("#/delivery/projects/".length).split(/[?/]/)[0] : undefined} needsSetup={hasUsers === false} />;
 }
 
@@ -109,6 +135,7 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
   }, []);
   const [filters, setFilters] = useState<FilterState>(() => freshFilters());
   const [selectedId, setSelectedId] = useState<string>();
+  const [sheet, setSheet] = useState(false); // detalj leada na telefonu
 
   // Pravi leadovi iz API-ja; dok ih nema, prikazuju se primeri.
   const allLeads = api.live && api.leads ? api.leads : DEMO_LEADS;
@@ -150,9 +177,7 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
           >
             {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
           </button>
-          <button className="grid size-[34px] place-items-center rounded-[7px] border border-line bg-surface text-muted hover:bg-surface-2" aria-label="Notifications">
-            <Bell size={15} />
-          </button>
+          <NotificationsBell />
           <div className="relative">
             <button
               onClick={() => setUserMenu((v) => !v)}
@@ -271,10 +296,35 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
           <Kpis leads={allLeads} />
           <Filters value={filters} onChange={setFilters} all={allLeads} shown={leads.length} />
 
-          <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
-            <LeadsTable leads={leads} selectedId={selected?.id} onSelect={setSelectedId} />
-            {selected && <LeadDetail lead={selected} live={api.live} onUpdated={api.update} />}
+          <div className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,1fr)_400px]">
+            <LeadsTable
+              leads={leads}
+              selectedId={selected?.id}
+              onSelect={(id) => {
+                setSelectedId(id);
+                setSheet(true);
+              }}
+            />
+            {selected && (
+              <div className="hidden xl:block">
+                <LeadDetail lead={selected} live={api.live} onUpdated={api.update} />
+              </div>
+            )}
           </div>
+          {/* Telefon / tablet: detalj leada kao panel preko ekrana */}
+          {selected && sheet && (
+            <div className="fixed inset-0 z-40 bg-black/50 backdrop-blur-[2px] xl:hidden" onClick={() => setSheet(false)}>
+              <div className="absolute inset-x-0 bottom-0 top-10 overflow-y-auto rounded-t-2xl border-t border-line bg-bg px-3 pb-8 pt-2 sm:inset-x-auto sm:right-0 sm:top-0 sm:w-[460px] sm:rounded-none sm:border-l sm:border-t-0" onClick={(e) => e.stopPropagation()}>
+                <div className="sticky top-0 z-10 -mx-3 mb-2 flex items-center bg-bg/90 px-3 py-2 backdrop-blur">
+                  <span className="mx-auto h-1 w-10 rounded-full bg-line-2 sm:hidden" />
+                  <button onClick={() => setSheet(false)} className="absolute right-3 rounded-md px-2 py-1 text-[13px] text-muted hover:text-fg">
+                    Close
+                  </button>
+                </div>
+                <LeadDetail lead={selected} live={api.live} onUpdated={api.update} />
+              </div>
+            </div>
+          )}
           </>
           )}
         </div>

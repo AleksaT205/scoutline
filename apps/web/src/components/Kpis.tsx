@@ -4,17 +4,17 @@ const DAY = 86_400_000;
 
 function Card({ label, value, trend, children, glow }: { label: string; value: string; trend: React.ReactNode; children: React.ReactNode; glow?: boolean }) {
   return (
-    <div className="relative overflow-hidden rounded-xl border border-line bg-surface px-4 pt-4 pb-3">
+    <div className="relative overflow-hidden rounded-xl border border-line bg-surface px-3 pt-3 pb-2.5 sm:px-4 sm:pt-4 sm:pb-3">
       {glow && (
         <div className="pointer-events-none absolute -top-24 -right-16 size-56 rounded-full bg-[radial-gradient(circle,var(--accent-soft),transparent_65%)]" />
       )}
-      <div className="text-[12.5px] text-muted">{label}</div>
+      <div className="truncate text-[12px] text-muted sm:text-[12.5px]">{label}</div>
       <div className="flex items-end justify-between gap-2.5">
         <div>
-          <div className="num mt-1.5 text-[30px] font-semibold leading-tight tracking-tight">{value}</div>
-          <div className="mt-1.5 text-xs">{trend}</div>
+          <div className="num mt-1 text-[22px] font-semibold leading-tight tracking-tight sm:mt-1.5 sm:text-[30px]">{value}</div>
+          <div className="mt-1 truncate text-[11px] sm:mt-1.5 sm:text-xs">{trend}</div>
         </div>
-        {children}
+        <div className="hidden sm:block">{children}</div>
       </div>
     </div>
   );
@@ -95,7 +95,7 @@ export function Kpis({ leads }: { leads: UiLead[] }) {
   const dash = (t1 / 100) * 106.8;
 
   return (
-    <section className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <section className="mb-5 grid grid-cols-2 gap-2 sm:gap-3 xl:grid-cols-4">
       <Card
         label="New today"
         value={String(live ? today.length : leads.length)}

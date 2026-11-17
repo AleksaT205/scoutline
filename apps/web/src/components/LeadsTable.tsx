@@ -11,7 +11,42 @@ export function LeadsTable({ leads, selectedId, onSelect }: { leads: UiLead[]; s
     );
   }
   return (
-    <div className="overflow-hidden rounded-xl border border-line bg-surface">
+    <>
+    {/* Telefon: kartice */}
+    <ul className="space-y-2 md:hidden">
+      {leads.map((l) => (
+        <li key={l.id}>
+          <button
+            onClick={() => onSelect(l.id)}
+            className={`w-full rounded-xl border bg-surface p-3 text-left transition-colors ${l.id === selectedId ? "border-accent/60 bg-accent-soft" : "border-line active:bg-surface-2"}`}
+          >
+            <div className="flex items-start gap-3">
+              <ScoreRing score={l.score} />
+              <div className="min-w-0 flex-1">
+                <div className="mb-1 flex flex-wrap items-center gap-1.5">
+                  <TypeBadge type={l.leadType} />
+                  {l.status && l.status !== "new" && <StatusPill status={l.status} />}
+                  {l.deadline && <DeadlineChip deadline={l.deadline} />}
+                </div>
+                <div className="line-clamp-2 text-[14px] font-medium leading-snug">{l.title}</div>
+                <div className="mt-0.5 truncate text-[12.5px] text-muted">{l.company}</div>
+              </div>
+            </div>
+            <div className="mt-2.5 flex items-center gap-2 border-t border-line pt-2 text-[12px] text-muted">
+              <span className="inline-flex items-center gap-1">
+                {flag(l.country)} <TierBadge tier={l.tier} />
+              </span>
+              <span className="num">{l.budgetLabel}</span>
+              <span className="ml-auto truncate text-faint">
+                {l.source} · {timeAgo(l.postedMinutesAgo)}
+              </span>
+            </div>
+          </button>
+        </li>
+      ))}
+    </ul>
+    {/* Tablet i računar: tabela */}
+    <div className="hidden overflow-hidden rounded-xl border border-line bg-surface md:block">
       <div className="overflow-x-auto">
         <table className="w-full border-collapse text-[13px]">
           <thead>
@@ -76,5 +111,6 @@ export function LeadsTable({ leads, selectedId, onSelect }: { leads: UiLead[]; s
         </table>
       </div>
     </div>
+    </>
   );
 }

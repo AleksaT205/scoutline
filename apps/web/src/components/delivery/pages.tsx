@@ -268,7 +268,37 @@ export function ProjectsPage() {
           </button>
         ))}
       </div>
-      <div className="overflow-hidden rounded-xl border border-line bg-surface">
+      <ul className="space-y-2 md:hidden">
+        {shown.map((p) => (
+          <li key={p.id}>
+            <a href={`#/delivery/projects/${p.id}`} className="block rounded-xl border border-line bg-surface p-3 active:bg-surface-2">
+              <div className="flex items-start gap-3">
+                <ProgressRing value={p.progress} size={34} />
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1.5">
+                    <span className="num rounded bg-surface-2 px-1.5 py-px text-[10.5px] text-muted ring-1 ring-line">{p.key}</span>
+                    <ProjectStatusPill status={p.status} />
+                  </div>
+                  <div className="mt-1 line-clamp-2 text-[14px] font-medium leading-snug">{p.name}</div>
+                  <div className="truncate text-[12px] text-muted">{p.customerName ?? "No client"}</div>
+                </div>
+              </div>
+              <div className="mt-2.5 flex items-center gap-3 border-t border-line pt-2 text-[12px] text-muted">
+                <span className="num">
+                  {p.issues.done}/{p.issues.total} done
+                </span>
+                <span className="num">{fmtEur(p.budgetEur)}</span>
+                <span className="num">{fmtDate(p.dueDate)}</span>
+                <span className="ml-auto">
+                  <Avatar name={p.ownerName} size={20} />
+                </span>
+              </div>
+            </a>
+          </li>
+        ))}
+        {data && shown.length === 0 && <li className="rounded-xl border border-dashed border-line px-6 py-10 text-center text-[13px] text-faint">No projects yet.</li>}
+      </ul>
+      <div className="hidden overflow-hidden rounded-xl border border-line bg-surface md:block">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-[13px]">
             <thead>
@@ -661,7 +691,34 @@ export function ClientsPage() {
           <ErrorNote>{error}</ErrorNote>
         </div>
       )}
-      <div className="overflow-hidden rounded-xl border border-line bg-surface">
+      <ul className="space-y-2 md:hidden">
+        {(data ?? []).map((c) => (
+          <li key={c.id} className="rounded-xl border border-line bg-surface p-3">
+            <div className="flex items-center gap-2.5">
+              <span className="grid size-9 place-items-center rounded-lg bg-surface-2 text-[12px] text-muted ring-1 ring-line">{c.name.slice(0, 2).toUpperCase()}</span>
+              <div className="min-w-0 flex-1">
+                <div className="truncate text-[14px] font-medium">
+                  {c.name} {c.country && flag(c.country)}
+                </div>
+                <div className="truncate text-[12px] text-muted">{c.contactName ?? c.contactEmail ?? "No contact yet"}</div>
+              </div>
+              {canEdit(user) && (
+                <button onClick={() => setEdit(c)} className="grid size-8 place-items-center rounded-md text-faint hover:bg-surface-2 hover:text-fg" aria-label={`Edit ${c.name}`}>
+                  <Pencil size={14} />
+                </button>
+              )}
+            </div>
+            <div className="mt-2.5 flex gap-4 border-t border-line pt-2 text-[12px] text-muted">
+              <span className="num">
+                {c.activeProjects} active · {c.projects} total
+              </span>
+              <span className="num ml-auto font-medium text-fg">{fmtEur(c.valueEur || null)}</span>
+            </div>
+          </li>
+        ))}
+        {data && data.length === 0 && <li className="rounded-xl border border-dashed border-line px-6 py-10 text-center text-[13px] text-faint">No clients yet.</li>}
+      </ul>
+      <div className="hidden overflow-hidden rounded-xl border border-line bg-surface md:block">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-[13px]">
             <thead>

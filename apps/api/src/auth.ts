@@ -17,6 +17,7 @@ export interface Actor {
   email: string;
   name: string;
   role: Role;
+  access?: string; // all | sales | delivery
 }
 const RANK: Record<Role, number> = { viewer: 0, member: 1, owner: 2 };
 
@@ -79,7 +80,7 @@ export function auth(getDb: () => Db) {
     if (!session) return null;
     const [u] = await getDb().select().from(users).where(eq(users.id, session.uid)).limit(1);
     if (!u || u.tokenVersion !== session.v) return null;
-    return { id: u.id, email: u.email, name: u.name, role: u.role };
+    return { id: u.id, email: u.email, name: u.name, role: u.role, access: u.access };
   }
 
   /** Zahteva prijavu sa najmanje datom ulogom. */
@@ -93,6 +94,16 @@ export function auth(getDb: () => Db) {
       }
       if (RANK[actor.role] < RANK[min]) return c.json({ error: "Your role doesn't allow this action." }, 403);
       c.set("actor" as never, actor as never);
+      await next();
+    };
+
+  /** Deo aplikacije: korisnik sa pristupom samo „sales“ ne vidi Delivery i obrnuto (vlasnik vidi sve). */
+  const space =
+    (s: "sales" | "delivery"): MiddlewareHandler =>
+    async (c, next) => {
+      const a = await actorFrom(c);
+      if (a?.id && a.role !== "owner" && a.access && a.access !== "all" && a.access !== s)
+        return c.json({ error: `Your account has access to ${a.access === "sales" ? "Sales" : "Delivery"} only.` }, 403);
       await next();
     };
 
@@ -215,9 +226,15 @@ export function auth(getDb: () => Db) {
     return c.json({ ok: true });
   });
   team.patch("/users/:id", require("owner"), async (c) => {
-    const input = await c.req.json<{ role?: Role }>().catch(() => null);
-    if (!input?.role || RANK[input.role] === undefined) return c.json({ error: "Role must be owner, member or viewer." }, 400);
+    const input = await c.req.json<{ role?: Role; access?: string }>().catch(() => null);
     const db = getDb();
+    // Pristup delu aplikacije (Sales / Delivery / oba)
+    if (input?.access !== undefined && !input.role) {
+      if (!["all", "sales", "delivery"].includes(input.access)) return c.json({ error: "Access must be all, sales or delivery." }, 400);
+      const [u] = await db.update(users).set({ access: input.access, updatedAt: new Date() }).where(eq(users.id, c.req.param("id")!)).returning();
+      return u ? c.json({ user: publicUser(u) }) : c.json({ error: "User not found." }, 404);
+    }
+    if (!input?.role || RANK[input.role] === undefined) return c.json({ error: "Role must be owner, member or viewer." }, 400);
     if (input.role !== "owner") {
       const owners = await db.select({ id: users.id }).from(users).where(eq(users.role, "owner"));
       if (owners.length === 1 && owners[0]!.id === c.req.param("id")) return c.json({ error: "The team needs at least one owner." }, 400);
@@ -272,11 +289,11 @@ export function auth(getDb: () => Db) {
     return s;
   }
 
-  return { require, readGuard, routes, team, findShare, actorFrom, usersExist };
+  return { require, readGuard, space, routes, team, findShare, actorFrom, usersExist };
 }
 
 function publicUser(u: typeof users.$inferSelect) {
-  return { id: u.id, email: u.email, name: u.name, role: u.role, lastLoginAt: u.lastLoginAt, createdAt: u.createdAt };
+  return { id: u.id, email: u.email, name: u.name, role: u.role, access: u.access, lastLoginAt: u.lastLoginAt, createdAt: u.createdAt };
 }
 
 async function findInvite(db: Db, token: string) {

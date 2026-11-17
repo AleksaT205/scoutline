@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { and, asc, count, desc, eq, gte, inArray, isNotNull, isNull, lt, sql } from "drizzle-orm";
-import { customers, cycles, issueEvents, issueLinks, issues, projectPortals, projects, userGithubToken, type Db } from "@radar/db";
+import { customers, cycles, issueEvents, issueLinks, issues, projectPortals, projects, settings, userGithubToken, type Db } from "@radar/db";
 import { runtime } from "./runtime.js";
 import { AGENTS, CYCLE_DAYS, parseRepo, type Agent } from "@radar/shared";
 import { sendTelegramText } from "@radar/scoring";
@@ -23,25 +23,32 @@ const DAY = 86_400_000;
 const OPEN = ["triage", "backlog", "todo", "in_progress", "in_review"] as const;
 
 // ── Sprintovi: uvek postoje tekući + 2 sledeća; nedovršeno iz završenih prelazi u tekući ──
+/** Dužina sprinta u danima (Cycles → podešavanje vlasnika); važi za sprintove koji tek počinju. */
+export async function cycleDays(db: Db): Promise<number> {
+  const [row] = await db.select().from(settings).where(eq(settings.key, "cycles")).limit(1);
+  const d = Number((row?.value as { days?: number } | undefined)?.days);
+  return [7, 14, 21, 28].includes(d) ? d : CYCLE_DAYS;
+}
 let ensuredAt = 0;
 export async function ensureCycles(db: Db, force = false) {
   if (!force && Date.now() - ensuredAt < 5 * 60_000) return;
   ensuredAt = Date.now();
   const now = new Date();
+  const LEN = (await cycleDays(db)) * DAY;
   const all = await db.select().from(cycles).orderBy(asc(cycles.number));
   let last = all[all.length - 1];
   if (!last) {
     // Prvi sprint počinje ovog ponedeljka (UTC)
     const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
     start.setUTCDate(start.getUTCDate() - ((start.getUTCDay() + 6) % 7));
-    [last] = await db.insert(cycles).values({ number: 1, startsAt: start, endsAt: new Date(start.getTime() + CYCLE_DAYS * DAY) }).returning();
+    [last] = await db.insert(cycles).values({ number: 1, startsAt: start, endsAt: new Date(start.getTime() + LEN) }).returning();
   }
   // Dopuni do tekućeg + 2 unapred
-  while (last!.endsAt.getTime() < now.getTime() + 2 * CYCLE_DAYS * DAY) {
+  while (last!.endsAt.getTime() < now.getTime() + 2 * LEN) {
     const startsAt = last!.endsAt;
     [last] = await db
       .insert(cycles)
-      .values({ number: last!.number + 1, startsAt, endsAt: new Date(startsAt.getTime() + CYCLE_DAYS * DAY) })
+      .values({ number: last!.number + 1, startsAt, endsAt: new Date(startsAt.getTime() + LEN) })
       .onConflictDoNothing()
       .returning();
     if (!last) return; // drugi proces je već napravio
@@ -143,6 +150,23 @@ export function deliveryPlusRoutes(getDb: () => Db, g: Guards) {
       })),
       burn,
     });
+  });
+
+  // Dužina sprinta: čita svako, menja vlasnik. Budući (još nepočeti) sprintovi se prave ponovo sa novom dužinom.
+  app.get("/cycles/settings", g.readGuard, async (c) => c.json({ days: await cycleDays(getDb()) }));
+  app.put("/cycles/settings", g.require("owner"), async (c) => {
+    const days = Number(((await c.req.json().catch(() => ({}))) as { days?: unknown }).days);
+    if (![7, 14, 21, 28].includes(days)) return c.json({ error: "Cycle length must be 1, 2, 3 or 4 weeks." }, 400);
+    const db = getDb();
+    await db.insert(settings).values({ key: "cycles", value: { days } }).onConflictDoUpdate({ target: settings.key, set: { value: { days }, updatedAt: new Date() } });
+    // Obriši buduće sprintove bez taskova (oni sa taskovima ostaju) i napravi ih ponovo
+    const future = await db.select({ id: cycles.id }).from(cycles).where(gte(cycles.startsAt, new Date()));
+    for (const f of future) {
+      const [used] = await db.select({ n: count() }).from(issues).where(eq(issues.cycleId, f.id));
+      if (!used?.n) await db.delete(cycles).where(eq(cycles.id, f.id));
+    }
+    await ensureCycles(db, true);
+    return c.json({ days });
   });
 
   // ── Inbox ──

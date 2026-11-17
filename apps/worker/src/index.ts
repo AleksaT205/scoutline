@@ -6,7 +6,7 @@ import { createDb, settings } from "@radar/db";
 import { CONNECTORS } from "./connectors/sources.js";
 import { aiConfigured } from "@radar/scoring";
 import { telegramConfigured } from "@radar/scoring";
-import { ingest, lastSuccess, notifyNew, purgeExpired, registerSources, scorePending } from "./pipeline/run.js";
+import { clearRunRequest, ingest, lastSuccess, notifyNew, purgeExpired, registerSources, scorePending, sourceControls } from "./pipeline/run.js";
 import { githubConfigured, syncGithub } from "./pipeline/github.js";
 import { refreshRuntime } from "./runtime.js";
 
@@ -40,11 +40,16 @@ async function tick() {
       fresh.forEach((c) => registered.add(c.id));
       console.log(`[worker] uključeni izvori: ${fresh.map((c) => c.id).join(", ")}`);
     }
+    const controls = await sourceControls(db);
     for (const c of now) {
-      const due = Date.now() - (lastRun.get(c.id) ?? 0) >= c.intervalMinutes * 60_000;
-      if (!due) continue;
+      const ctl = controls.get(c.id);
+      const last = lastRun.get(c.id) ?? 0;
+      const manual = !!ctl?.runAt && ctl.runAt.getTime() > last; // „Run now“ radi i za pauziran izvor
+      const due = (ctl?.enabled ?? true) && Date.now() - last >= (ctl?.interval ?? c.intervalMinutes) * 60_000;
+      if (!due && !manual) continue;
       lastRun.set(c.id, Date.now());
       await ingest(db, c);
+      if (manual) await clearRunRequest(db, c.id);
     }
     await scorePending(db, SCORE_BATCH);
     await notifyNew(db);

@@ -6,7 +6,11 @@ export interface SessionUser {
   email: string;
   name: string;
   role: "owner" | "member" | "viewer";
+  access?: "all" | "sales" | "delivery"; // koji deo aplikacije vidi (vlasnik uvek sve)
 }
+
+/** Koji prostor korisnik sme: null = oba. */
+export const onlySpace = (u: SessionUser | null): "sales" | "delivery" | null => (u && u.role !== "owner" && (u.access === "sales" || u.access === "delivery") ? u.access : null);
 
 const TOKEN_KEY = "scoutline-session";
 const USER_KEY = "scoutline-user";

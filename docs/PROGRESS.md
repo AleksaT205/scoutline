@@ -21,9 +21,20 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 | 11 | Cycles (sprintovi + burn-up), Inbox (triage), GitHub PR sync (PR → In Review / Done, issues → Inbox), Assign to Claude/Codex (brief u GitHub issue), portal za klijenta (+ zahtevi) · [DELIVERY.md](DELIVERY.md) · #11 | ✅ |
 | 12 | Izveštaji: evidencija vremena na tasku, cena rada (po osobi), naplata fiksno/po satu, profitabilnost po projektu (vrednost, trošak, marža, potrošen budžet, €/h), sati po nedelji i osobi, AI trošak i ušteda po projektu, taskovi agenata, CSV · [DELIVERY.md](DELIVERY.md) | ✅ |
 
-**Sledeći korak:** Redeploy u Coolify-ju → podesiti Email-in po [EMAIL-IN.md](EMAIL-IN.md) (Gmail + App password u Coolify) i, po želji, `SAM_API_KEY`. Za Delivery + GitHub: `GITHUB_TOKEN` sa pristupom repoima projekata ([DELIVERY.md](DELIVERY.md)). Sve faze iz Roadmap-a 2.0 su gotove — sledeće: podešavanja na serveru i stvarni rad, pa nove ideje u GitHub Issues.
+**Sledeći korak:** Redeploy u Coolify-ju → podesiti Email-in po [EMAIL-IN.md](EMAIL-IN.md) (Gmail + App password u Coolify) i, po želji, `SAM_API_KEY`. Za Delivery + GitHub: `GITHUB_TOKEN` sa pristupom repoima projekata ([DELIVERY.md](DELIVERY.md)). Sledeće: Faza 13 (AI asistent u projektu) po [ROADMAP-3.md](ROADMAP-3.md).
 
 ## Urađeno
+
+- **17. 11. 2026. — Dorade (lista želja, deo 1)**
+  - Logo u tabu pregledača (favicon).
+  - Leadovi: novi filteri **Source** (više izvora, pretraga, brojevi), **Budget** (€1k+ … €100k+, „samo sa budžetom“), **Posted**, Score/Market/Status/Service/Industry — svi isti uredni meniji; na telefonu iza dugmeta „Filters“.
+  - Izvori: **Run now**, raspored (15 min – 24 h) i **pauza** po izvoru (worker poštuje; ručni raspored se ne vraća pri restartu). Migracija 0011.
+  - **Zvonce**: novi dobri leadovi, zahtevi u Inboxu, dodele, komentari, PR-ovi, završeni taskovi; „Mark all read“.
+  - **Pristup po korisniku** (Settings → Team): Sales + Delivery / samo Sales / samo Delivery — bez prekidača i sa zaštitom na API-ju. Migracija 0012.
+  - **Dužina sprinta** (1–4 nedelje, vlasnik, Cycles).
+  - **Telefon**: kartice umesto tabela (Leads, Sources, Projects, Clients, Reports), detalj leada preko celog ekrana, kompaktne KPI kartice.
+  - Sklonjeno: AI Router iz menija i trošak AI-a iz kartice statusa; kartica „Connect Email-in“ (podešava se u Settings → Integrations).
+  - Veće želje (AI chat, statusi, modeli, GitHub PR/Actions/deploy, grane, više repoa, organizacije, skills, Figma, preview) → [ROADMAP-3.md](ROADMAP-3.md).
 
 - **17. 11. 2026. — Integrations (aplikacija nezavisna od Coolify-ja)**
   - Settings → **Integrations**: lično (svako svoj GitHub token, proveren pre čuvanja; podrazumevani agent Claude/Codex) i firma (vlasnik: GitHub, Telegram, Email-in, SAM.gov) sa „Test connection“.

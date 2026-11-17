@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { and, desc, eq, gte, isNull, lt, ne } from "drizzle-orm";
+import { and, desc, eq, gte, isNull, lt, ne, sql } from "drizzle-orm";
 import { leads, rawItems, settings, sources, type Db } from "@radar/db";
 import { detectCountry, normalizeAlerts, remoteFriendly, tierOf, type AlertSettings } from "@radar/shared";
 import { CONTRACT, aiActive, passesPrefilter, scoreItem } from "@radar/scoring";
@@ -16,8 +16,18 @@ export async function registerSources(db: Db, connectors: Connector[]) {
     await db
       .insert(sources)
       .values({ id: c.id, name: c.name, kind: c.kind, intervalMinutes: c.intervalMinutes })
-      .onConflictDoUpdate({ target: sources.id, set: { name: c.name, kind: c.kind, intervalMinutes: c.intervalMinutes } });
+      // Raspored koji je tim promenio u aplikaciji ostaje
+      .onConflictDoUpdate({ target: sources.id, set: { name: c.name, kind: c.kind, intervalMinutes: sql`case when ${sources.customInterval} then ${sources.intervalMinutes} else ${c.intervalMinutes} end` } });
   }
+}
+
+/** Raspored, pauza i „Run now“ iz aplikacije (tabela sources). */
+export async function sourceControls(db: Db) {
+  const rows = await db.select({ id: sources.id, enabled: sources.enabled, interval: sources.intervalMinutes, runAt: sources.runRequestedAt }).from(sources);
+  return new Map(rows.map((r) => [r.id, r]));
+}
+export async function clearRunRequest(db: Db, id: string) {
+  await db.update(sources).set({ runRequestedAt: null }).where(eq(sources.id, id));
 }
 
 /** Preuzme oglase sa jednog izvora, sačuva nove i napravi leadove za one koji prođu filter. */

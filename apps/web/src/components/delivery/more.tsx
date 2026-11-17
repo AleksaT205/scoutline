@@ -126,6 +126,46 @@ function BurnUp({ burn, scope }: { burn: Array<{ day: string; done: number }>; s
   );
 }
 
+function CycleLength({ onChanged }: { onChanged: () => void }) {
+  const user = useSessionUser();
+  const [days, setDays] = useState<number | null>(null);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    teamFetch<{ days: number }>("/delivery/cycles/settings")
+      .then((d) => setDays(d.days))
+      .catch(() => setDays(14));
+  }, []);
+  if (days === null) return null;
+  const owner = user?.role === "owner" || !user;
+  return (
+    <label className="inline-flex items-center gap-2 text-[12.5px] text-muted" title="Applies to cycles that haven't started yet">
+      Cycle length
+      <select
+        disabled={!owner || busy}
+        value={days}
+        onChange={async (e) => {
+          const d = Number(e.target.value);
+          setBusy(true);
+          try {
+            await teamFetch("/delivery/cycles/settings", { method: "PUT", body: JSON.stringify({ days: d }) });
+            setDays(d);
+            onChanged();
+          } finally {
+            setBusy(false);
+          }
+        }}
+        className="h-[30px] rounded-lg border border-line bg-surface px-2 text-[12.5px] text-fg outline-none disabled:opacity-60"
+      >
+        {[7, 14, 21, 28].map((d) => (
+          <option key={d} value={d}>
+            {d / 7} week{d > 7 ? "s" : ""}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
 export function CyclesPage() {
   const cycles = useCycles();
   const issues = useIssues("cycle=current");
@@ -143,9 +183,14 @@ export function CyclesPage() {
 
   return (
     <>
-      <div className="mb-5">
-        <h1 className="text-2xl font-semibold tracking-tight">Cycles</h1>
-        <p className="mt-0.5 text-[13.5px] text-muted">Two-week sprints for the whole team. Unfinished issues move to the next cycle automatically.</p>
+      <div className="mb-5 flex flex-wrap items-end gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Cycles</h1>
+          <p className="mt-0.5 text-[13.5px] text-muted">Sprints for the whole team. Unfinished issues move to the next cycle automatically.</p>
+        </div>
+        <div className="sm:ml-auto">
+          <CycleLength onChanged={cycles.reload} />
+        </div>
       </div>
       {cycles.error && <ErrorNote>{cycles.error}</ErrorNote>}
       {current && (
