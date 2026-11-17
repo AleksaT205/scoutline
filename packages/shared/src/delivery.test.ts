@@ -35,3 +35,20 @@ describe("trajanje", () => {
     expect(fmtMinutes(45)).toBe("45m");
   });
 });
+
+import { branchName, slugify } from "./delivery";
+describe("branchName", () => {
+  it("feature grana sa ključem i opisom bez naših slova", () => {
+    expect(branchName({ key: "PZS", number: 1, title: "Početna strana" })).toBe("feature/pzs-1-pocetna-strana");
+  });
+  it("bug → fix/", () => {
+    expect(branchName({ key: "PZS", number: 4, title: "Bug: meni na telefonu" })).toBe("fix/pzs-4-meni-na-telefonu");
+    expect(branchName({ key: "ACME", number: 9, title: "Login ne radi", labels: ["bug"] })).toBe("fix/acme-9-login-ne-radi");
+  });
+  it("bez taska i sa đ", () => {
+    expect(branchName({ title: "Đački popust na kolače" })).toBe("feature/djacki-popust-na-kolace");
+    expect(slugify("  —  ")).toBe("");
+    expect(branchName({ title: "!!!" })).toBe("feature/update");
+  });
+});
+

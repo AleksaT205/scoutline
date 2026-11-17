@@ -3,7 +3,7 @@ import { Bot, Check, CircleAlert, ExternalLink, GitMerge, GitPullRequest, Loader
 import { useCached } from "../../lib/cache";
 import { teamFetch } from "../../lib/team";
 import { canEdit, useSessionUser } from "../../lib/session";
-import { ErrorNote, btnPrimary, btnSecondary } from "./parts";
+import { Dialog, ErrorNote, btnPrimary, btnSecondary } from "./parts";
 import { AskPanel, Md } from "./assistant";
 
 /**
@@ -137,6 +137,60 @@ export function PreviewButton({ projectId, repo, branch, className, children }: 
     >
       {busy ? <Loader2 size={13} className="animate-spin" /> : <Play size={13} />} {children ?? "Preview"}
     </button>
+  );
+}
+
+// ── „Work locally“: Claude Code na tvom računaru (interaktivno), lokalni pregled, pa PR → main ──
+export function LocalWorkDialog({ open, onClose, projectId, repo, issueId, prompt, model }: { open: boolean; onClose: () => void; projectId: string; repo?: string; issueId?: string; prompt?: string; model?: string }) {
+  const [d, setD] = useState<{ branch: string; main: string; folder: string; command: string; task: string | null } | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+  useEffect(() => {
+    if (!open) return;
+    setD(null);
+    setErr(null);
+    teamFetch<NonNullable<typeof d>>(`/delivery/projects/${projectId}/local${repo ? `?${repoQ(repo)}` : ""}`, { method: "POST", body: JSON.stringify({ issueId, prompt, model: model || undefined }) })
+      .then(setD)
+      .catch((e) => setErr((e as Error).message));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+  return (
+    <Dialog open={open} onClose={onClose} title="Work locally with Claude Code" width={680}>
+      <div className="space-y-3 px-4 py-4 text-[13px]">
+        <p className="text-muted">Claude Code runs on your computer, in your terminal — you talk to it directly and see the site live on localhost. When it's done it opens a pull request, and you merge it here into {d?.main ?? "main"}.</p>
+        {err && <ErrorNote>{err}</ErrorNote>}
+        {!d && !err && <div className="h-40 animate-pulse rounded-lg bg-surface-2" />}
+        {d && (
+          <>
+            <div className="flex flex-wrap items-center gap-2 text-[12.5px]">
+              <span className="text-muted">Branch</span>
+              <code className="num rounded bg-surface-2 px-1.5 py-0.5 text-fg">{d.branch}</code>
+              <span className="text-faint">from {d.main}</span>
+              {d.task && <span className="rounded-full bg-accent-soft px-2 py-px text-[11px] text-accent">{d.task} → In progress</span>}
+            </div>
+            <ol className="list-decimal space-y-1 pl-5 text-[12.5px] text-muted">
+              <li>Copy the command and paste it into Terminal. It gets the code into <code className="num text-fg">{d.folder}</code>, creates the branch and starts Claude with the task and the project's plan.</li>
+              <li>Work with Claude there. It starts a local preview (e.g. <code className="num">localhost:3000</code>) — open it and ask for changes.</li>
+              <li>Say <b className="text-fg">“done, push and open the PR”</b>. The PR shows up in Scoutline (Code → Pull requests and on the task) — review, Preview, Merge → {d.main}. The task moves to Done.</li>
+            </ol>
+            <pre className="num max-h-56 overflow-auto rounded-lg border border-line bg-bg p-3 text-[11.5px] leading-relaxed text-fg">{d.command.split("\n").slice(0, 5).join("\n")}{"\n"}…</pre>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={async () => {
+                  await navigator.clipboard.writeText(d.command);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1800);
+                }}
+                className={btnPrimary}
+              >
+                {copied ? <Check size={14} /> : <Play size={14} />} {copied ? "Copied — paste into Terminal" : "Copy command"}
+              </button>
+              <span className="text-[11.5px] text-faint">Needs Git, the GitHub CLI signed in (<code className="num">gh auth login</code>) and Claude Code (<code className="num">claude</code>).</span>
+            </div>
+          </>
+        )}
+      </div>
+    </Dialog>
   );
 }
 
@@ -287,6 +341,7 @@ function BuildPanel({ projectId }: { projectId: string }) {
   const [sel, setSel] = useState<number | null>(null);
   const [prompt, setPrompt] = useState("");
   const [model, setModel] = useState(savedModel);
+  const [localOpen, setLocalOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -367,6 +422,9 @@ function BuildPanel({ projectId }: { projectId: string }) {
               <span className="text-[11.5px] text-faint">⌘ Enter to start · runs on your Claude subscription via GitHub Actions (usually 3–15 min)</span>
               <span className="ml-auto" />
               <ModelSelect value={model} onChange={setModel} />
+              <button type="button" disabled={prompt.trim().length < 3 || !repo} onClick={() => setLocalOpen(true)} className={btnSecondary} title="Run Claude Code on your computer instead of GitHub — live preview on localhost">
+                Work locally
+              </button>
               <button disabled={busy || prompt.trim().length < 3 || !repo} className={btnPrimary}>
                 {busy ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />} Start
               </button>
@@ -379,6 +437,7 @@ function BuildPanel({ projectId }: { projectId: string }) {
             )}
           </form>
         )}
+        <LocalWorkDialog open={localOpen} onClose={() => setLocalOpen(false)} projectId={projectId} repo={repo} prompt={prompt} model={model} />
         {runs.data?.error || runs.error ? (
           <div className="p-3">
             <ErrorNote>{runs.data?.error ?? runs.error}</ErrorNote>

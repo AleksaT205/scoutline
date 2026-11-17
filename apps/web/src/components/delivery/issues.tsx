@@ -6,6 +6,7 @@ import { canEdit, useSessionUser } from "../../lib/session";
 import { cycleLabel, fmtDate, patchIssue, toDateInput, useCycles, useMembers, type Issue, type IssueEvent, type IssueLink, type Project } from "../../lib/delivery";
 import { TimeBox } from "./time";
 import { FigmaBox } from "./workspace-ui";
+import { LocalWorkDialog } from "./agent";
 import { Avatar, BOARD_STATUSES, Dialog, ErrorNote, ISSUE_STATUS_META, Menu, PRIORITY_META, PriorityIcon, StatusIcon, btnPrimary, btnSecondary } from "./parts";
 
 const ESTIMATES = [null, 1, 2, 3, 5, 8];
@@ -457,6 +458,7 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
   const [links, setLinks] = useState<IssueLink[]>([]);
   const [agentBusy, setAgentBusy] = useState<string | null>(null);
   const [repoUrl, setRepoUrl] = useState<string | null | undefined>(undefined);
+  const [localOpen, setLocalOpen] = useState(false);
   const [firstAgent, setFirstAgent] = useState<"claude" | "codex">("claude");
   useEffect(() => {
     void preferredAgent().then(setFirstAgent);
@@ -672,7 +674,14 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
               )}
             </div>
             {repoUrl && editable && (
-              <div className="mt-2">
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button
+                  onClick={() => setLocalOpen(true)}
+                  className="inline-flex h-[28px] items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 text-[12px] font-medium hover:bg-surface-2"
+                  title="Run Claude Code on your computer for this task — live preview on localhost, then a pull request"
+                >
+                  Work locally
+                </button>
                 <button
                   disabled={!!agentBusy}
                   onClick={async () => {
@@ -721,6 +730,7 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
             )}
           </div>
           )}
+          <LocalWorkDialog open={localOpen} onClose={() => (setLocalOpen(false), onChanged({ ...issue, status: issue.status === "todo" || issue.status === "backlog" ? "in_progress" : issue.status, updatedAt: new Date().toISOString() }))} projectId={issue.projectId} issueId={issue.id} />
           <FigmaBox issueId={issue.id} links={links} onChanged={() => void loadLinks()} />
           <TimeBox issueId={issue.id} />
           {error && (

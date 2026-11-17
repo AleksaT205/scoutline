@@ -2,6 +2,8 @@ import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { eq } from "drizzle-orm";
 import sodium from "libsodium-wrappers";
 import { asc } from "drizzle-orm";
+import { branchName } from "@radar/shared";
+import { issueEvents } from "@radar/db";
 import { claudeCodeTokenFor, customers, ghFetch, issues as tasks, projectRepoNames, projects, userGithubToken, users, type Db } from "@radar/db";
 import { runtime } from "./runtime.js";
 
@@ -467,6 +469,70 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     } catch (e) {
       return c.json({ error: (e as Error).message }, 502);
     }
+  });
+
+  // ── „Work locally“: Claude Code na računaru korisnika (interaktivno), lokalni pregled, pa PR → main ──
+  // Vraća jednu komandu: klonira/osveži repo, napravi granu po standardu i pokrene `claude` sa zadatkom i kontekstom.
+  app.post("/projects/:id/local", member, async (c) => {
+    const r = await repoOf(c);
+    if (!r) return c.json({ error: "Link a GitHub repo to the project first." }, 400);
+    const b = (await c.req.json().catch(() => ({}))) as { issueId?: string; prompt?: string; model?: string };
+    const db = getDb();
+    const model = MODELS.includes(b.model as Model) ? (b.model as Model) : null;
+    let title = "";
+    let details = "";
+    let key: string | null = null;
+    let number: number | null = null;
+    let labels: string[] = [];
+    if (typeof b.issueId === "string" && UUID.test(b.issueId)) {
+      const [t] = await db.select().from(tasks).where(eq(tasks.id, b.issueId)).limit(1);
+      if (!t || t.projectId !== r.p.id) return c.json({ error: "Task not found." }, 404);
+      title = t.title;
+      details = t.description ?? "";
+      key = r.p.key;
+      number = t.number;
+      labels = t.labels;
+      // Rad je počeo → task u „In progress“
+      if (t.status === "todo" || t.status === "backlog") {
+        await db.update(tasks).set({ status: "in_progress", updatedAt: new Date() }).where(eq(tasks.id, t.id));
+        await db.insert(issueEvents).values({ issueId: t.id, type: "status", data: { from: t.status, to: "in_progress", via: "work locally" }, actor: actor(c).name });
+      }
+    } else {
+      details = (b.prompt ?? "").trim().slice(0, 6000);
+      if (details.length < 3) return c.json({ error: "Describe what to build, or open a task." }, 400);
+      title = details.split("\n")[0]!.slice(0, 80);
+    }
+    const tok = await ghToken(c);
+    const main = tok ? ((await gh<{ default_branch: string }>(tok, `/repos/${r.full}`).catch(() => null))?.default_branch ?? "main") : "main";
+    const branch = branchName({ key, number, title, labels });
+    const dir = r.full.split("/")[1]!;
+    const folder = `~/scoutline/${r.p.key}`;
+    const ref = key && number ? `${key}-${number}` : null;
+    const prompt = [
+      `You're working on the Scoutline project ${r.p.name} (${r.p.key}), repo ${r.full}, on branch \`${branch}\` (from ${main}).`,
+      "",
+      ref ? `Task ${ref}: ${title}` : `Task: ${title}`,
+      details && details !== title ? `\n${details}` : "",
+      "",
+      "How we work:",
+      "1. Make the changes in this repo. Keep them focused and production quality.",
+      "2. Start a local preview so I can check it (plain website: `npx --yes serve . -l 3000`; Node app: `npm install && npm run dev`) and tell me the URL. Keep it running while we iterate.",
+      `3. When I say it's done: commit with a clear message (no co-author lines), \`git push -u origin ${branch}\`, then open a pull request: \`gh pr create --base ${main} --title "${ref ? `[${ref}] ` : ""}<short title>" --body "<what changed>${ref ? `\\n\\nTask: ${ref}` : ""}"\`. Tell me the PR link.`,
+      "4. Don't merge — the team merges in Scoutline.",
+      "",
+      await projectContext(r.p),
+    ].join("\n");
+    const claudeArgs = [model ? `--model ${model}` : "", `--settings '{"includeCoAuthoredBy":false}'`].filter(Boolean).join(" ");
+    const command = [
+      `mkdir -p ${folder} && cd ${folder} && { [ -d ${dir}/.git ] || git clone https://github.com/${r.full}.git; } && cd ${dir} \\`,
+      `  && git fetch origin && git checkout ${main} && git pull --ff-only \\`,
+      `  && { git checkout ${branch} 2>/dev/null || git checkout -b ${branch}; } \\`,
+      `  && claude ${claudeArgs} "$(cat <<'SCOUTLINE_TASK'`,
+      prompt.replace(/SCOUTLINE_TASK/g, "SCOUTLINE-TASK"),
+      "SCOUTLINE_TASK",
+      `)"`,
+    ].join("\n");
+    return c.json({ branch, main, folder: `${folder}/${dir}`, command, task: ref });
   });
 
   // ── Terminal: POST pokreće komandu (GitHub Actions), GET vraća status i izlaz ──

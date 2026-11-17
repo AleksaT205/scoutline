@@ -102,3 +102,9 @@ Sve ide preko GitHub-a i Claude **pretplate** (bez API ključa):
 5. **Run locally**: StackBlitz (u browseru), Codespaces, VS Code/Cursor, komande + dugme „Open localhost“.
 
 GitHub token treba: Contents, Issues, Pull requests, Actions, Workflows, Secrets — Read and write. Sesije se ne čuvaju u bazi: to su GitHub issue-i sa oznakom `scoutline`.
+
+### Work locally (Claude Code na svom računaru)
+Na tasku ili u Build with Claude → **Work locally** → kopiraj komandu u Terminal: repo ide u `~/scoutline/<KLJUČ>/`, pravi se grana po standardu (`feature/pzs-1-pocetna-strana`, `fix/pzs-4-meni-na-telefonu`) i pokreće se `claude` sa zadatkom i planom projekta. Pregled uživo na localhostu; „done, push and open the PR“ → PR u Scoutline-u → Merge u main → task Done. Treba Git, `gh auth login` i Claude Code.
+
+### Terminal
+Code → **Terminal**: komanda (npm install, test, build, ls…) radi na čistoj GitHub mašini sa repoom i Node 20 (samo čitanje, bez tajni); izlaz se vidi u aplikaciji. „Set up automatically“ dodaje `.github/workflows/scoutline-terminal.yml`.

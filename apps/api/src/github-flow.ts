@@ -1,7 +1,7 @@
 import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { and, desc, eq } from "drizzle-orm";
 import { decryptSecret, deploys, encryptSecret, ghFetch, ghJson, issueLinks, issues, projectRepoNames, projectRepos, projects, userGithubToken, type Db, type Secret } from "@radar/db";
-import { parseRepo } from "@radar/shared";
+import { branchName, parseRepo } from "@radar/shared";
 import { runtime } from "./runtime.js";
 
 /**
@@ -277,8 +277,8 @@ export function githubFlowRoutes(getDb: () => Db, g: Guards) {
     const b = (await c.req.json().catch(() => ({}))) as { issueId?: string; name?: string };
     let name = (b.name ?? "").trim();
     if (isUuid(b.issueId)) {
-      const [i] = await getDb().select({ number: issues.number, title: issues.title }).from(issues).where(eq(issues.id, b.issueId)).limit(1);
-      if (i) name = `${r.p.key}-${i.number}-${i.title}`.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
+      const [i] = await getDb().select({ number: issues.number, title: issues.title, labels: issues.labels }).from(issues).where(eq(issues.id, b.issueId)).limit(1);
+      if (i) name = branchName({ key: r.p.key, number: i.number, title: i.title, labels: i.labels }); // feature/pzs-1-pocetna-strana
     }
     if (!/^[\w./-]{2,80}$/.test(name)) return c.json({ error: "Invalid branch name." }, 400);
     try {

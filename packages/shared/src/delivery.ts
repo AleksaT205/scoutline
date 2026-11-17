@@ -71,3 +71,29 @@ export function normalizeRates(v: unknown): Rates {
   for (const [k, x] of Object.entries(r.members ?? {})) if (Number.isFinite(Number(x))) members[k] = num(x, 0);
   return { defaultHourlyCost: num(r.defaultHourlyCost, DEFAULT_RATES.defaultHourlyCost), members };
 }
+
+/** Slug bez naših slova i znakova: „Početna strana — meni“ → „pocetna-strana-meni“. */
+export function slugify(text: string, max = 40): string {
+  const map: Record<string, string> = { đ: "dj", Đ: "dj", ß: "ss", æ: "ae", ø: "o" };
+  return text
+    .replace(/[đĐßæø]/g, (ch) => map[ch] ?? ch)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, max)
+    .replace(/-+$/g, "");
+}
+
+/**
+ * Naziv grane po standardu: feature/… ili fix/…, ključ taska i kratak opis.
+ * „Bug: meni na telefonu“ (PZS-4) → fix/pzs-4-meni-na-telefonu · „Početna strana“ (PZS-1) → feature/pzs-1-pocetna-strana.
+ * Ključ u nazivu grane povezuje PR sa taskom (PR → In review → Done).
+ */
+export function branchName(o: { key?: string | null; number?: number | null; title: string; labels?: string[] }): string {
+  const isFix = /^\s*(bug|fix|hotfix)\b/i.test(o.title) || /\b(bug|greška|greska)\b/i.test(o.title) || (o.labels ?? []).some((l) => /^(bug|fix)$/i.test(l));
+  const words = slugify(o.title.replace(/^\s*(bug|fix|hotfix)\s*[:\-–]\s*/i, ""), 40);
+  const prefix = o.key && o.number ? `${o.key.toLowerCase()}-${o.number}-` : "";
+  return `${isFix ? "fix" : "feature"}/${prefix}${words || "update"}`;
+}
