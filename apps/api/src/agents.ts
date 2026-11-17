@@ -276,7 +276,7 @@ jobs:
 const newId = () => Math.random().toString(36).slice(2, 10);
 const encRef = (b: string) => b.split("/").map(encodeURIComponent).join("/");
 type AgentResult = { ok: boolean; text: string; cost: number | null; turns: number | null; ms: number | null; in: number; out: number; steps: string[]; commits: string[] };
-const parseResult = (log: string): AgentResult | null => {
+export const parseResult = (log: string): AgentResult | null => {
   const m = /SCOUTLINE_RESULT ([A-Za-z0-9+/=]+)/.exec(log);
   if (!m) return null;
   try {
@@ -374,7 +374,7 @@ export async function syncAgentRun(db: Db, run: typeof agentRuns.$inferSelect): 
       body: `${text}${prNote}`,
       meta: { ok, conclusion: w.conclusion, url: w.html_url, cost: res?.cost ?? null, in: res?.in ?? null, out: res?.out ?? null, turns: res?.turns ?? null, ms: res?.ms ?? Math.max(0, Date.parse(w.updated_at) - Date.parse(w.run_started_at ?? w.created_at)), steps: res?.steps ?? [], commits: res?.commits ?? [] },
     });
-    const [upd] = await db.update(agentRuns).set({ status: ok || res?.text ? "done" : "failed", branch, prNumber, prUrl, updatedAt: new Date() }).where(eq(agentRuns.id, run.id)).returning();
+    const [upd] = await db.update(agentRuns).set({ status: w.conclusion === "success" || res?.text ? "done" : "failed", branch, prNumber, prUrl, updatedAt: new Date() }).where(eq(agentRuns.id, run.id)).returning();
     return upd ?? run;
   } finally {
     syncing.delete(run.id);
