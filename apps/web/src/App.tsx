@@ -1,6 +1,7 @@
 import { Suspense, startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useDismiss } from "./lib/useDismiss";
 import { ConfirmHost } from "./lib/confirm";
+import { CommandPalette } from "./components/CommandPalette";
 import { AssistantPage, ClientsPage, CyclesPage, InboxPage, MyIssuesPage, OverviewPage, PipelinePage, ProjectPage, ProjectsPage, ReportsPage, RouterPage, SettingsPage, SourcesPage, warmUp } from "./pages";
 import { BellRing, Menu, Moon, Plus, RefreshCw, Search, Sun } from "lucide-react";
 import { useApiStatus, useLeads } from "./lib/api";
@@ -157,6 +158,18 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
     return () => window.removeEventListener("keydown", on);
   }, [menuOpen]);
   const [addOpen, setAddOpen] = useState(false);
+  // ⌘K / Ctrl+K: pretraga i brze radnje
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  useEffect(() => {
+    const on = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen((v) => !v);
+      }
+    };
+    window.addEventListener("keydown", on);
+    return () => window.removeEventListener("keydown", on);
+  }, []);
   // „Add lead“ sa bilo koje stranice (npr. Sources) otvara prozor na mestu
   useEffect(() => {
     const open = () => setAddOpen(true);
@@ -172,6 +185,15 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
   const [filters, setFilters] = useState<FilterState>(() => freshFilters());
   const [selectedId, setSelectedId] = useState<string>();
   const [sheet, setSheet] = useState(false); // detalj leada na telefonu
+  // ⌘K → lead: izaberi ga (na telefonu otvori detalj)
+  useEffect(() => {
+    const on = (e: Event) => {
+      setSelectedId((e as CustomEvent<string>).detail);
+      if (window.innerWidth < 1280) setSheet(true);
+    };
+    window.addEventListener("select-lead", on);
+    return () => window.removeEventListener("select-lead", on);
+  }, []);
 
   // Pravi leadovi iz API-ja; dok ih nema, prikazuju se primeri.
   // Bez probnih podataka: dok se učitava prikazuje se skeleton, a ne lažni brojevi
@@ -215,8 +237,18 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
             />
           </label>
           <button
+            onClick={() => setPaletteOpen(true)}
+            className="ml-auto inline-flex h-[34px] items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-[12.5px] text-faint hover:bg-surface-2 hover:text-fg sm:w-56"
+            aria-label="Search (⌘K)"
+            title="Search and commands (⌘K)"
+          >
+            <Search size={15} />
+            <span className="hidden flex-1 text-left sm:inline">Search…</span>
+            <kbd className="hidden rounded border border-line px-1 text-[10.5px] sm:inline">⌘K</kbd>
+          </button>
+          <button
             onClick={toggleTheme}
-            className="ml-auto grid size-[34px] place-items-center rounded-lg border border-line bg-surface text-muted hover:bg-surface-2 hover:text-fg"
+            className="grid size-[34px] place-items-center rounded-lg border border-line bg-surface text-muted hover:bg-surface-2 hover:text-fg"
             aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             title={theme === "dark" ? "Light mode" : "Dark mode"}
           >
@@ -415,6 +447,7 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
       </main>
       <AlertsDialog open={alertsOpen} onClose={() => setAlertsOpen(false)} />
       <ConfirmHost />
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} onToggleTheme={toggleTheme} />
       <AddLeadDialog
         open={addOpen}
         onClose={() => setAddOpen(false)}

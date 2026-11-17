@@ -166,5 +166,7 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 
 - **Sales:** AI nacrt odgovora na leadu (mejl / ponuda, EN / SR, besplatni modeli), podsetnici „Follow up“ (Telegram + zvonce + oznaka na Pipeline kartici), duplikati iz drugih izvora se sakriju („Also on“), nedeljni izveštaj ponedeljkom u 8h na Telegram.
 
+- **Delivery 2.0:** ⌘K / Ctrl+K paleta (taskovi i po ključu PZS-12, projekti, klijenti, leadovi, brze radnje; dugme za pretragu gore za telefon), pregled izmena u PR-u u aplikaciji (fajlovi, +/−, diff u boji) u Code → Pull requests i u razgovoru sa Claude-om.
+
 ## Otvoreno
 - Konačan naziv (predlog: Scoutline)

@@ -9,6 +9,7 @@ import { useHashParam, useOptionalHashParam } from "../../lib/hashParams";
 import { AttachButton, AttachedThumbs, MessageImages, splitImages, useImageAttachments } from "./attachments";
 import { askConfirm } from "../../lib/confirm";
 import { VoiceButton } from "../../lib/voice";
+import { PrFiles } from "./pr-files";
 import { AskPanel, Md } from "./assistant";
 
 /**
@@ -757,6 +758,7 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
           )}
         </div>
       )}
+      {pr && <PrFiles projectId={projectId} repo={repo} number={pr.number} className="-mt-1" />}
       <div className="max-h-[460px] space-y-2.5 overflow-y-auto">
         {messages.map((m) =>
           m.role === "assistant" ? (

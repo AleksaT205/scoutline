@@ -21,6 +21,7 @@ import { notificationRoutes } from "./notifications.js";
 import { assistantRoutes } from "./assistant.js";
 import { errorRoutes, recordError } from "./errors.js";
 import { salesRoutes } from "./sales.js";
+import { searchRoutes } from "./search.js";
 import { githubFlowRoutes } from "./github-flow.js";
 import { agentRoutes } from "./agents.js";
 import { previewRoutes } from "./preview.js";
@@ -116,6 +117,7 @@ export function createApp(getDb: () => Db) {
   });
   app.route("/", errorRoutes(getDb, a));
   app.route("/", salesRoutes(getDb, a));
+  app.route("/", searchRoutes(getDb, a.readGuard));
 
   app.get("/health", (c) => c.json({ ok: true, service: "radar-api", time: new Date().toISOString() }));
   // Detaljna provera za spoljni monitoring (UptimeRobot i sl.): 200 kad sve radi, 503 kad ne

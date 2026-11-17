@@ -9,6 +9,7 @@ import { TerminalView } from "./terminal";
 import { useHashParam } from "../../lib/hashParams";
 import { askConfirm } from "../../lib/confirm";
 import { btnSm, segItem } from "../../lib/ui";
+import { PrFiles } from "./pr-files";
 import { RunLocallyView, SkillsView } from "./workspace-ui";
 
 /** Faza 14 — tab „Code“: GitHub iz aplikacije (analitika, PR-ovi, grane, Actions, deploy). */
@@ -387,6 +388,7 @@ function PullsView({ projectId, repo }: { projectId: string; repo: string }) {
                 )}
               </div>
               )}
+              <PrFiles projectId={projectId} repo={repo} number={p.number} className="mt-1.5" />
             </div>
           </div>
           {canEdit(user) && (p.state ?? "open") === "open" && (

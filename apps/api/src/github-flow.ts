@@ -173,6 +173,28 @@ export function githubFlowRoutes(getDb: () => Db, g: Guards) {
   });
 
   // ── Pull request-ovi ──
+  // Izmene u PR-u (fajlovi i patch) — pregled u aplikaciji, bez odlaska na GitHub
+  app.get("/projects/:id/pulls/:n/files", g.readGuard, async (c) => {
+    const r = await repoOf(c);
+    if (r instanceof Response) return r;
+    const n = Number(c.req.param("n"));
+    if (!Number.isInteger(n) || n <= 0) return c.json({ error: "Not found." }, 404);
+    try {
+      const files = await ghJson<Array<{ filename: string; status: string; additions: number; deletions: number; changes: number; patch?: string; previous_filename?: string }>>(await token(c), `/repos/${r.full}/pulls/${n}/files?per_page=100`);
+      let budget = 300_000; // ukupno teksta izmena (veliki PR-ovi: ostatak samo kao lista)
+      return c.json({
+        files: files.map((f) => {
+          const patch = f.patch && f.patch.length <= 40_000 && budget - f.patch.length > 0 ? ((budget -= f.patch.length), f.patch) : null;
+          return { name: f.filename, previous: f.previous_filename ?? null, status: f.status, additions: f.additions, deletions: f.deletions, patch, tooBig: !!f.patch && !patch };
+        }),
+        additions: files.reduce((a, f) => a + f.additions, 0),
+        deletions: files.reduce((a, f) => a + f.deletions, 0),
+      });
+    } catch (e) {
+      return fail(c, e);
+    }
+  });
+
   app.get("/projects/:id/pulls", g.readGuard, async (c) => {
     const r = await repoOf(c);
     if (r instanceof Response) return r;
