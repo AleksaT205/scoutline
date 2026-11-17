@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { INDUSTRIES, LEAD_TYPES, SERVICE_CATEGORIES, type LeadType, type Tier } from "@radar/shared";
-import { Check, ChevronDown, Info, RotateCcw, Search } from "lucide-react";
+import { Check, ChevronDown, Info, RotateCcw, Search, X } from "lucide-react";
 import type { UiLead } from "../data/demo";
 import { CATEGORY_LABEL, TYPE_META } from "./ui";
 
@@ -146,7 +146,7 @@ const STATUSES = [
 ] as const;
 
 /** Jedan uredan padajući filter: dugme sa trenutnom vrednošću + lista (jedan ili više izbora). */
-function FilterMenu({ label, value, active, children, wide }: { label: string; value: string; active: boolean; children: (close: () => void) => React.ReactNode; wide?: boolean }) {
+function FilterMenu({ label, value, active, children, wide, onClear }: { label: string; value: string; active: boolean; children: (close: () => void) => React.ReactNode; wide?: boolean; onClear?: () => void }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -171,7 +171,25 @@ function FilterMenu({ label, value, active, children, wide }: { label: string; v
       >
         <span className={active ? "text-muted" : "text-faint"}>{label}</span>
         <span className={`max-w-[150px] truncate ${active ? "font-medium text-fg" : "text-fg"}`}>{value}</span>
-        <ChevronDown size={13} className={`text-faint transition-transform ${open ? "rotate-180" : ""}`} />
+        {active && onClear ? (
+          <span
+            role="button"
+            tabIndex={0}
+            aria-label={`Clear ${label} filter`}
+            title={`Clear ${label}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClear();
+              setOpen(false);
+            }}
+            onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), e.stopPropagation(), onClear())}
+            className="-mr-1 grid size-[18px] place-items-center rounded-full text-muted hover:bg-accent/20 hover:text-fg"
+          >
+            <X size={11} strokeWidth={2.5} />
+          </span>
+        ) : (
+          <ChevronDown size={13} className={`text-faint transition-transform ${open ? "rotate-180" : ""}`} />
+        )}
       </button>
       {open && (
         <div className={`absolute left-0 z-40 mt-1 rounded-xl border border-line bg-surface p-1 shadow-float ${wide ? "w-72" : "w-56"}`} role="listbox">
@@ -242,6 +260,23 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
     value.types.size === DEFAULT_TYPES.length &&
     DEFAULT_TYPES.every((t) => value.types.has(t));
 
+  // Spisak uključenih filtera (za red „Active filters“)
+  const sameTypes = value.types.size === DEFAULT_TYPES.length && DEFAULT_TYPES.every((t) => value.types.has(t));
+  const active: Array<{ key: string; label: string; clear: () => void }> = [
+    ...(value.query ? [{ key: "q", label: `“${value.query}”`, clear: () => set({ query: "" }) }] : []),
+    ...(!sameTypes ? [{ key: "types", label: `Type: ${value.types.size ? LEAD_TYPES.filter((t) => value.types.has(t)).map((t) => TYPE_META[t].label).join(", ") : "none"}`, clear: () => set({ types: new Set(DEFAULT_TYPES) }) }] : []),
+    ...(value.minScore !== DEFAULT_FILTERS.minScore ? [{ key: "score", label: `Score ${value.minScore ? `${value.minScore}+` : "any"}`, clear: () => set({ minScore: DEFAULT_FILTERS.minScore }) }] : []),
+    ...(value.maxAgeHours ? [{ key: "posted", label: labelOf(POSTED, value.maxAgeHours), clear: () => set({ maxAgeHours: 0 }) }] : []),
+    ...(value.minBudget ? [{ key: "budget", label: `Budget ${labelOf(BUDGETS, value.minBudget)}`, clear: () => set({ minBudget: 0 }) }] : []),
+    ...(value.budgetKnownOnly ? [{ key: "known", label: "Budget stated", clear: () => set({ budgetKnownOnly: false }) }] : []),
+    ...[...value.sources].map((src) => ({ key: `src:${src}`, label: src, clear: () => set({ sources: toggle(value.sources, src) }) })),
+    ...(value.markets.size !== ALL_MARKETS.length ? [{ key: "market", label: `Market: ${value.markets.size ? MARKETS.filter((m) => value.markets.has(m.key)).map((m) => m.label.replace("🇷🇸 ", "")).join(", ") : "none"}`, clear: () => set({ markets: new Set(ALL_MARKETS) }) }] : []),
+    ...(value.status !== "open" ? [{ key: "status", label: `Status: ${labelOf(STATUSES, value.status).replace(/ \(.+\)/, "")}`, clear: () => set({ status: "open" }) }] : []),
+    ...(value.category !== "all" ? [{ key: "cat", label: CATEGORY_LABEL[value.category as keyof typeof CATEGORY_LABEL] ?? value.category, clear: () => set({ category: "all" }) }] : []),
+    ...(value.industry !== "all" ? [{ key: "ind", label: value.industry.replace(/_/g, " "), clear: () => set({ industry: "all" }) }] : []),
+    ...(value.remoteOnly ? [{ key: "remote", label: "Remote-friendly", clear: () => set({ remoteOnly: false }) }] : []),
+  ];
+
   const marketValue = value.markets.size === ALL_MARKETS.length ? "All" : value.markets.size === 0 ? "None" : MARKETS.filter((m) => value.markets.has(m.key)).map((m) => m.label.replace("🇷🇸 ", "")).join(", ");
   const sourceValue = !value.sources.size ? "All" : value.sources.size === 1 ? [...value.sources][0]! : `${value.sources.size} sources`;
 
@@ -278,7 +313,16 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
 
       {/* Ostali filteri — isti stil za svaki meni */}
       <div className={`${mobileOpen ? "flex" : "hidden"} flex-wrap items-center gap-1.5 sm:flex`}>
-        <FilterMenu label="Score" value={labelOf(SCORES, value.minScore).replace(/ \(.+\)/, "")} active={value.minScore !== DEFAULT_FILTERS.minScore}>
+        <label className="flex h-[30px] w-full items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 text-faint focus-within:border-accent/55 sm:w-56">
+          <Search size={13} />
+          <input value={value.query} onChange={(e) => set({ query: e.target.value })} placeholder="Search title, company, city…" className="w-full bg-transparent text-[12.5px] text-fg outline-none placeholder:text-faint" aria-label="Search leads" />
+          {value.query && (
+            <button onClick={() => set({ query: "" })} className="text-faint hover:text-fg" aria-label="Clear search">
+              <X size={12} />
+            </button>
+          )}
+        </label>
+        <FilterMenu label="Score" value={labelOf(SCORES, value.minScore).replace(/ \(.+\)/, "")} active={value.minScore !== DEFAULT_FILTERS.minScore} onClear={() => set({ minScore: DEFAULT_FILTERS.minScore })}>
           {(close) =>
             SCORES.map(([k, l]) => (
               <Option key={k} selected={value.minScore === k} onClick={() => (set({ minScore: k }), close())}>
@@ -287,7 +331,7 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
             ))
           }
         </FilterMenu>
-        <FilterMenu label="Posted" value={labelOf(POSTED, value.maxAgeHours)} active={!!value.maxAgeHours}>
+        <FilterMenu label="Posted" value={labelOf(POSTED, value.maxAgeHours)} active={!!value.maxAgeHours} onClear={() => set({ maxAgeHours: 0 })}>
           {(close) =>
             POSTED.map(([k, l]) => (
               <Option key={k} selected={value.maxAgeHours === k} onClick={() => (set({ maxAgeHours: k }), close())}>
@@ -296,7 +340,7 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
             ))
           }
         </FilterMenu>
-        <FilterMenu label="Budget" value={`${labelOf(BUDGETS, value.minBudget)}${value.budgetKnownOnly ? " · stated" : ""}`} active={!!value.minBudget || value.budgetKnownOnly}>
+        <FilterMenu label="Budget" value={`${labelOf(BUDGETS, value.minBudget)}${value.budgetKnownOnly ? " · stated" : ""}`} active={!!value.minBudget || value.budgetKnownOnly} onClear={() => set({ minBudget: 0, budgetKnownOnly: false })}>
           {(close) => (
             <>
               {BUDGETS.map(([k, l]) => (
@@ -311,7 +355,7 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
             </>
           )}
         </FilterMenu>
-        <FilterMenu label="Source" value={sourceValue} active={value.sources.size > 0} wide>
+        <FilterMenu label="Source" value={sourceValue} active={value.sources.size > 0} wide onClear={() => set({ sources: new Set() })}>
           {() => (
             <>
               {sources.length > 7 && (
@@ -335,7 +379,7 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
             </>
           )}
         </FilterMenu>
-        <FilterMenu label="Market" value={marketValue} active={value.markets.size !== ALL_MARKETS.length} wide>
+        <FilterMenu label="Market" value={marketValue} active={value.markets.size !== ALL_MARKETS.length} wide onClear={() => set({ markets: new Set(ALL_MARKETS) })}>
           {() => (
             <>
               {MARKETS.map((m) => (
@@ -355,7 +399,7 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
             </>
           )}
         </FilterMenu>
-        <FilterMenu label="Status" value={labelOf(STATUSES, value.status).replace(/ \(.+\)/, "")} active={value.status !== "open"}>
+        <FilterMenu label="Status" value={labelOf(STATUSES, value.status).replace(/ \(.+\)/, "")} active={value.status !== "open"} onClear={() => set({ status: "open" })}>
           {(close) =>
             STATUSES.map(([k, l]) => (
               <Option key={k} selected={value.status === k} onClick={() => (set({ status: k }), close())}>
@@ -364,7 +408,7 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
             ))
           }
         </FilterMenu>
-        <FilterMenu label="Service" value={value.category === "all" ? "All" : (CATEGORY_LABEL[value.category as keyof typeof CATEGORY_LABEL] ?? value.category)} active={value.category !== "all"}>
+        <FilterMenu label="Service" value={value.category === "all" ? "All" : (CATEGORY_LABEL[value.category as keyof typeof CATEGORY_LABEL] ?? value.category)} active={value.category !== "all"} onClear={() => set({ category: "all" })}>
           {(close) => (
             <div className="max-h-72 overflow-y-auto">
               <Option selected={value.category === "all"} onClick={() => (set({ category: "all" }), close())}>
@@ -378,7 +422,7 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
             </div>
           )}
         </FilterMenu>
-        <FilterMenu label="Industry" value={value.industry === "all" ? "All" : value.industry.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase())} active={value.industry !== "all"}>
+        <FilterMenu label="Industry" value={value.industry === "all" ? "All" : value.industry.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase())} active={value.industry !== "all"} onClear={() => set({ industry: "all" })}>
           {(close) => (
             <div className="max-h-72 overflow-y-auto">
               <Option selected={value.industry === "all"} onClick={() => (set({ industry: "all" }), close())}>
@@ -395,6 +439,7 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
         <Chip on={value.remoteOnly} onClick={() => set({ remoteOnly: !value.remoteOnly })}>
           Remote-friendly
         </Chip>
+        <div className="sm:hidden">
         <FilterMenu label="Sort" value={`${SORTS.find(([k]) => k === value.sortBy)?.[1] ?? "Score"} ${value.sortDir === "desc" ? "↓" : "↑"}`} active={value.sortBy !== "score" || value.sortDir !== "desc"}>
           {(close) => (
             <>
@@ -408,15 +453,25 @@ export function Filters({ value, onChange, all, shown }: { value: FilterState; o
             </>
           )}
         </FilterMenu>
-        {!isDefault && (
-          <button onClick={() => onChange(freshFilters())} className="hidden h-[30px] items-center gap-1 px-1.5 text-[12.5px] text-muted hover:text-fg sm:inline-flex">
-            <RotateCcw size={12} /> Reset
-          </button>
-        )}
+        </div>
         <span className="ml-auto hidden text-[12.5px] text-faint sm:inline">
           <span className="num">{shown}</span> of <span className="num">{all.length}</span> leads
         </span>
       </div>
+      {/* Aktivni filteri — vidi se šta je uključeno, × poništava jedan, „Clear all“ sve */}
+      {active.length > 0 && (
+        <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-accent/25 bg-accent-soft/40 px-2 py-1.5">
+          <span className="text-[12px] text-muted">Active filters</span>
+          {active.map((a) => (
+            <button key={a.key} onClick={a.clear} className="inline-flex h-[24px] items-center gap-1 rounded-full border border-line bg-surface px-2 text-[12px] text-fg hover:border-danger/40" title="Remove this filter">
+              {a.label} <X size={11} className="text-faint" />
+            </button>
+          ))}
+          <button onClick={() => onChange(freshFilters({ sortBy: value.sortBy, sortDir: value.sortDir }))} className="ml-auto inline-flex h-[26px] items-center gap-1 rounded-md bg-fg px-2.5 text-[12px] font-medium text-bg hover:opacity-90">
+            <RotateCcw size={12} /> Clear all
+          </button>
+        </div>
+      )}
     </div>
   );
 }

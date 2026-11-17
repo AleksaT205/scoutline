@@ -174,7 +174,7 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
               {{ router: "AI Router", sources: "Sources", pipeline: "Pipeline", overview: "Overview", settings: "Settings", team: "Team", tasks: "Tasks", leads: "Leads", issues: "My issues", projects: "Projects", project: "Project", clients: "Clients", inbox: "Inbox", cycles: "Cycles", reports: "Reports", assistant: "Assistant" }[page]}
             </b>
           </div>
-          <label className={`ml-auto h-[34px] w-80 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-faint focus-within:border-accent/55 ${page === "leads" ? "hidden md:flex" : "hidden"}`}>
+          <label className="hidden">
             <Search size={14} />
             <input
               value={filters.query}
@@ -185,7 +185,7 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
           </label>
           <button
             onClick={toggleTheme}
-            className={`ml-auto grid size-[34px] place-items-center rounded-[7px] border border-line bg-surface text-muted hover:bg-surface-2 hover:text-fg ${page === "leads" ? "md:ml-0" : ""}`}
+            className="ml-auto grid size-[34px] place-items-center rounded-[7px] border border-line bg-surface text-muted hover:bg-surface-2 hover:text-fg"
             aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
             title={theme === "dark" ? "Light mode" : "Dark mode"}
           >
