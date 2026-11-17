@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { eq } from "drizzle-orm";
 import sodium from "libsodium-wrappers";
@@ -305,6 +306,37 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     return out;
   };
 
+  // ── Limit Claude plana (kao na claude.ai → Usage): trenutna sesija (5 h) i ova nedelja ──
+  // Isti podatak koji Claude Code prikazuje komandom /usage, čita se tokenom osobe (lični → firme). Nije javni API:
+  // ako Anthropic promeni odgovor ili token nema pristup, vraćamo „available: false“ i aplikacija samo sakrije trake.
+  const planCache = new Map<string, { at: number; data: unknown }>();
+  app.get("/claude/usage", g.readGuard, async (c) => {
+    const cc = await claudeCodeTokenFor(getDb(), actor(c).id);
+    if (!cc) return c.json({ available: false, reason: "no_token" });
+    const key = createHash("sha256").update(cc.token).digest("hex").slice(0, 16);
+    const hit = planCache.get(key);
+    if (hit && Date.now() - hit.at < 60_000) return c.json(hit.data);
+    try {
+      const r = await fetch("https://api.anthropic.com/api/oauth/usage", {
+        headers: { Authorization: `Bearer ${cc.token}`, "anthropic-beta": "oauth-2025-04-20", "Content-Type": "application/json", "User-Agent": "scoutline" },
+        signal: AbortSignal.timeout(8000),
+      });
+      if (!r.ok) {
+        const data = { available: false, reason: r.status === 401 || r.status === 403 ? "token" : "unavailable", status: r.status };
+        planCache.set(key, { at: Date.now(), data });
+        return c.json(data);
+      }
+      type Window = { utilization?: number | null; resets_at?: string | null } | null | undefined;
+      const d = (await r.json()) as { five_hour?: Window; seven_day?: Window; seven_day_opus?: Window };
+      const win = (w: Window) => (w && typeof w.utilization === "number" ? { pct: Math.round(w.utilization), resetsAt: w.resets_at ?? null } : null);
+      const data = { available: true, owner: cc.owner, session: win(d.five_hour), week: win(d.seven_day), opusWeek: win(d.seven_day_opus) };
+      planCache.set(key, { at: Date.now(), data });
+      return c.json(data);
+    } catch {
+      return c.json({ available: false, reason: "unavailable" });
+    }
+  });
+
   // ── Stanje podešavanja (checklist) ──
   app.get("/projects/:id/agent/setup", g.readGuard, async (c) => {
     const r = await repoOf(c);
@@ -407,7 +439,7 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
           .filter((i) => !i.pull_request)
           .map(async (i) => {
             const pr = matchPull(pulls, i.number);
-            const mine = wf.workflow_runs.filter((w) => w.display_title === i.title || (pr && w.display_title === pr.title));
+            const mine = wf.workflow_runs.filter((w) => (w.display_title === i.title || (pr && w.display_title === pr.title)) && w.conclusion !== "skipped");
             const model = ((i as GhIssue & { labels?: Array<{ name: string }> }).labels ?? []).find((l) => l.name.startsWith("model:"))?.name.slice(6) ?? "default";
             const usage = { in: 0, out: 0, cost: 0, turns: 0, known: 0 };
             const sessionList: Array<{ id: number; at: string; minutes: number; status: string; conclusion: string | null; url: string; tokens: number | null; cost: number | null; turns: number | null }> = [];

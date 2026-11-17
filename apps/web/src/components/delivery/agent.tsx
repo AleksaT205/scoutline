@@ -51,110 +51,59 @@ interface Summary {
 const fmtTok = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${Math.round(n / 1000)}k` : String(n));
 const fmtUsd = (n: number) => (n >= 10 ? `$${Math.round(n)}` : `$${n.toFixed(2)}`);
 
-/** Potrošnja Claude Code-a u aplikaciji (iz samih sesija): tokeni, koraci, trajanje i vrednost na API-ju — po osobi i modelu. */
+/** Limit Claude plana kao na claude.ai → Usage: trenutna sesija i ova nedelja (procenat i reset). */
+interface PlanUsage {
+  available: boolean;
+  reason?: string;
+  owner?: string;
+  session?: { pct: number; resetsAt: string | null } | null;
+  week?: { pct: number; resetsAt: string | null } | null;
+  opusWeek?: { pct: number; resetsAt: string | null } | null;
+}
+const resetIn = (iso: string | null | undefined, weekly = false) => {
+  if (!iso) return weekly ? "" : "Starts with your first message";
+  const d = new Date(iso);
+  const mins = Math.round((d.getTime() - Date.now()) / 60_000);
+  if (!weekly && mins > 0 && mins < 24 * 60) return `Resets in ${mins >= 60 ? `${Math.floor(mins / 60)} h ${mins % 60} min` : `${mins} min`}`;
+  return `Resets ${d.toLocaleString("en-GB", { weekday: "long", hour: "2-digit", minute: "2-digit" })}`;
+};
 function UsageBar({ s }: { s: Summary }) {
-  const [open, setOpen] = useState(false);
-  const m = s.month;
-  const tokens = (m.tokensIn ?? 0) + (m.tokensOut ?? 0);
-  const table = (title: string, rows: Record<string, Agg> | undefined) =>
-    rows && Object.keys(rows).length > 0 ? (
-      <div>
-        <div className="mb-1 text-[11px] font-medium uppercase tracking-wider text-faint">{title}</div>
-        <table className="w-full text-[12px]">
-          <tbody>
-            {Object.entries(rows)
-              .sort((a, b) => (b[1].tokens ?? 0) - (a[1].tokens ?? 0) || b[1].runs - a[1].runs)
-              .map(([k, v]) => (
-                <tr key={k} className="border-t border-line">
-                  <td className="py-1 pr-2 capitalize text-fg">{k}</td>
-                  <td className="num py-1 pr-2 text-right">{v.runs} tasks</td>
-                  <td className="num py-1 pr-2 text-right">{v.sessions ?? "—"} sessions</td>
-                  <td className="num py-1 pr-2 text-right">{v.minutes} min</td>
-                  <td className="num py-1 pr-2 text-right">{v.tokens ? `${fmtTok(v.tokens)} tok` : "—"}</td>
-                  <td className="num py-1 text-right text-muted">{v.cost ? fmtUsd(v.cost) : "—"}</td>
-                </tr>
-              ))}
-          </tbody>
-        </table>
+  const u = useCached<PlanUsage>("/delivery/claude/usage", { staleMs: 60_000, refreshMs: 120_000 });
+  const d = u.data;
+  const Row = ({ label, w, weekly }: { label: string; w: { pct: number; resetsAt: string | null }; weekly?: boolean }) => (
+    <div className="grid grid-cols-[minmax(0,9rem)_minmax(0,1fr)_4.5rem] items-center gap-3">
+      <div className="min-w-0">
+        <div className="text-[12.5px] text-fg">{label}</div>
+        <div className="truncate text-[11px] text-faint">{resetIn(w.resetsAt, weekly)}</div>
       </div>
-    ) : null;
+      <div className="h-1.5 overflow-hidden rounded-full bg-surface-2">
+        <div className={`h-full rounded-full ${w.pct >= 90 ? "bg-danger" : w.pct >= 70 ? "bg-warning" : "bg-accent"}`} style={{ width: `${Math.min(100, Math.max(w.pct ? 2 : 0, w.pct))}%` }} />
+      </div>
+      <div className="num text-right text-[12px] text-muted">{w.pct}% used</div>
+    </div>
+  );
   return (
-    <div className="border-b border-line bg-bg px-4 py-1.5 text-[11.5px] text-muted">
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
-        <span className="font-medium text-fg">This month</span>
-        <span>
-          <span className="num text-fg">{m.runs}</span> tasks · <span className="num text-fg">{m.sessions}</span> sessions · <span className="num text-fg">{m.minutes}</span> min
-        </span>
-        {tokens > 0 && (
-          <span title="Tokens Claude used in these sessions (input incl. cached context + output)">
-            <span className="num text-fg">{fmtTok(tokens)}</span> tokens{m.turns ? ` · ${m.turns} steps` : ""}
-          </span>
-        )}
-        {tokens === 0 && m.sessions > 0 && (
-          <span className="text-faint" title="Sessions from before the latest “Set up automatically” didn't record token counts">
-            tokens & API value show for new sessions
-          </span>
-        )}
-        {(m.cost ?? 0) > 0 && (
-          <span title="What these sessions would cost on the pay-per-use API. On a Pro/Max subscription it's included — this just shows how much you're getting.">
-            ≈ <span className="num text-fg">{fmtUsd(m.cost!)}</span> API value · included in your plan
-          </span>
-        )}
-        <span>
-          <span className="num">{m.prs}</span> PRs · <span className="num">{m.merged}</span> merged
-        </span>
-        <button type="button" onClick={() => setOpen(!open)} className="ml-auto text-muted hover:text-fg">
-          {open ? "Hide details" : "Details"}
-        </button>
-      </div>
-      {open && (
-        <div className="mt-2 grid gap-3 pb-1 sm:grid-cols-2">
-          {table("By person", s.byPerson)}
-          {table("By model", s.byModel)}
-          {s.sessions && s.sessions.length > 0 && (
-            <div className="sm:col-span-2">
-              <div className="mb-1 text-[11px] font-medium uppercase tracking-wider text-faint">Sessions</div>
-              <div className="max-h-[260px] overflow-auto">
-                <table className="w-full min-w-[560px] text-[12px]">
-                  <thead>
-                    <tr className="text-left text-[11px] text-faint">
-                      <th className="py-1 pr-2 font-normal">When</th>
-                      <th className="py-1 pr-2 font-normal">Task</th>
-                      <th className="py-1 pr-2 font-normal">Who</th>
-                      <th className="py-1 pr-2 font-normal">Model</th>
-                      <th className="py-1 pr-2 text-right font-normal">Time</th>
-                      <th className="py-1 pr-2 text-right font-normal">Tokens</th>
-                      <th className="py-1 text-right font-normal">Value</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {s.sessions.map((x) => (
-                      <tr key={x.id} className="border-t border-line">
-                        <td className="num whitespace-nowrap py-1 pr-2">
-                          <a href={x.url} target="_blank" rel="noreferrer" className="hover:text-fg" title="Open this session on GitHub">
-                            {new Date(x.at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
-                          </a>
-                        </td>
-                        <td className="max-w-[260px] truncate py-1 pr-2 text-fg" title={x.task}>
-                          <span className="num text-faint">#{x.number}</span> {x.task}
-                        </td>
-                        <td className="py-1 pr-2">{x.by ?? "—"}</td>
-                        <td className="py-1 pr-2 capitalize">{x.model}</td>
-                        <td className="num py-1 pr-2 text-right">
-                          {x.status !== "completed" ? <span className="text-warning">running</span> : x.conclusion === "success" ? `${x.minutes} min` : <span className="text-danger">{x.conclusion ?? "failed"}</span>}
-                        </td>
-                        <td className="num py-1 pr-2 text-right">{x.tokens != null ? fmtTok(x.tokens) : "—"}</td>
-                        <td className="num py-1 text-right text-muted">{x.cost != null ? fmtUsd(x.cost) : "—"}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
-          <p className="text-[11px] text-faint sm:col-span-2">Counted from the Claude sessions in this repo (sessions after the latest “Set up automatically”). Anthropic doesn't share plan limits (5-hour / weekly) with other apps — Claude Code warns you in a session when you get close.</p>
+    <div className="space-y-2 border-b border-line bg-bg px-4 py-2.5">
+      {d?.available && (d.session || d.week) ? (
+        <>
+          {d.session && <Row label="Current session" w={d.session} />}
+          {d.week && <Row label="This week" w={d.week} weekly />}
+          {d.opusWeek && d.opusWeek.pct > 0 && <Row label="This week · Opus" w={d.opusWeek} weekly />}
+        </>
+      ) : (
+        <div className="text-[11.5px] text-faint">
+          {d?.reason === "no_token"
+            ? "Add your Claude Code token in Settings → Integrations to see your plan usage here."
+            : d?.reason === "token"
+              ? "Claude didn't accept the saved token for usage — run claude setup-token and paste the new token in Settings → Integrations."
+              : d
+                ? "Plan usage isn't available right now."
+                : "Loading plan usage…"}
         </div>
       )}
+      <div className="text-[11px] text-faint">
+        This month: {s.month.runs} tasks · {s.month.sessions} sessions · {s.month.merged} merged
+      </div>
     </div>
   );
 }
