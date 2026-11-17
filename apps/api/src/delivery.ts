@@ -397,11 +397,11 @@ export function deliveryRoutes(getDb: () => Db, g: Guards) {
 
   app.patch("/issues/:id", member, async (c) => {
     const id = c.req.param("id")!;
-    if (!isUuid(id)) return c.json({ error: "Issue not found." }, 404);
+    if (!isUuid(id)) return c.json({ error: "Task not found." }, 404);
     const b = (await c.req.json().catch(() => ({}))) as Record<string, unknown>;
     const db = getDb();
     const [cur] = await db.select().from(issues).where(eq(issues.id, id)).limit(1);
-    if (!cur) return c.json({ error: "Issue not found." }, 404);
+    if (!cur) return c.json({ error: "Task not found." }, 404);
     const f: Partial<typeof issues.$inferInsert> = {};
     if (b.title !== undefined && str(b.title, 300)) f.title = str(b.title, 300)!;
     if (b.description !== undefined) f.description = str(b.description, 20_000);
@@ -432,7 +432,7 @@ export function deliveryRoutes(getDb: () => Db, g: Guards) {
 
   app.delete("/issues/:id", member, async (c) => {
     const id = c.req.param("id")!;
-    if (!isUuid(id)) return c.json({ error: "Issue not found." }, 404);
+    if (!isUuid(id)) return c.json({ error: "Task not found." }, 404);
     const db = getDb();
     // Projekat sa GitHub sync-om: brisanje = „Canceled“ (zatvori na GitHub-u kao „not planned“), da se ne vrati sa sledećim sync-om
     const [synced] = await db.select({ sync: projects.githubSync }).from(issues).innerJoin(projects, eq(issues.projectId, projects.id)).where(eq(issues.id, id)).limit(1);
@@ -443,7 +443,7 @@ export function deliveryRoutes(getDb: () => Db, g: Guards) {
       return c.json({ ok: true, canceled: true });
     }
     const [row] = await db.delete(issues).where(eq(issues.id, id)).returning({ id: issues.id });
-    return row ? c.json({ ok: true }) : c.json({ error: "Issue not found." }, 404);
+    return row ? c.json({ ok: true }) : c.json({ error: "Task not found." }, 404);
   });
 
   app.get("/issues/:id/events", g.readGuard, async (c) => {
@@ -459,12 +459,12 @@ export function deliveryRoutes(getDb: () => Db, g: Guards) {
 
   app.post("/issues/:id/comments", member, async (c) => {
     const id = c.req.param("id")!;
-    if (!isUuid(id)) return c.json({ error: "Issue not found." }, 404);
+    if (!isUuid(id)) return c.json({ error: "Task not found." }, 404);
     const text = str(((await c.req.json().catch(() => ({}))) as { text?: unknown }).text, 8000);
     if (!text) return c.json({ error: "Comment can't be empty." }, 400);
     const db = getDb();
     const [exists] = await db.select({ id: issues.id }).from(issues).where(eq(issues.id, id)).limit(1);
-    if (!exists) return c.json({ error: "Issue not found." }, 404);
+    if (!exists) return c.json({ error: "Task not found." }, 404);
     const [event] = await db.insert(issueEvents).values({ issueId: id, type: "comment", data: { text }, actor: actor(c).name }).returning();
     await db.update(issues).set({ updatedAt: new Date() }).where(eq(issues.id, id));
     return c.json({ event }, 201);

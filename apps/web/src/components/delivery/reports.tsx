@@ -150,7 +150,7 @@ function RatesDialog({ open, onClose, report, onSaved }: { open: boolean; onClos
 }
 
 function exportCsv(r: Report) {
-  const head = ["Key", "Project", "Client", "Status", "Billing", "Revenue EUR", "Hours", "Billable hours", "Labor EUR", "AI EUR", "Cost EUR", "Margin EUR", "Margin %", "Budget used %", "EUR per hour", "Issues done", "Done by AI agents", "AI savings EUR"];
+  const head = ["Key", "Project", "Client", "Status", "Billing", "Revenue EUR", "Hours", "Billable hours", "Labor EUR", "AI EUR", "Cost EUR", "Margin EUR", "Margin %", "Budget used %", "EUR per hour", "Tasks done", "Done by AI agents", "AI savings EUR"];
   const rows = r.projects.map((p) => [p.key, p.name, p.customerName ?? "", p.status, p.billing, p.revenue, p.hours, p.billableHours, p.laborCost, p.aiCost, p.cost, p.margin, p.marginPct ?? "", p.budgetUsedPct ?? "", p.effectiveRate ?? "", p.issues.done, p.issues.agentDone, p.aiSavings]);
   const csv = [head, ...rows].map((row) => row.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
   const a = document.createElement("a");
@@ -278,7 +278,7 @@ export function ReportsPage() {
                       <span className={`rounded-full px-1.5 py-px text-[10.5px] ring-1 ring-inset ${PROJECT_STATUS_META[p.status].cls}`}>{PROJECT_STATUS_META[p.status].label}</span>
                       {p.customerName ?? "No client"} · {p.billing === "hourly" ? `hourly €${p.hourlyRateEur ?? 0}` : "fixed"}
                       {p.issues.agentDone > 0 && (
-                        <span className="inline-flex items-center gap-0.5 text-accent" title="Issues completed by AI agents">
+                        <span className="inline-flex items-center gap-0.5 text-accent" title="Tasks completed by AI agents">
                           <Bot size={11} /> {p.issues.agentDone}
                         </span>
                       )}
@@ -312,7 +312,7 @@ export function ReportsPage() {
               {data && projects.length === 0 && (
                 <tr>
                   <td colSpan={8} className="px-6 py-12 text-center text-[13px] text-faint">
-                    No projects yet. Create one in Projects, then log time on issues.
+                    No projects yet. Create one in Projects, then log time on tasks.
                   </td>
                 </tr>
               )}
@@ -357,7 +357,7 @@ export function ReportsPage() {
                 </div>
               </li>
             ))}
-            {data && data.people.length === 0 && <li className="text-[12.5px] text-faint">No time logged in this period. Open an issue and use “Log”.</li>}
+            {data && data.people.length === 0 && <li className="text-[12.5px] text-faint">No time logged in this period. Open a task and use “Log”.</li>}
           </ul>
         </section>
       </div>
@@ -370,7 +370,7 @@ export function ReportsPage() {
         <div className="grid grid-cols-2 gap-3">
           {[
             ["Spent on AI", data ? eur2(data.ai.spendEur) : "—", "free tiers are billed €0"],
-            ["Issues done by AI agents", data ? String(data.ai.agentTasks) : "—", data ? `${data.ai.agentPoints} points · Claude / Codex` : ""],
+            ["Tasks done by AI agents", data ? String(data.ai.agentTasks) : "—", data ? `${data.ai.agentPoints} points · Claude / Codex` : ""],
           ].map(([l, v, s]) => (
             <div key={l} className="rounded-lg border border-line bg-bg px-3 py-3">
               <div className="text-[12px] text-muted">{l}</div>

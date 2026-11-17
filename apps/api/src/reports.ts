@@ -66,7 +66,7 @@ export function reportRoutes(getDb: () => Db, g: Guards) {
     const issueId = isUuid(b.issueId) ? b.issueId : null;
     if (issueId) {
       const [i] = await db.select({ projectId: issues.projectId }).from(issues).where(eq(issues.id, issueId)).limit(1);
-      if (!i) return c.json({ error: "Issue not found." }, 404);
+      if (!i) return c.json({ error: "Task not found." }, 404);
       projectId = i.projectId;
     }
     if (!projectId) return c.json({ error: "Pick a project or issue." }, 400);

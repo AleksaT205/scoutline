@@ -123,9 +123,9 @@ export function TasksPage() {
     <>
       <div className="mb-5 flex flex-wrap items-end gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Tasks</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Feedback</h1>
           <p className="mt-0.5 text-[13.5px] text-muted">
-            Development tasks, synced with GitHub Issues{data?.repo ? ` (${data.repo})` : ""}. Hand any task to Claude Code — it opens a pull request for you to review.
+            Bugs and ideas for Scoutline itself, synced with GitHub Issues{data?.repo ? ` (${data.repo})` : ""}. Hand any task to Claude Code — it opens a pull request for you to review.
           </p>
         </div>
         {canEdit(user) && data?.configured && (

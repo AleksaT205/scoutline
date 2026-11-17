@@ -378,7 +378,7 @@ export function workspaceRoutes(getDb: () => Db, g: Guards) {
   // ── Figma u tasku ──
   app.post("/delivery/issues/:iid/figma", member, async (c) => {
     const iid = c.req.param("iid")!;
-    if (!isUuid(iid)) return c.json({ error: "Issue not found." }, 404);
+    if (!isUuid(iid)) return c.json({ error: "Task not found." }, 404);
     const url = str(((await c.req.json().catch(() => ({}))) as { url?: unknown }).url, 600);
     const f = figmaParse(url);
     if (!f) return c.json({ error: "Paste a Figma link (figma.com/design/… or /file/…)." }, 400);

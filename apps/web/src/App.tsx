@@ -189,7 +189,7 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
               {page === "router" ? "AI Ops / " : page === "settings" || page === "team" || page === "tasks" ? "Workspace / " : ["issues", "projects", "project", "clients", "inbox", "cycles", "reports", "assistant"].includes(page) ? "Delivery / " : "Prospecting / "}
             </span>
             <b className="font-medium text-fg">
-              {{ router: "AI Router", sources: "Sources", pipeline: "Pipeline", overview: "Overview", settings: "Settings", team: "Team", tasks: "Tasks", leads: "Leads", issues: "My issues", projects: "Projects", project: "Project", clients: "Clients", inbox: "Inbox", cycles: "Cycles", reports: "Reports", assistant: "Assistant" }[page]}
+              {{ router: "AI Router", sources: "Sources", pipeline: "Pipeline", overview: "Overview", settings: "Settings", team: "Team", tasks: "Feedback", leads: "Leads", issues: "My tasks", projects: "Projects", project: "Project", clients: "Clients", inbox: "Inbox", cycles: "Cycles", reports: "Reports", assistant: "Assistant" }[page]}
             </b>
           </div>
           <label className="hidden">

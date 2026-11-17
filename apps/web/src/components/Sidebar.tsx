@@ -14,7 +14,7 @@ const prospecting = (leadCount: number | undefined) => [
 const delivery = [
   { label: "Projects", icon: FolderKanban, href: "#/delivery", page: "projects" },
   { label: "Clients", icon: Building2, href: "#/delivery/clients", page: "clients" },
-  { label: "My issues", icon: CircleDot, href: "#/delivery/issues", page: "issues" },
+  { label: "My tasks", icon: CircleDot, href: "#/delivery/issues", page: "issues" },
   { label: "Inbox", icon: Inbox, href: "#/delivery/inbox", page: "inbox" },
   { label: "Cycles", icon: RefreshCcw, href: "#/delivery/cycles", page: "cycles" },
   { label: "Reports", icon: BarChart3, href: "#/delivery/reports", page: "reports" },
@@ -24,7 +24,7 @@ export const DELIVERY_PAGES = ["inbox", "issues", "projects", "project", "cycles
 const formatCost = (v?: number) => (v === undefined ? "—" : v > 0 && v < 0.01 ? `$${v.toFixed(4)}` : `$${v.toFixed(2)}`);
 
 const workspace = [
-  { label: "Tasks", icon: ListTodo, href: "#/tasks" },
+  { label: "Feedback", icon: ListTodo, href: "#/tasks" },
   { label: "Team", icon: Users, href: "#/team" },
   { label: "Settings", icon: Settings, href: "#/settings" },
 ];

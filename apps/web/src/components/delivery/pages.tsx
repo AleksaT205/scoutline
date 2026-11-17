@@ -226,7 +226,7 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
             <button
               type="button"
               onClick={async () => {
-                if (!window.confirm(`Delete “${project.name}”? Its issues, logged time and client links are deleted too. This can't be undone.`)) return;
+                if (!window.confirm(`Delete “${project.name}”? Its tasks, logged time and client links are deleted too. This can't be undone.`)) return;
                 try {
                   await teamFetch(`/delivery/projects/${project.id}`, { method: "DELETE" });
                   mutate<{ projects: Project[] }>("/delivery/projects", (d) => (d ? { ...d, projects: d.projects.filter((x) => x.id !== project.id) } : d));
@@ -282,7 +282,7 @@ export function ProjectsPage() {
     <>
       <PageHead title="Projects" sub="Everything the team is delivering. Won leads become projects with one click.">
         {canEdit(user) && (
-          <button onClick={() => void createSample()} disabled={sampleBusy} className={btnSecondary} title="Adds a ready-made sample project with a client, issues in every stage, logged time and a client request — to try everything">
+          <button onClick={() => void createSample()} disabled={sampleBusy} className={btnSecondary} title="Adds a ready-made sample project with a client, tasks in every stage, logged time and a client request — to try everything">
             {sampleBusy ? <Loader2 size={14} className="animate-spin" /> : <Sparkles size={13} />} Sample project
           </button>
         )}
@@ -305,7 +305,7 @@ export function ProjectsPage() {
       <section className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
         {[
           ["Active projects", String(active.length)],
-          ["Open issues", String(active.reduce((a, p) => a + p.issues.total - p.issues.done, 0))],
+          ["Open tasks", String(active.reduce((a, p) => a + p.issues.total - p.issues.done, 0))],
           ["Active value", fmtEur(active.reduce((a, p) => a + (p.budgetEur ?? 0), 0))],
           ["Due in 14 days", String((data ?? []).filter((p) => p.dueDate && p.status !== "done" && Date.parse(p.dueDate) - Date.now() < 14 * 86_400_000).length)],
         ].map(([l, v]) => (
@@ -432,7 +432,7 @@ function ProjectFacts({ project: p, issues, done }: { project: Project; issues: 
     ["Backlog / Todo", issues.filter((i) => i.status === "backlog" || i.status === "todo").length],
     ["In progress / review", issues.filter((i) => i.status === "in_progress" || i.status === "in_review").length],
     ["Done", done],
-    ["Overdue issues", overdue, overdue ? "text-danger" : undefined],
+    ["Overdue tasks", overdue, overdue ? "text-danger" : undefined],
     ["Story points done", issues.filter((i) => i.status === "done").reduce((a, i) => a + (i.estimate ?? 0), 0)],
     ["Time logged", time.data ? `${Math.floor(mins / 60)}h ${mins % 60 ? `${mins % 60}m` : ""}`.trim() : "…"],
     ["Budget", fmtEur(p.budgetEur)],
@@ -519,7 +519,7 @@ export function ProjectPage({ id }: { id: string }) {
                 <ProjectStatusPill status={p.status} />
               )}
               <span className="inline-flex items-center gap-1.5">
-                <ProgressRing value={progress} size={16} /> {progress}% · {live?.done ?? p.issues.done}/{live?.total ?? p.issues.total} issues
+                <ProgressRing value={progress} size={16} /> {progress}% · {live?.done ?? p.issues.done}/{live?.total ?? p.issues.total} tasks
               </span>
               <span className="inline-flex items-center gap-1">
                 <Building2 size={12} /> {p.customerName ?? "No client"}
@@ -567,7 +567,7 @@ export function ProjectPage({ id }: { id: string }) {
           )}
           {editable && p && (
             <button onClick={() => setNewOpen("todo")} className={`${btnPrimary} order-first sm:order-none`} title="Shortcut: C">
-              <Plus size={14} /> New issue <kbd className="ml-1 hidden rounded border border-bg/30 px-1 text-[10px] opacity-70 sm:inline">C</kbd>
+              <Plus size={14} /> New task <kbd className="ml-1 hidden rounded border border-bg/30 px-1 text-[10px] opacity-70 sm:inline">C</kbd>
             </button>
           )}
         </div>
@@ -594,7 +594,7 @@ export function ProjectPage({ id }: { id: string }) {
         {(view === "board" || view === "list") && (
           <label className="flex h-[32px] w-full items-center sm:ml-auto sm:w-64 gap-2 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-faint focus-within:border-accent/55">
             <Search size={13} />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter issues…" className="w-full bg-transparent text-fg outline-none placeholder:text-faint" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter tasks…" className="w-full bg-transparent text-fg outline-none placeholder:text-faint" />
           </label>
         )}
       </div>
@@ -649,10 +649,10 @@ export function MyIssuesPage() {
   const sel = issues.data?.find((i) => i.id === selected) ?? null;
   return (
     <>
-      <PageHead title="My issues" sub={scope === "me" ? "Open issues assigned to you, across all projects." : "All open issues across projects."}>
+      <PageHead title="My tasks" sub={scope === "me" ? "Open tasks assigned to you, across all projects." : "All open tasks across projects."}>
         {editable && (
           <button onClick={() => setNewOpen(true)} disabled={!projects.data?.length} className={btnPrimary} title={projects.data?.length ? "Shortcut: C" : "Create a project first"}>
-            <Plus size={14} /> New issue
+            <Plus size={14} /> New task
           </button>
         )}
       </PageHead>
@@ -662,7 +662,7 @@ export function MyIssuesPage() {
             <button
               key={s}
               disabled={s === "me" && !user?.id}
-              title={s === "me" && !user?.id ? "Sign in with your own account to see your issues" : undefined}
+              title={s === "me" && !user?.id ? "Sign in with your own account to see your tasks" : undefined}
               onClick={() => setScope(s)}
               className={`h-[28px] rounded-md px-3 disabled:opacity-40 ${scope === s ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}
             >

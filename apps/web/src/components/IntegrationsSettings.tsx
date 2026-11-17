@@ -255,7 +255,7 @@ function MyIntegrations() {
             </button>
           ))}
         </div>
-        <span className="text-[12px] text-faint">Shown first on every issue. Uses your own subscription through GitHub.</span>
+        <span className="text-[12px] text-faint">Shown first on every task. Uses your own subscription through GitHub.</span>
       </div>
       <div className="mt-4 border-t border-line pt-4">
         <div className="flex flex-wrap items-center gap-2 text-[13px]">

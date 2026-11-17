@@ -313,7 +313,7 @@ function BranchesView({ projectId, repo }: { projectId: string; repo: string }) 
           <button disabled={busy || !name.trim()} className={small}>
             {busy ? <Loader2 size={12} className="animate-spin" /> : <Plus size={12} />} Create branch
           </button>
-          <span className="self-center text-[12px] text-faint">Tip: open an issue → “Create branch” names it after the task.</span>
+          <span className="self-center text-[12px] text-faint">Tip: open a task → “Create branch” names it after the task.</span>
         </form>
       )}
       {msg && <div className="text-[12.5px] text-muted">{msg}</div>}

@@ -186,7 +186,7 @@ export function CyclesPage() {
       <div className="mb-5 flex flex-wrap items-end gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Cycles</h1>
-          <p className="mt-0.5 text-[13.5px] text-muted">Sprints for the whole team. Unfinished issues move to the next cycle automatically.</p>
+          <p className="mt-0.5 text-[13.5px] text-muted">Sprints for the whole team. Unfinished tasks move to the next cycle automatically.</p>
         </div>
         <div className="sm:ml-auto">
           <CycleLength onChanged={cycles.reload} />
@@ -224,7 +224,7 @@ export function CyclesPage() {
         </section>
       )}
 
-      <div className="mb-2 text-[12px] font-medium uppercase tracking-wider text-faint">Issues in this cycle</div>
+      <div className="mb-2 text-[12px] font-medium uppercase tracking-wider text-faint">Tasks in this cycle</div>
       {!issues.data ? <div className="h-32 animate-pulse rounded-xl bg-surface-2" /> : <IssueList issues={issues.data} onOpen={(i) => setSelected(i.id)} showProject empty="No issues in this cycle yet. Open an issue and set Cycle, or tick “Current cycle” when creating one." />}
 
       <div className="mt-6 mb-2 text-[12px] font-medium uppercase tracking-wider text-faint">All cycles</div>
@@ -296,7 +296,7 @@ export function PortalDialog({ open, onClose, projectId, projectName }: { open: 
     <Dialog open={open} onClose={onClose} title="Client portal" width={580}>
       <div className="space-y-3 px-4 py-4">
         <p className="text-[13px] text-muted">
-          A private read-only page for your client: progress, what was done this week, what’s in progress and up next. Issues labeled <code className="num text-fg">internal</code> are hidden. Clients can also send
+          A private read-only page for your client: progress, what was done this week, what’s in progress and up next. Tasks labeled <code className="num text-fg">internal</code> are hidden. Clients can also send
           requests — they land in your Inbox.
         </p>
         {created ? (

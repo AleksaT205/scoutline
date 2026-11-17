@@ -117,7 +117,7 @@ export function NewIssueDialog({
   submitRef.current = () => void (!busy && submit());
 
   return (
-    <Dialog open={open} onClose={onClose} title="New issue" width={620}>
+    <Dialog open={open} onClose={onClose} title="New task" width={620}>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -131,7 +131,7 @@ export function NewIssueDialog({
               <span className="max-w-[260px] truncate text-fg">{project?.name ?? "Pick a project"}</span>
             </Menu>
           )}
-          <input autoFocus className="w-full bg-transparent py-1 text-[17px] font-medium outline-none placeholder:text-faint" placeholder="Issue title" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <input autoFocus className="w-full bg-transparent py-1 text-[17px] font-medium outline-none placeholder:text-faint" placeholder="Task title" value={title} onChange={(e) => setTitle(e.target.value)} />
           <textarea className="h-28 w-full resize-none bg-transparent text-[13.5px] leading-relaxed text-muted outline-none placeholder:text-faint" placeholder="Add description… (what needs to be done, how we know it's done)" value={description} onChange={(e) => setDescription(e.target.value)} />
           <div className="flex flex-wrap items-center gap-1.5 pb-3">
             <div className="rounded-md border border-line">
@@ -158,7 +158,7 @@ export function NewIssueDialog({
             Cancel
           </button>
           <button disabled={busy || !title.trim() || !pid} className={btnPrimary}>
-            {busy ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Create issue
+            {busy ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Create task
           </button>
         </div>
       </form>
@@ -290,7 +290,7 @@ export function IssueBoard({ issues, setIssues, onOpen, onNew, showProject }: { 
                   <span className="font-medium">{ISSUE_STATUS_META[status].label}</span>
                   <span className="num text-faint">{items.length}</span>
                   {onNew && editable && (
-                    <button onClick={() => onNew(status)} className="ml-auto grid size-6 place-items-center rounded-md text-faint hover:bg-surface-2 hover:text-fg" aria-label={`New issue in ${ISSUE_STATUS_META[status].label}`}>
+                    <button onClick={() => onNew(status)} className="ml-auto grid size-6 place-items-center rounded-md text-faint hover:bg-surface-2 hover:text-fg" aria-label={`New task in ${ISSUE_STATUS_META[status].label}`}>
                       <Plus size={14} />
                     </button>
                   )}
@@ -331,7 +331,7 @@ export function IssueBoard({ issues, setIssues, onOpen, onNew, showProject }: { 
 }
 
 // ── Lista grupisana po statusu (Linear „list view“) ──
-export function IssueList({ issues, onOpen, showProject, empty = "No issues yet." }: { issues: Issue[]; onOpen: (i: Issue) => void; showProject?: boolean; empty?: string }) {
+export function IssueList({ issues, onOpen, showProject, empty = "No tasks yet." }: { issues: Issue[]; onOpen: (i: Issue) => void; showProject?: boolean; empty?: string }) {
   const groups = ISSUE_STATUSES.map((s) => ({ status: s, items: issues.filter((i) => i.status === s).sort((a, b) => a.priority - b.priority || a.sortOrder - b.sortOrder) })).filter((g) => g.items.length);
   if (!issues.length) return <div className="grid place-items-center rounded-xl border border-dashed border-line px-6 py-14 text-[13px] text-faint">{empty}</div>;
   return (
@@ -375,7 +375,7 @@ function eventText(e: IssueEvent, names: Record<string, string>) {
   const d = (e.data ?? {}) as { from?: unknown; to?: unknown; via?: string };
   switch (e.type) {
     case "created":
-      return "created the issue";
+      return "created the task";
     case "status":
       return (
         <>
@@ -427,7 +427,7 @@ function eventText(e: IssueEvent, names: Record<string, string>) {
     case "estimate":
       return d.to ? `set estimate to ${d.to} pt` : "removed the estimate";
     case "title":
-      return "renamed the issue";
+      return "renamed the task";
     default:
       return e.type;
   }
@@ -548,8 +548,8 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
                   }
                 }}
                 className="grid size-7 place-items-center rounded-md text-faint hover:bg-surface-2 hover:text-danger"
-                aria-label="Delete issue"
-                title="Delete issue"
+                aria-label="Delete task"
+                title="Delete task"
               >
                 <Trash2 size={14} />
               </button>

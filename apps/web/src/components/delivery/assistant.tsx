@@ -79,7 +79,7 @@ export function Md({ text }: { text: string }) {
   return <div className="text-[13.5px] leading-relaxed text-muted" dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
-const SUGGESTIONS = ["Where is the login handled and how does it work?", "Which issues are blocked or overdue?", "How is this project deployed?", "What should we work on next?"];
+const SUGGESTIONS = ["Where is the login handled and how does it work?", "Which tasks are blocked or overdue?", "How is this project deployed?", "What should we work on next?"];
 
 /** Chat sa projektom: odgovori iz repoa i taskova, sa linkovima na fajlove. */
 /** Potrošnja Ask AI ovog meseca: moja pitanja i tokeni, i koliko je išlo na Claude ključ (plaća se) a koliko na besplatne modele. */
@@ -159,7 +159,7 @@ export function AskPanel({ projectId, hasRepo }: { projectId?: string; hasRepo?:
       <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2.5">
         <MessagesSquare size={15} className="text-accent" />
         <span className="text-[13.5px] font-medium">Ask the project</span>
-        <span className="hidden text-[12px] text-faint sm:inline">{projectId ? (hasRepo ? "answers from the repo code + issues" : "answers from issues (add a GitHub repo for code answers)") : "general questions"}</span>
+        <span className="hidden text-[12px] text-faint sm:inline">{projectId ? (hasRepo ? "answers from the repo code + tasks" : "answers from tasks (add a GitHub repo for code answers)") : "general questions"}</span>
         <span className="ml-auto">
           <ModelPicker value={model} onChange={setModel} />
         </span>
@@ -292,7 +292,7 @@ export function StatusDialog({ open, onClose, projectId }: { open: boolean; onCl
             <div className="mt-2 text-[11px] text-faint">{meta}</div>
           </div>
         ) : (
-          <p className="text-[12.5px] text-muted">Summarizes what was done, what's in progress, what's overdue and what's next. The client version hides issue keys, names and issues labeled “internal”.</p>
+          <p className="text-[12.5px] text-muted">Summarizes what was done, what's in progress, what's overdue and what's next. The client version hides task keys, names and tasks labeled “internal”.</p>
         )}
         {error && <ErrorNote>{error}</ErrorNote>}
         <div className="flex justify-end gap-2">
@@ -330,7 +330,7 @@ export function AssistantPage() {
       <div className="mb-5 flex flex-wrap items-end gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Assistant</h1>
-          <p className="mt-0.5 text-[13.5px] text-muted">Ask where something is and how it works — answers come from the project's code and issues.</p>
+          <p className="mt-0.5 text-[13.5px] text-muted">Ask where something is and how it works — answers come from the project's code and tasks.</p>
         </div>
         <div className="sm:ml-auto">
           <Menu label="Project" value={pid} onChange={setPid} options={[{ value: "", label: "No project (general)" }, ...(projects.data ?? []).map((x) => ({ value: x.id, label: x.name, hint: x.key }))]} className="h-[32px] border border-line px-2.5">

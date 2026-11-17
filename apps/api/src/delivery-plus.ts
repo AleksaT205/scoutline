@@ -190,7 +190,7 @@ export function deliveryPlusRoutes(getDb: () => Db, g: Guards) {
     if (!isUuid(id) || !AGENTS.includes(agent)) return c.json({ error: "Pick Claude or Codex." }, 400);
     const db = getDb();
     const [row] = await db.select({ i: issues, p: projects }).from(issues).innerJoin(projects, eq(issues.projectId, projects.id)).where(eq(issues.id, id)).limit(1);
-    if (!row) return c.json({ error: "Issue not found." }, 404);
+    if (!row) return c.json({ error: "Task not found." }, 404);
     const { i, p } = row;
     const repo = parseRepo(p.repoUrl);
     if (!repo) return c.json({ error: "Add the project's GitHub repo first (Edit project → GitHub repo)." }, 400);
