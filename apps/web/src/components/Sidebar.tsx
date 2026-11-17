@@ -1,4 +1,4 @@
-import { BarChart3, Building2, CircleDot, FolderKanban, Inbox, MessagesSquare, ListTodo, Kanban, LayoutGrid, RefreshCcw, Rss, Search, Settings, Users, X } from "lucide-react";
+import { BarChart3, Building2, CircleDot, FolderKanban, Inbox, MessagesSquare, Kanban, LayoutGrid, RefreshCcw, Rss, Search, Settings, Users, X } from "lucide-react";
 import { useInboxCount } from "../lib/delivery";
 import { onlySpace, useSessionUser } from "../lib/session";
 import { useOrganization } from "../lib/org";
@@ -24,7 +24,6 @@ export const DELIVERY_PAGES = ["inbox", "issues", "projects", "project", "cycles
 const formatCost = (v?: number) => (v === undefined ? "—" : v > 0 && v < 0.01 ? `$${v.toFixed(4)}` : `$${v.toFixed(2)}`);
 
 const workspace = [
-  { label: "Feedback", icon: ListTodo, href: "#/tasks" },
   { label: "Team", icon: Users, href: "#/team" },
   { label: "Settings", icon: Settings, href: "#/settings" },
 ];

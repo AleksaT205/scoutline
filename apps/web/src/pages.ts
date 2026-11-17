@@ -15,7 +15,6 @@ const loaders = {
   sources: () => import("./components/SourcesPage"),
   pipeline: () => import("./components/PipelinePage"),
   settings: () => import("./components/SettingsPage"),
-  tasks: () => import("./components/TasksPage"),
   router: () => import("./components/RouterPage"),
 };
 type Loader = keyof typeof loaders;
@@ -32,7 +31,6 @@ export const OverviewPage = lazy(() => loaders.overview().then((m) => ({ default
 export const SourcesPage = lazy(() => loaders.sources().then((m) => ({ default: m.SourcesPage })));
 export const PipelinePage = lazy(() => loaders.pipeline().then((m) => ({ default: m.PipelinePage })));
 export const SettingsPage = lazy(() => loaders.settings().then((m) => ({ default: m.SettingsPage })));
-export const TasksPage = lazy(() => loaders.tasks().then((m) => ({ default: m.TasksPage })));
 export const RouterPage = lazy(() => loaders.router().then((m) => ({ default: m.RouterPage })));
 
 /** Šta treba svakoj stranici: deo koda + podaci (ključevi iz keša). */
@@ -49,7 +47,6 @@ const ROUTES: Array<[prefix: string, chunk: Loader | null, data: string[]]> = [
   ["#/pipeline", "pipeline", []],
   ["#/settings", "settings", []],
   ["#/team", "settings", []],
-  ["#/tasks", "tasks", []],
   ["#/router", "router", []],
 ];
 

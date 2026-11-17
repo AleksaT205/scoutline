@@ -11,7 +11,6 @@ import { htmlTitle, mainText, scoreItem, sendLeadToTelegram, telegramConfigured 
 import { safeFetchHtml } from "./safe-fetch.js";
 import { auth, type Actor } from "./auth.js";
 import { checkHealth } from "./monitor.js";
-import { devTasks } from "./dev.js";
 import { llmProxy, routerAdmin } from "./router.js";
 import { deliveryRoutes } from "./delivery.js";
 import { deliveryPlusRoutes, portalRoutes } from "./delivery-plus.js";
@@ -236,8 +235,6 @@ export function createApp(getDb: () => Db) {
   app.route("/", previewRoutes(getDb, a));
   // Faza 15: organizacija, skills, Figma, pokreni lokalno
   app.route("/", workspaceRoutes(getDb, a));
-  app.use("/dev/*", a.require("member"));
-  app.route("/dev/tasks", devTasks(getDb));
 
   // GET /share/:token — javni prikaz samo za čitanje (bez beleški, email nacrta i izmena)
   app.get("/share/:token", async (c) => {

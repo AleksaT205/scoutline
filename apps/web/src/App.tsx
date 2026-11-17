@@ -1,7 +1,7 @@
 import { Suspense, startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useDismiss } from "./lib/useDismiss";
 import { ConfirmHost } from "./lib/confirm";
-import { AssistantPage, ClientsPage, CyclesPage, InboxPage, MyIssuesPage, OverviewPage, PipelinePage, ProjectPage, ProjectsPage, ReportsPage, RouterPage, SettingsPage, SourcesPage, TasksPage, warmUp } from "./pages";
+import { AssistantPage, ClientsPage, CyclesPage, InboxPage, MyIssuesPage, OverviewPage, PipelinePage, ProjectPage, ProjectsPage, ReportsPage, RouterPage, SettingsPage, SourcesPage, warmUp } from "./pages";
 import { BellRing, Menu, Moon, Plus, RefreshCw, Search, Sun } from "lucide-react";
 import { useApiStatus, useLeads } from "./lib/api";
 import { Sidebar } from "./components/Sidebar";
@@ -40,8 +40,8 @@ function useTheme(): [Theme, () => void] {
   return [theme, () => setTheme((t) => (t === "dark" ? "light" : "dark"))];
 }
 
-export type Page = "leads" | "router" | "sources" | "pipeline" | "overview" | "settings" | "team" | "tasks" | "issues" | "projects" | "project" | "clients" | "inbox" | "cycles" | "reports" | "assistant";
-const PAGES: Page[] = ["router", "sources", "pipeline", "overview", "settings", "team", "tasks"];
+export type Page = "leads" | "router" | "sources" | "pipeline" | "overview" | "settings" | "team" | "issues" | "projects" | "project" | "clients" | "inbox" | "cycles" | "reports" | "assistant";
+const PAGES: Page[] = ["router", "sources", "pipeline", "overview", "settings", "team"];
 const readHash = () => window.location.hash;
 function useHash(): string {
   const [hash, setHash] = useState(readHash);
@@ -199,10 +199,10 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
           </button>
           <div className="text-[13px] text-muted">
             <span className="hidden sm:inline">
-              {page === "router" ? "AI Ops / " : page === "settings" || page === "team" || page === "tasks" ? "Workspace / " : ["issues", "projects", "project", "clients", "inbox", "cycles", "reports", "assistant"].includes(page) ? "Delivery / " : "Prospecting / "}
+              {page === "router" ? "AI Ops / " : page === "settings" || page === "team" ? "Workspace / " : ["issues", "projects", "project", "clients", "inbox", "cycles", "reports", "assistant"].includes(page) ? "Delivery / " : "Prospecting / "}
             </span>
             <b className="font-medium text-fg">
-              {{ router: "AI Router", sources: "Sources", pipeline: "Pipeline", overview: "Overview", settings: "Settings", team: "Team", tasks: "Feedback", leads: "Leads", issues: "My tasks", projects: "Projects", project: "Project", clients: "Clients", inbox: "Inbox", cycles: "Cycles", reports: "Reports", assistant: "Assistant" }[page]}
+              {{ router: "AI Router", sources: "Sources", pipeline: "Pipeline", overview: "Overview", settings: "Settings", team: "Team", leads: "Leads", issues: "My tasks", projects: "Projects", project: "Project", clients: "Clients", inbox: "Inbox", cycles: "Cycles", reports: "Reports", assistant: "Assistant" }[page]}
             </b>
           </div>
           <label className="hidden">
@@ -290,8 +290,6 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
             )
           ) : page === "assistant" ? (
             <AssistantPage />
-          ) : page === "tasks" ? (
-            <TasksPage />
           ) : page === "settings" || page === "team" ? (
             <SettingsPage initialTab={page === "team" ? "team" : window.location.hash.startsWith("#/settings/integrations") ? "integrations" : "profile"} onOpenAlerts={() => setAlertsOpen(true)} />
           ) : page === "router" ? (
