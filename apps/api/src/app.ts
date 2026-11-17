@@ -2,6 +2,8 @@ import { createHash, randomUUID } from "node:crypto";
 import { Hono, type Context } from "hono";
 import { cors } from "hono/cors";
 import { secureHeaders } from "hono/secure-headers";
+import { compress } from "hono/compress";
+import { etag } from "hono/etag";
 import { and, count, desc, eq, gte, inArray, lt, ne, sql, type SQL } from "drizzle-orm";
 import { leadEvents, leads, rawItems, settings, sources, type Db } from "@radar/db";
 import { LEAD_STATUSES, detectCountry, normalizeAlerts, remoteFriendly, type LeadStatus } from "@radar/shared";
@@ -70,8 +72,20 @@ export function createApp(getDb: () => Db) {
       origin: (origin) => (origins.includes(origin) || (isDev && /^http:\/\/localhost:\d+$/.test(origin)) ? origin : null),
       allowMethods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
       allowHeaders: ["Content-Type", "Authorization"],
+      // Pregledač pamti CORS proveru (OPTIONS) — bez ovoga svaki zahtev ide dvaput preko tunela
+      maxAge: 86_400,
     }),
   );
+  // Brzina: gzip za JSON (lista leadova ~750 KB → ~100 KB); /llm proxy se ne dira
+  const gzip = compress();
+  app.use("*", (c, next) => (c.req.path.startsWith("/llm") ? next() : gzip(c, next)));
+  // ETag za velike liste koje se često osvežavaju: ako se ništa nije promenilo, server vraća 304 bez tela
+  const tag = etag();
+  for (const p of ["/leads", "/stats", "/sources", "/analytics", "/notifications"])
+    app.use(p, async (c, next) => {
+      await tag(c, next);
+      if (c.req.method === "GET") c.header("Cache-Control", "private, no-cache");
+    });
 
   // Mora pre ruta (Hono izvršava redom registracije)
   // Pristup po delu aplikacije (Settings → Team): Sales korisnik ne vidi Delivery i obrnuto

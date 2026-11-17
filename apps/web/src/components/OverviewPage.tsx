@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import { prefetch, useCached } from "../lib/cache";
 import type { LeadStatus, LeadType, ServiceCategory } from "@radar/shared";
-import { API_URL } from "../lib/api";
-import { authHeaders } from "../lib/team";
 import { CATEGORY_LABEL, STATUS_META, TYPE_META } from "./ui";
 
 interface Analytics {
@@ -97,23 +96,13 @@ function HBars({ rows, color = "bg-accent" }: { rows: Array<{ label: string; val
 
 export function OverviewPage() {
   const [days, setDays] = useState(30);
-  const [data, setData] = useState<Analytics | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
+  const res = useCached<Analytics>(`/analytics?days=${days}`, { staleMs: 60_000, refreshMs: 120_000 });
+  const data = res.data ?? null;
+  const error = res.error ? "Can't load analytics — the backend may be offline." : null;
+  // Ostali periodi se učitaju unapred, pa je promena perioda odmah
   useEffect(() => {
-    let alive = true;
-    setData(null);
-    const load = () =>
-      fetch(`${API_URL}/analytics?days=${days}`, { headers: authHeaders() })
-        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-        .then((d: Analytics) => alive && (setData(d), setError(null)))
-        .catch(() => alive && setError("Can't load analytics — the backend may be offline."));
-    void load();
-    const id = setInterval(load, 120_000);
-    return () => {
-      alive = false;
-      clearInterval(id);
-    };
+    const t = setTimeout(() => [7, 30, 90].forEach((d) => d !== days && prefetch(`/analytics?days=${d}`, 60_000)), 800);
+    return () => clearTimeout(t);
   }, [days]);
 
   const total = data?.daily.reduce((a, d) => a + d.leads, 0) ?? 0;

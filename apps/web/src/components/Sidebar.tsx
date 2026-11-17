@@ -3,6 +3,7 @@ import { useInboxCount } from "../lib/delivery";
 import { onlySpace, useSessionUser } from "../lib/session";
 import { useOrganization } from "../lib/org";
 import type { ApiStatus } from "../lib/api";
+import { prefetchHref } from "../pages";
 
 const prospecting = (leadCount: number | undefined) => [
   { label: "Overview", icon: LayoutGrid, href: "#/overview" },
@@ -41,6 +42,9 @@ function NavItem({ label, icon: Icon, count, active, href, soon }: { label: stri
   return (
     <a
       href={href}
+      onMouseEnter={() => href && prefetchHref(href)}
+      onFocus={() => href && prefetchHref(href)}
+      onTouchStart={() => href && prefetchHref(href)}
       className={`flex items-center gap-2.5 rounded-md px-2 py-[7px] text-[13.5px] transition-colors ${
         active ? "bg-surface-2 text-fg ring-1 ring-line ring-inset" : "text-muted hover:bg-surface-2 hover:text-fg"
       }`}
@@ -110,7 +114,7 @@ export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: {
               ["Delivery", "#/delivery", DELIVERY_PAGES.includes(page)],
             ] as const
           ).map(([label, href, on]) => (
-            <a key={label} href={href} role="tab" aria-selected={on} className={`rounded-md py-1 text-center transition-colors ${on ? "bg-surface-2 font-medium text-fg ring-1 ring-line ring-inset" : "text-muted hover:text-fg"}`}>
+            <a key={label} href={href} onMouseEnter={() => prefetchHref(href)} onTouchStart={() => prefetchHref(href)} role="tab" aria-selected={on} className={`rounded-md py-1 text-center transition-colors ${on ? "bg-surface-2 font-medium text-fg ring-1 ring-line ring-inset" : "text-muted hover:text-fg"}`}>
               {label}
             </a>
           ))}

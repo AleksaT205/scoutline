@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useRef, useState } from "react";
+import { useCached } from "../lib/cache";
 import { AlertTriangle, CheckCircle2, ExternalLink, Loader2, Mail, Pause, Play, Plus, Rss } from "lucide-react";
-import { API_URL } from "../lib/api";
-import { authHeaders, teamFetch } from "../lib/team";
+import { teamFetch } from "../lib/team";
 import { canEdit, useSessionUser } from "../lib/session";
 
 interface Source {
@@ -74,39 +74,27 @@ const controllable = (s: { id: string; kind: string }) => s.kind !== "manual" &&
 
 export function SourcesPage() {
   const user = useSessionUser();
-  const [items, setItems] = useState<Source[] | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const waiting = useRef(false);
+  // Dok čeka „Run now“, osvežava se češće
+  const res = useCached<{ items: Source[] }>("/sources", { staleMs: 20_000, refreshMs: waiting.current ? 10_000 : 60_000 });
+  const items = res.data?.items ?? null;
+  waiting.current = !!items?.some((s) => s.runRequestedAt);
+  const [actionError, setError] = useState<string | null>(null);
+  const error = actionError ?? (res.error ? "Can't load sources — the backend may be offline." : null);
   const [busy, setBusy] = useState<string | null>(null);
-  const [tick, setTick] = useState(0);
   const act = async (id: string, path: string, init: RequestInit, patch: Partial<Source>) => {
     setBusy(id);
-    setItems((cur) => cur?.map((x) => (x.id === id ? { ...x, ...patch } : x)) ?? cur);
+    res.setData((cur) => (cur ? { ...cur, items: cur.items.map((x) => (x.id === id ? { ...x, ...patch } : x)) } : cur));
     try {
       await teamFetch(path, init);
     } catch (e) {
       setError((e as Error).message);
     } finally {
       setBusy(null);
-      setTimeout(() => setTick((t) => t + 1), 1500);
+      setTimeout(() => void res.reload(), 1500);
     }
   };
 
-  useEffect(() => {
-    let alive = true;
-    const load = () =>
-      fetch(`${API_URL}/sources`, { headers: authHeaders() })
-        .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
-        .then((d: { items: Source[] }) => alive && (setItems(d.items), setError(null)))
-        .catch(() => alive && setError("Can't load sources — the backend may be offline."));
-    void load();
-    // Dok čeka „Run now“, osvežava se češće
-    const id = setInterval(load, items?.some((s) => s.runRequestedAt) ? 10_000 : 60_000);
-    return () => {
-      alive = false;
-      clearInterval(id);
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tick, items?.some((s) => s.runRequestedAt)]);
 
   const healthy = items?.filter((s) => !s.lastError && s.kind !== "manual").length ?? 0;
   const automatic = items?.filter((s) => s.kind !== "manual").length ?? 0;

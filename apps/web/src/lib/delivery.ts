@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
+import { useCached } from "./cache";
 import type { IssueStatus, ProjectStatus } from "@radar/shared";
 import { teamFetch } from "./team";
 
@@ -120,23 +121,28 @@ export interface IssueEvent {
 
 /** Jednostavno učitavanje sa ponovnim pokušajem i lokalnim izmenama (optimistično). */
 function useResource<T>(path: string | null, pick: (d: unknown) => T) {
-  const [data, setData] = useState<T | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const reload = useCallback(async () => {
-    if (!path) return;
-    try {
-      setData(pick(await teamFetch(path)));
-      setError(null);
-    } catch (e) {
-      setError((e as Error).message);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [path]);
-  useEffect(() => {
-    setData(null);
-    void reload();
-  }, [reload]);
-  return { data, setData, error, reload };
+  // Zajednički keš: povratak na stranicu je odmah, sveži podaci stižu u pozadini
+  const c = useCached<unknown>(path, { staleMs: 2_000 }); // uvek proveri sveže, ali prikaži keš odmah
+  const data = useMemo(() => (c.data === undefined ? null : pick(c.data)), [c.data]); // eslint-disable-line react-hooks/exhaustive-deps
+  // setData menja izabrani deo odgovora (npr. listu projekata) i čuva ostatak odgovora
+  const setData = useCallback(
+    (next: T | null | ((cur: T | null) => T | null)) =>
+      c.setData((raw) => {
+        if (raw === undefined) return raw;
+        const cur = pick(raw);
+        const val = typeof next === "function" ? (next as (cur: T | null) => T | null)(cur) : next;
+        return replacePicked(raw, cur, val);
+      }),
+    [c.setData], // eslint-disable-line react-hooks/exhaustive-deps
+  );
+  return { data, setData, error: c.error, reload: c.reload };
+}
+
+/** Upiše novu vrednost na mesto gde je bila izabrana (npr. d.projects) — ili zameni ceo odgovor. */
+function replacePicked(raw: unknown, cur: unknown, val: unknown): unknown {
+  if (raw === cur) return val;
+  if (raw && typeof raw === "object") for (const [k, v] of Object.entries(raw)) if (v === cur) return { ...(raw as object), [k]: val };
+  return raw;
 }
 
 export const useProjects = () => useResource<Project[]>("/delivery/projects", (d) => (d as { projects: Project[] }).projects);

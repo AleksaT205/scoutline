@@ -1,6 +1,7 @@
 import { authHeaders } from "./team";
 import type { UiLead } from "../data/demo";
 import { useEffect, useState } from "react";
+import { useCached } from "./cache";
 
 export const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000";
 
@@ -56,35 +57,26 @@ export interface LeadsState {
   update: (lead: UiLead) => void;
 }
 
-/** Učitava prave leadove; ako ih još nema (ili API nije dostupan), vraća live=false. */
-export function useLeads(): LeadsState {
-  const [state, setState] = useState<Omit<LeadsState, "add" | "reload" | "update">>({ leads: null, live: false });
-  const [tick, setTick] = useState(0);
-  const add = (lead: UiLead) =>
-    setState((s) => ({ ...s, live: true, leads: [lead, ...(s.live && s.leads ? s.leads.filter((l) => l.id !== lead.id) : [])] }));
-  useEffect(() => {
-    let alive = true;
-    const load = async () => {
-      try {
-        const [l, s] = await Promise.all([
-          fetch(`${API_URL}/leads?limit=1000&includeHidden=1`, { headers: authHeaders() }).then((r) => (r.ok ? r.json() : { items: [] })) as Promise<{ items?: UiLead[] }>,
-          fetch(`${API_URL}/stats`, { headers: authHeaders() }).then((r) => (r.ok ? r.json() : {})) as Promise<{ newToday?: number; total?: number; aiCostUsd?: number }>,
-        ]);
-        if (!alive) return;
-        const items = (l.items ?? []) as UiLead[];
-        // live = podaci su sa servera (i kad ih još nema) — probni podaci se više ne prikazuju
-        setState({ leads: items, live: true, newToday: s.newToday, total: s.total, aiCostUsd: s.aiCostUsd, loadedAt: Date.now() });
-      } catch {
-        if (alive) setState((cur) => (cur.leads ? cur : { leads: [], live: false })); // greška mreže: zadrži poslednje učitane
-      }
-    };
-    void load();
-    const id = setInterval(load, 60_000); // dashboard se osvežava svakog minuta
-    return () => {
-      alive = false;
-      clearInterval(id);
-    };
-  }, [tick]);
-  const update = (lead: UiLead) => setState((s) => ({ ...s, leads: s.leads?.map((l) => (l.id === lead.id ? lead : l)) ?? null }));
-  return { ...state, add, update, reload: () => setTick((t) => t + 1) };
+export const LEADS_KEY = "/leads?limit=1000&includeHidden=1";
+export const STATS_KEY = "/stats";
+
+/** Leadovi + brojke iz keša (odmah prikaz), osvežava se svakog minuta dok je tab otvoren. */
+export function useLeads(enabled = true): LeadsState {
+  const l = useCached<{ items?: UiLead[] }>(enabled ? LEADS_KEY : null, { staleMs: 20_000, refreshMs: 60_000 });
+  const s = useCached<{ newToday?: number; total?: number; aiCostUsd?: number }>(enabled ? STATS_KEY : null, { staleMs: 20_000, refreshMs: 60_000 });
+  const leads = l.data ? (l.data.items ?? []) : l.error ? [] : null;
+  return {
+    leads,
+    live: !!l.data,
+    newToday: s.data?.newToday,
+    total: s.data?.total,
+    aiCostUsd: s.data?.aiCostUsd,
+    loadedAt: l.loadedAt || undefined,
+    reload: () => {
+      void l.reload();
+      void s.reload();
+    },
+    add: (lead) => l.setData((cur) => ({ ...cur, items: [lead, ...(cur?.items ?? []).filter((x) => x.id !== lead.id)] })),
+    update: (lead) => l.setData((cur) => (cur ? { ...cur, items: (cur.items ?? []).map((x) => (x.id === lead.id ? lead : x)) } : cur)),
+  };
 }

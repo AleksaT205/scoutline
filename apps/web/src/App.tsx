@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { AssistantPage, ClientsPage, CyclesPage, InboxPage, MyIssuesPage, OverviewPage, PipelinePage, ProjectPage, ProjectsPage, ReportsPage, RouterPage, SettingsPage, SourcesPage, TasksPage, warmUp } from "./pages";
 import { BellRing, Menu, Moon, Plus, RefreshCw, Search, Sun } from "lucide-react";
 import { useApiStatus, useLeads } from "./lib/api";
 import { Sidebar } from "./components/Sidebar";
@@ -8,17 +9,7 @@ import { Filters, applyFilters, freshFilters, type FilterState } from "./compone
 import { LeadsTable } from "./components/LeadsTable";
 import { LeadDetail } from "./components/LeadDetail";
 import { AddLeadDialog } from "./components/AddLeadDialog";
-import { RouterPage } from "./components/RouterPage";
-import { SourcesPage } from "./components/SourcesPage";
 import { AlertsDialog } from "./components/AlertsDialog";
-import { PipelinePage } from "./components/PipelinePage";
-import { OverviewPage } from "./components/OverviewPage";
-import { SettingsPage } from "./components/SettingsPage";
-import { TasksPage } from "./components/TasksPage";
-import { ClientsPage, MyIssuesPage, ProjectPage, ProjectsPage } from "./components/delivery/pages";
-import { CyclesPage, InboxPage } from "./components/delivery/more";
-import { ReportsPage } from "./components/delivery/reports";
-import { AssistantPage } from "./components/delivery/assistant";
 import { PortalPage } from "./components/PortalPage";
 import { NotificationsBell } from "./components/NotificationsBell";
 import { SharePage } from "./components/SharePage";
@@ -53,13 +44,14 @@ const readHash = () => window.location.hash;
 function useHash(): string {
   const [hash, setHash] = useState(readHash);
   useEffect(() => {
-    const on = () => {
-      setHash(readHash());
-      window.scrollTo(0, 0);
-    };
+    // Prelaz kao „transition“: stara stranica ostaje na ekranu dok nova nije spremna (bez treptanja skeletona)
+    const on = () => startTransition(() => setHash(readHash()));
     window.addEventListener("hashchange", on);
     return () => window.removeEventListener("hashchange", on);
   }, []);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [hash]);
   return hash;
 }
 const pageOf = (hash: string): Page => {
@@ -74,6 +66,22 @@ const pageOf = (hash: string): Page => {
   if (hash.startsWith("#/delivery")) return "projects";
   return PAGES.find((p) => hash.startsWith(`#/${p}`)) ?? "leads";
 };
+
+/** Dok se deo stranice učitava (retko — delovi se skidaju unapred). */
+function PageSkeleton() {
+  return (
+    <div className="animate-pulse space-y-3" aria-busy="true" aria-label="Loading">
+      <div className="h-7 w-48 rounded-md bg-surface-2" />
+      <div className="h-4 w-80 max-w-full rounded bg-surface-2" />
+      <div className="grid gap-3 pt-2 sm:grid-cols-3">
+        <div className="h-24 rounded-xl bg-surface-2" />
+        <div className="h-24 rounded-xl bg-surface-2" />
+        <div className="h-24 rounded-xl bg-surface-2" />
+      </div>
+      <div className="h-64 rounded-xl bg-surface-2" />
+    </div>
+  );
+}
 
 /** Ulaz u aplikaciju: javni linkovi (deljeni pregled, pozivnica), prijava, pa dashboard. */
 export function App() {
@@ -125,7 +133,12 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
   const [userMenu, setUserMenu] = useState(false);
   const [theme, toggleTheme] = useTheme();
   const status = useApiStatus();
-  const api = useLeads();
+  const space = onlySpace(user);
+  const api = useLeads(space !== "delivery");
+  // Posle prvog prikaza: u pozadini skini ostale stranice i njihove podatke
+  useEffect(() => {
+    warmUp(space);
+  }, [space]);
   const [menuOpen, setMenuOpen] = useState(false);
   const [addOpen, setAddOpen] = useState(false);
   // „Add lead“ sa bilo koje stranice (npr. Sources) otvara prozor na mestu
@@ -147,8 +160,10 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
   // Pravi leadovi iz API-ja; dok ih nema, prikazuju se primeri.
   // Bez probnih podataka: dok se učitava prikazuje se skeleton, a ne lažni brojevi
   const loading = api.leads === null;
-  const allLeads = api.leads ?? [];
-  const leads = useMemo(() => applyFilters(allLeads, filters), [allLeads, filters]);
+  const allLeads = useMemo(() => api.leads ?? [], [api.leads]);
+  // Kucanje u pretrazi ostaje glatko: lista se preračuna odmah posle, bez kočenja unosa
+  const deferredFilters = useDeferredValue(filters);
+  const leads = useMemo(() => applyFilters(allLeads, deferredFilters), [allLeads, deferredFilters]);
   const PAGE_SIZE = 50;
   const [pageNo, setPage] = useState(0);
   useEffect(() => setPage(0), [filters]); // novi filter/sort → prva strana
@@ -234,6 +249,7 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
               <a href="#/setup" className="font-medium text-accent">Create account →</a>
             </div>
           )}
+          <Suspense fallback={<PageSkeleton />}>
           {page === "projects" ? (
             <ProjectsPage />
           ) : page === "project" && projectId ? (
@@ -372,6 +388,7 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
           )}
           </>
           )}
+          </Suspense>
         </div>
       </main>
       <AlertsDialog open={alertsOpen} onClose={() => setAlertsOpen(false)} />

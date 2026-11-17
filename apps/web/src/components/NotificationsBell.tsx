@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Bell, CheckCheck, CircleDot, GitMerge, Inbox, MessageSquare, Sparkles, UserPlus } from "lucide-react";
-import { teamFetch } from "../lib/team";
+import { useCached } from "../lib/cache";
 
 /** Zvonce u zaglavlju: novi dobri leadovi, zahtevi u Inboxu, dodele, komentari, PR-ovi. „Pročitano“ pamti browser. */
 interface Note {
@@ -34,24 +34,13 @@ const ago = (iso: string) => {
   return `${Math.round(m / 1440)}d`;
 };
 
+const NONE: Note[] = [];
+
 export function NotificationsBell() {
-  const [items, setItems] = useState<Note[]>([]);
+  const items = useCached<{ items: Note[] }>("/notifications", { staleMs: 30_000, refreshMs: 60_000 }).data?.items ?? NONE;
   const [open, setOpen] = useState(false);
   const [seen, setSeen] = useState(readSeen);
   const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    let alive = true;
-    const load = () =>
-      teamFetch<{ items: Note[] }>("/notifications")
-        .then((d) => alive && setItems(d.items))
-        .catch(() => undefined);
-    void load();
-    const id = setInterval(load, 60_000);
-    return () => {
-      alive = false;
-      clearInterval(id);
-    };
-  }, []);
   useEffect(() => {
     if (!open) return;
     const off = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);

@@ -15,6 +15,9 @@ export const onlySpace = (u: SessionUser | null): "sales" | "delivery" | null =>
 const TOKEN_KEY = "scoutline-session";
 const USER_KEY = "scoutline-user";
 const listeners = new Set<() => void>();
+const resetters = new Set<() => void>();
+/** Poziva se kad se promeni nalog (odjava ili prijava drugog korisnika) — npr. brisanje keša podataka. */
+export const onAccountChange = (fn: () => void) => void resetters.add(fn);
 
 const read = (k: string) => {
   try {
@@ -38,6 +41,8 @@ export function getSessionUser(): SessionUser | null {
 }
 
 export function setSession(token: string, user: SessionUser) {
+  const prevId = getSessionUser()?.id;
+  if (prevId !== undefined && prevId !== user.id) resetters.forEach((f) => f());
   try {
     localStorage.setItem(TOKEN_KEY, token);
     localStorage.setItem(USER_KEY, JSON.stringify(user));
@@ -48,6 +53,7 @@ export function setSession(token: string, user: SessionUser) {
 }
 
 export function clearSession() {
+  resetters.forEach((f) => f());
   try {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
