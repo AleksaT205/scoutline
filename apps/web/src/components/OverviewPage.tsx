@@ -40,28 +40,29 @@ function Kpi({ label, value, hint }: { label: string; value: string; hint?: stri
 }
 
 /**
- * Linijski grafikon po danima: svi leadovi (siva linija) i dobri ≥70 (akcenat).
- * Miš: vertikalna linija prati kursor i gore piše tačna vrednost za taj dan.
- * Telefon: zadrži prst ~0,4 s pa prevlači levo-desno (stranica se tada ne pomera).
- * Tastatura: fokus na grafikon + strelice levo/desno.
+ * Stubičasti grafikon po danima (ljubičasto): ceo stub = novi leadovi, tamniji deo pri dnu = score ≥ 70.
+ * Prazni dani pre prvih podataka se ne prikazuju; danas je uvek desno.
+ * Vrednost piše gore i menja se dok se prelazi mišem / prstom (zadrži ~0,4 s) / strelicama.
  */
 const fmtDay = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
 const shortDay = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
 
-function DailyLine({ data, days }: { data: Analytics["daily"]; days: number }) {
+function LeadsChart({ data, days }: { data: Analytics["daily"] | null; days: number }) {
   const series = useMemo(() => {
-    const map = new Map(data.map((d) => [d.day, d]));
-    return Array.from({ length: days }, (_, i) => {
+    const map = new Map((data ?? []).map((d) => [d.day, d]));
+    const all = Array.from({ length: days }, (_, i) => {
       const day = new Date(Date.now() - (days - 1 - i) * 86_400_000).toISOString().slice(0, 10);
       return { day, leads: map.get(day)?.leads ?? 0, good: map.get(day)?.good ?? 0 };
     });
+    const first = all.findIndex((d) => d.leads > 0);
+    return first < 0 ? all : all.slice(Math.min(first, all.length - 2)); // bar juče + danas
   }, [data, days]);
 
   const boxRef = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(600);
   const [idx, setIdx] = useState<number | null>(null);
-  const H = 168;
-  const pad = { top: 12, right: 6, bottom: 22, left: 30 };
+  const H = w < 520 ? 210 : 270;
+  const pad = { top: 10, right: 4, bottom: 24, left: 34 };
 
   useEffect(() => {
     const el = boxRef.current;
@@ -69,23 +70,25 @@ function DailyLine({ data, days }: { data: Analytics["daily"]; days: number }) {
     const ro = new ResizeObserver(([e]) => setW(Math.max(240, Math.round(e!.contentRect.width))));
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [!!data]); // grafikon se pojavi tek kad stignu podaci
 
-  // Lepa gornja granica ose (npr. 0 / 150 / 300)
   const rawMax = Math.max(...series.map((s) => s.leads), 1);
   const step = 10 ** Math.floor(Math.log10(rawMax));
   const max = Math.ceil(rawMax / step / 2) * step * 2 || 1;
   const innerW = w - pad.left - pad.right;
   const innerH = H - pad.top - pad.bottom;
-  const x = (i: number) => pad.left + (series.length <= 1 ? innerW / 2 : (i / (series.length - 1)) * innerW);
+  const n = series.length;
+  // Širina mesta po danu: najviše 56 px, pa je malo dana i dalje uredno (stubovi uz desnu ivicu, danas desno)
+  const slot = Math.min(innerW / n, 56);
+  const startX = pad.left + innerW - slot * n;
+  const barW = Math.max(3, Math.min(slot - (slot > 12 ? 6 : 2), 40));
+  const cx = (i: number) => startX + slot * i + slot / 2;
   const y = (v: number) => pad.top + innerH - (v / max) * innerH;
-  const path = (k: "leads" | "good") => series.map((s, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(s[k]).toFixed(1)}`).join("");
-  const area = (k: "leads" | "good") => `${path(k)}L${x(series.length - 1).toFixed(1)},${y(0)}L${x(0).toFixed(1)},${y(0)}Z`;
 
   const indexAt = (clientX: number) => {
     const r = boxRef.current!.getBoundingClientRect();
-    const rel = (clientX - r.left - pad.left) / innerW;
-    return Math.min(series.length - 1, Math.max(0, Math.round(rel * (series.length - 1))));
+    const i = Math.floor((clientX - r.left - startX) / slot);
+    return Math.min(n - 1, Math.max(0, i));
   };
 
   // Dodir: dugo držanje uključuje očitavanje, pa prevlačenje ne pomera stranicu
@@ -131,93 +134,93 @@ function DailyLine({ data, days }: { data: Analytics["daily"]; days: number }) {
       el.removeEventListener("touchcancel", onEnd);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [series.length, innerW]);
+  }, [n, innerW, !!data]);
 
-  const cur = idx === null ? null : series[idx]!;
+  const cur = series[idx ?? n - 1];
   const ticks = [0, max / 2, max];
-  const tipLeft = idx === null ? 0 : Math.min(Math.max(x(idx), 70), w - 70);
-  const mid = Math.floor((series.length - 1) / 2);
+  // Datumi ispod: prvi, sredina i danas (bez ponavljanja kad je dana malo)
+  const labels = [...new Set([0, Math.floor((n - 1) / 2), n - 1])];
+  // Zaobljen vrh stuba (4 px), ravno dno na osi
+  const bar = (x0: number, top: number, bottom: number, wd: number) => {
+    const h = bottom - top;
+    if (h <= 0) return "";
+    const r = Math.min(4, wd / 2, h);
+    return `M${x0},${bottom}V${top + r}Q${x0},${top} ${x0 + r},${top}H${x0 + wd - r}Q${x0 + wd},${top} ${x0 + wd},${top + r}V${bottom}Z`;
+  };
 
   return (
-    <div>
-      <div
-        ref={boxRef}
-        tabIndex={0}
-        role="img"
-        aria-label={`Leads per day, last ${days} days. Use left and right arrow keys to read each day.`}
-        className="relative w-full min-w-0 select-none outline-none [-webkit-touch-callout:none] focus-visible:ring-2 focus-visible:ring-accent/40 rounded-md"
-        style={{ height: H }}
-        onPointerMove={(e) => e.pointerType === "mouse" && setIdx(indexAt(e.clientX))}
-        onPointerLeave={(e) => e.pointerType === "mouse" && setIdx(null)}
-        onContextMenu={(e) => e.preventDefault()}
-        onKeyDown={(e) => {
-          if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-            e.preventDefault();
-            setIdx((i) => Math.min(series.length - 1, Math.max(0, (i ?? series.length) + (e.key === "ArrowLeft" ? -1 : 1))));
-          } else if (e.key === "Escape") setIdx(null);
-        }}
-        onBlur={() => setIdx(null)}
-      >
-        <svg width={w} height={H} className="absolute inset-0 block overflow-visible">
-          <defs>
-            <linearGradient id="dl-good" x1="0" x2="0" y1="0" y2="1">
-              <stop offset="0" stopColor="var(--color-accent)" stopOpacity="0.22" />
-              <stop offset="1" stopColor="var(--color-accent)" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          {/* Mreža i vrednosti na osi — tiho, u pozadini */}
-          {ticks.map((t) => (
-            <g key={t}>
-              <line x1={pad.left} x2={w - pad.right} y1={y(t)} y2={y(t)} stroke="var(--color-line)" strokeDasharray={t ? "3 4" : undefined} />
-              <text x={pad.left - 6} y={y(t) + 3.5} textAnchor="end" className="num fill-faint text-[10.5px]">
-                {Math.round(t).toLocaleString()}
-              </text>
-            </g>
-          ))}
-          <path d={area("leads")} fill="var(--color-muted)" fillOpacity="0.07" />
-          <path d={path("leads")} fill="none" stroke="var(--color-muted)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-          <path d={area("good")} fill="url(#dl-good)" />
-          <path d={path("good")} fill="none" stroke="var(--color-accent)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
-          {/* Datumi */}
-          {[0, mid, series.length - 1].map((i, k) => (
-            <text key={i} x={x(i)} y={H - 5} textAnchor={k === 0 ? "start" : k === 2 ? "end" : "middle"} className="fill-faint text-[10.5px]">
-              {k === 2 ? "Today" : shortDay(series[i]!.day)}
-            </text>
-          ))}
-          {/* Očitavanje: tanka vertikalna linija + tačke */}
-          {cur && idx !== null && (
-            <g>
-              <line x1={x(idx)} x2={x(idx)} y1={pad.top - 4} y2={y(0)} stroke="var(--color-fg)" strokeOpacity="0.35" strokeWidth="1" />
-              <circle cx={x(idx)} cy={y(cur.leads)} r="4.5" fill="var(--color-muted)" stroke="var(--color-surface)" strokeWidth="2" />
-              <circle cx={x(idx)} cy={y(cur.good)} r="4.5" fill="var(--color-accent)" stroke="var(--color-surface)" strokeWidth="2" />
-            </g>
-          )}
-        </svg>
-        {cur && (
-          <div className="pointer-events-none absolute -top-2 z-10 -translate-x-1/2 -translate-y-full rounded-lg border border-line bg-surface px-2.5 py-1.5 shadow-lg" style={{ left: tipLeft }}>
-            <div className="whitespace-nowrap text-[11px] text-faint">{fmtDay(cur.day)}</div>
-            <div className="mt-0.5 flex items-center gap-1.5 whitespace-nowrap text-[12px]">
-              <i className="h-0.5 w-3 rounded-full bg-muted" />
-              <b className="num font-semibold text-fg">{cur.leads}</b>
-              <span className="text-muted">leads</span>
-            </div>
-            <div className="flex items-center gap-1.5 whitespace-nowrap text-[12px]">
-              <i className="h-0.5 w-3 rounded-full bg-accent" />
-              <b className="num font-semibold text-fg">{cur.good}</b>
-              <span className="text-muted">score ≥ 70</span>
-            </div>
+    <section className="min-w-0 rounded-xl border border-line bg-surface p-4 xl:col-span-2">
+      <div className="mb-3 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <div className="min-w-0">
+          <div className="text-[13.5px] font-medium">Leads per day</div>
+          <div className="mt-1 flex items-baseline gap-2">
+            <span className="num text-[26px] font-semibold leading-none tracking-tight">{data && cur ? cur.leads.toLocaleString() : "—"}</span>
+            <span className="text-[12.5px] text-muted">
+              new leads · <span className="num font-medium text-accent">{(cur?.good ?? 0).toLocaleString()}</span> score ≥ 70
+            </span>
           </div>
-        )}
+          <div className="mt-1 text-[12px] text-faint">{cur ? (idx === null ? `Today · ${fmtDay(cur.day)}` : fmtDay(cur.day)) : " "}</div>
+        </div>
+        <div className="flex items-center gap-3 pt-0.5 text-[11.5px] text-muted">
+          <span className="inline-flex items-center gap-1.5"><i className="size-2.5 rounded-[3px] bg-accent/40" /> all leads</span>
+          <span className="inline-flex items-center gap-1.5"><i className="size-2.5 rounded-[3px] bg-accent" /> score ≥ 70</span>
+        </div>
       </div>
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-faint">
-        <span className="flex gap-3">
-          <span className="inline-flex items-center gap-1.5"><i className="h-0.5 w-3 rounded-full bg-muted" /> all leads</span>
-          <span className="inline-flex items-center gap-1.5"><i className="h-0.5 w-3 rounded-full bg-accent" /> score ≥ 70</span>
-        </span>
-        <span className="hidden sm:inline">Hover to see each day</span>
+
+      {!data ? (
+        <div className="h-[210px] animate-pulse rounded-lg bg-surface-2 sm:h-[270px]" />
+      ) : (
+        <div
+          ref={boxRef}
+          tabIndex={0}
+          role="img"
+          aria-label={`Leads per day. Use left and right arrow keys to read each day.`}
+          className="relative w-full min-w-0 select-none rounded-md outline-none [-webkit-touch-callout:none] focus-visible:ring-2 focus-visible:ring-accent/40"
+          style={{ height: H }}
+          onPointerMove={(e) => e.pointerType === "mouse" && setIdx(indexAt(e.clientX))}
+          onPointerLeave={(e) => e.pointerType === "mouse" && setIdx(null)}
+          onContextMenu={(e) => e.preventDefault()}
+          onKeyDown={(e) => {
+            if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+              e.preventDefault();
+              setIdx((i) => Math.min(n - 1, Math.max(0, (i ?? n) + (e.key === "ArrowLeft" ? -1 : 1))));
+            } else if (e.key === "Escape") setIdx(null);
+          }}
+          onBlur={() => setIdx(null)}
+        >
+          <svg width={w} height={H} className="absolute inset-0 block overflow-visible">
+            {ticks.map((t) => (
+              <g key={t}>
+                <line x1={pad.left} x2={w - pad.right} y1={y(t)} y2={y(t)} stroke="var(--color-line)" strokeDasharray={t ? "2 5" : undefined} />
+                <text x={pad.left - 8} y={y(t) + 3.5} textAnchor="end" className="num fill-faint text-[10.5px]">
+                  {t >= 1000 ? `${(t / 1000).toFixed(t % 1000 ? 1 : 0)}k` : Math.round(t)}
+                </text>
+              </g>
+            ))}
+            {series.map((s, i) => {
+              const x0 = cx(i) - barW / 2;
+              const dim = idx !== null && idx !== i;
+              return (
+                <g key={s.day} opacity={dim ? 0.45 : 1} style={{ transition: "opacity 120ms" }}>
+                  {/* ceo stub (svi leadovi) svetlije, a deo sa score ≥ 70 puna boja; 2 px razmaka između */}
+                  <path d={bar(x0, y(s.leads), Math.min(y(0), y(s.good) - (s.good ? 2 : 0)), barW)} fill="var(--color-accent)" fillOpacity="0.4" />
+                  <path d={bar(x0, y(s.good), y(0), barW)} fill="var(--color-accent)" />
+                </g>
+              );
+            })}
+            {labels.map((i) => (
+              <text key={i} x={cx(i)} y={H - 6} textAnchor={n > 6 ? (i === 0 ? "start" : i === n - 1 ? "end" : "middle") : "middle"} className="fill-faint text-[10.5px]">
+                {i === n - 1 ? "Today" : shortDay(series[i]!.day)}
+              </text>
+            ))}
+          </svg>
+        </div>
+      )}
+      <div className="mt-2 text-right text-[11px] text-faint">
+        <span className="hidden sm:inline">Hover a bar to see that day</span>
         <span className="sm:hidden">Press and hold to see each day</span>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -292,9 +295,7 @@ export function OverviewPage() {
       </section>
 
       <div className="grid gap-4 xl:grid-cols-3">
-        <Panel title="Leads per day" sub="New leads and how many scored 70+" className="xl:col-span-2">
-          {data ? <DailyLine data={data.daily} days={days} /> : <div className="h-40 animate-pulse rounded-lg bg-surface-2" />}
-        </Panel>
+        <LeadsChart data={data?.daily ?? null} days={days} />
 
         <Panel title="Outreach funnel" sub="All time">
           {data ? (
