@@ -410,27 +410,39 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
             const mine = wf.workflow_runs.filter((w) => w.display_title === i.title || (pr && w.display_title === pr.title));
             const model = ((i as GhIssue & { labels?: Array<{ name: string }> }).labels ?? []).find((l) => l.name.startsWith("model:"))?.name.slice(6) ?? "default";
             const usage = { in: 0, out: 0, cost: 0, turns: 0, known: 0 };
-            if (Date.parse(i.created_at) >= month0)
-              for (const w of mine.filter((x) => x.status === "completed")) {
-                if (!usageCache.has(`${r.full}#${w.id}`) && budget-- <= 0) continue;
-                const u = await usageOf(tok, r.full, w.id);
-                if (!u) continue;
+            const sessionList: Array<{ id: number; at: string; minutes: number; status: string; conclusion: string | null; url: string; tokens: number | null; cost: number | null; turns: number | null }> = [];
+            for (const w of mine) {
+              let u: Usage | null = null;
+              if (Date.parse(w.created_at) >= month0 && w.status === "completed" && (usageCache.has(`${r.full}#${w.id}`) || budget-- > 0)) u = await usageOf(tok, r.full, w.id);
+              if (u) {
                 usage.in += u.in;
                 usage.out += u.out;
                 usage.cost += u.cost ?? 0;
                 usage.turns += u.turns ?? 0;
                 usage.known++;
               }
-            return { number: i.number, title: i.title, url: i.html_url, createdAt: i.created_at, by: startedBy(i.body) ?? i.user?.login ?? null, model, status: statusOf(i, pr, mine), minutes: minutesOf(mine), sessions: mine.length, pr: pullView(pr), usage: usage.known ? usage : null };
+              sessionList.push({
+                id: w.id,
+                at: w.run_started_at ?? w.created_at,
+                minutes: w.status === "completed" ? Math.max(0, Math.round((Date.parse(w.updated_at) - Date.parse(w.run_started_at ?? w.created_at)) / 60_000)) : 0,
+                status: w.status,
+                conclusion: w.conclusion,
+                url: w.html_url,
+                tokens: u ? u.in + u.out : null,
+                cost: u?.cost ?? null,
+                turns: u?.turns ?? null,
+              });
+            }
+            return { number: i.number, title: i.title, url: i.html_url, createdAt: i.created_at, by: startedBy(i.body) ?? i.user?.login ?? null, model, status: statusOf(i, pr, mine), minutes: minutesOf(mine), sessions: mine.length, sessionList, pr: pullView(pr), usage: usage.known ? usage : null };
           }),
       );
       // Potrošnja ovog meseca: sesije (pokretanja Actions-a) i minuti, po osobi
       const month = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).getTime();
       const thisMonth = runs.filter((x) => Date.parse(x.createdAt) >= month);
-      type Agg = { runs: number; minutes: number; tokens: number; cost: number };
+      type Agg = { runs: number; sessions: number; minutes: number; tokens: number; cost: number };
       const add = (m: Record<string, Agg>, k: string, x: (typeof runs)[number]) => {
-        const a = m[k] ?? { runs: 0, minutes: 0, tokens: 0, cost: 0 };
-        m[k] = { runs: a.runs + 1, minutes: a.minutes + x.minutes, tokens: a.tokens + (x.usage ? x.usage.in + x.usage.out : 0), cost: a.cost + (x.usage?.cost ?? 0) };
+        const a = m[k] ?? { runs: 0, sessions: 0, minutes: 0, tokens: 0, cost: 0 };
+        m[k] = { runs: a.runs + 1, sessions: a.sessions + x.sessions, minutes: a.minutes + x.minutes, tokens: a.tokens + (x.usage ? x.usage.in + x.usage.out : 0), cost: a.cost + (x.usage?.cost ?? 0) };
       };
       const byPerson: Record<string, Agg> = {};
       const byModel: Record<string, Agg> = {};
@@ -454,6 +466,10 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
           },
           byPerson,
           byModel,
+          sessions: thisMonth
+            .flatMap((x) => x.sessionList.map((sx) => ({ ...sx, task: x.title, number: x.number, by: x.by, model: x.model })))
+            .sort((a, b) => b.at.localeCompare(a.at))
+            .slice(0, 40),
         },
       });
     } catch (e) {

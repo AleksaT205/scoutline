@@ -37,6 +37,7 @@ interface Run {
 }
 interface Agg {
   runs: number;
+  sessions?: number;
   minutes: number;
   tokens?: number;
   cost?: number;
@@ -45,6 +46,7 @@ interface Summary {
   month: { runs: number; sessions: number; minutes: number; prs: number; merged: number; tokensIn?: number; tokensOut?: number; cost?: number; turns?: number };
   byPerson: Record<string, Agg>;
   byModel?: Record<string, Agg>;
+  sessions?: Array<{ id: number; at: string; minutes: number; status: string; conclusion: string | null; url: string; tokens: number | null; cost: number | null; turns: number | null; task: string; number: number; by: string | null; model: string }>;
 }
 const fmtTok = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${Math.round(n / 1000)}k` : String(n));
 const fmtUsd = (n: number) => (n >= 10 ? `$${Math.round(n)}` : `$${n.toFixed(2)}`);
@@ -66,8 +68,9 @@ function UsageBar({ s }: { s: Summary }) {
                 <tr key={k} className="border-t border-line">
                   <td className="py-1 pr-2 capitalize text-fg">{k}</td>
                   <td className="num py-1 pr-2 text-right">{v.runs} tasks</td>
+                  <td className="num py-1 pr-2 text-right">{v.sessions ?? "—"} sessions</td>
                   <td className="num py-1 pr-2 text-right">{v.minutes} min</td>
-                  <td className="num py-1 pr-2 text-right">{fmtTok(v.tokens ?? 0)} tok</td>
+                  <td className="num py-1 pr-2 text-right">{v.tokens ? `${fmtTok(v.tokens)} tok` : "—"}</td>
                   <td className="num py-1 text-right text-muted">{v.cost ? fmtUsd(v.cost) : "—"}</td>
                 </tr>
               ))}
@@ -108,6 +111,47 @@ function UsageBar({ s }: { s: Summary }) {
         <div className="mt-2 grid gap-3 pb-1 sm:grid-cols-2">
           {table("By person", s.byPerson)}
           {table("By model", s.byModel)}
+          {s.sessions && s.sessions.length > 0 && (
+            <div className="sm:col-span-2">
+              <div className="mb-1 text-[11px] font-medium uppercase tracking-wider text-faint">Sessions</div>
+              <div className="max-h-[260px] overflow-auto">
+                <table className="w-full min-w-[560px] text-[12px]">
+                  <thead>
+                    <tr className="text-left text-[11px] text-faint">
+                      <th className="py-1 pr-2 font-normal">When</th>
+                      <th className="py-1 pr-2 font-normal">Task</th>
+                      <th className="py-1 pr-2 font-normal">Who</th>
+                      <th className="py-1 pr-2 font-normal">Model</th>
+                      <th className="py-1 pr-2 text-right font-normal">Time</th>
+                      <th className="py-1 pr-2 text-right font-normal">Tokens</th>
+                      <th className="py-1 text-right font-normal">Value</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {s.sessions.map((x) => (
+                      <tr key={x.id} className="border-t border-line">
+                        <td className="num whitespace-nowrap py-1 pr-2">
+                          <a href={x.url} target="_blank" rel="noreferrer" className="hover:text-fg" title="Open this session on GitHub">
+                            {new Date(x.at).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                          </a>
+                        </td>
+                        <td className="max-w-[260px] truncate py-1 pr-2 text-fg" title={x.task}>
+                          <span className="num text-faint">#{x.number}</span> {x.task}
+                        </td>
+                        <td className="py-1 pr-2">{x.by ?? "—"}</td>
+                        <td className="py-1 pr-2 capitalize">{x.model}</td>
+                        <td className="num py-1 pr-2 text-right">
+                          {x.status !== "completed" ? <span className="text-warning">running</span> : x.conclusion === "success" ? `${x.minutes} min` : <span className="text-danger">{x.conclusion ?? "failed"}</span>}
+                        </td>
+                        <td className="num py-1 pr-2 text-right">{x.tokens != null ? fmtTok(x.tokens) : "—"}</td>
+                        <td className="num py-1 text-right text-muted">{x.cost != null ? fmtUsd(x.cost) : "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
           <p className="text-[11px] text-faint sm:col-span-2">Counted from the Claude sessions in this repo (sessions after the latest “Set up automatically”). Anthropic doesn't share plan limits (5-hour / weekly) with other apps — Claude Code warns you in a session when you get close.</p>
         </div>
       )}
