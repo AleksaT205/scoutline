@@ -84,7 +84,7 @@ Netlify na besplatnom planu dodaje oznaku na sajt i ona ne može da se isključi
    - Build command: `pnpm --filter @radar/web build`
    - Build output directory: `apps/web/dist`
    - Root directory: prazno (koren repoa)
-   - Environment variables: `NODE_VERSION=20.19.4`, `VITE_API_URL=https://aleksaserver.tail32786c.ts.net`
+   - Environment variables: `NODE_VERSION=20.19.4`, `PNPM_VERSION=10.20.0`, `VITE_API_URL=https://aleksaserver.tail32786c.ts.net`
 3. Posle prvog deploy-a dobiješ adresu `https://<ime>.pages.dev`.
 4. Coolify → Environment Variables: u `CORS_ORIGINS` dodaj novu adresu (zarezom, bez razmaka), a `DASHBOARD_URL` postavi na nju → Redeploy.
 5. Kad sve radi na novoj adresi, Netlify sajt može da se obriše (ili ostavi kao rezerva).
