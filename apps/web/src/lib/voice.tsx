@@ -38,6 +38,26 @@ const SpeechCtor = (): (new () => SpeechRec) | null => {
   const w = window as unknown as { SpeechRecognition?: new () => SpeechRec; webkitSpeechRecognition?: new () => SpeechRec };
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 };
+const BLOCKED = "__mic_blocked__";
+/** Traži mikrofon odmah (pregledač tada sam pokaže prozor „Allow“). Ako je ranije odbijen — vraća false. */
+async function askMic(): Promise<boolean> {
+  try {
+    const st = await navigator.permissions?.query({ name: "microphone" as PermissionName });
+    if (st?.state === "denied") return false;
+  } catch {
+    /* neki pregledači ne znaju za ovo pitanje — samo probaj */
+  }
+  if (!navigator.mediaDevices?.getUserMedia) return true;
+  try {
+    const s = await navigator.mediaDevices.getUserMedia({ audio: true });
+    s.getTracks().forEach((t) => t.stop());
+    return true;
+  } catch {
+    return false;
+  }
+}
+const isSafari = () => /^((?!chrome|android|crios|fxios).)*safari/i.test(navigator.userAgent);
+const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent);
 const join = (a: string, b: string) => (b ? (a && !/\s$/.test(a) ? `${a} ${b}` : `${a}${b}`) : a);
 
 type State = "idle" | "listening" | "recording" | "transcribing";
@@ -80,7 +100,7 @@ export function useVoice(value: string, onChange: (v: string) => void) {
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch {
-      setError("Allow microphone access in the browser to talk.");
+      setError(BLOCKED);
       return;
     }
     const type = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"].find((t) => MediaRecorder.isTypeSupported?.(t));
@@ -114,8 +134,9 @@ export function useVoice(value: string, onChange: (v: string) => void) {
     window.setTimeout(() => mr.state !== "inactive" && mr.stop(), 120_000);
   };
 
-  const start = () => {
+  const start = async () => {
     setError(null);
+    if (!(await askMic())) return setError(BLOCKED);
     const Ctor = SpeechCtor();
     if (!Ctor || fallback.current) return void record();
     const r = new Ctor();
@@ -140,7 +161,7 @@ export function useVoice(value: string, onChange: (v: string) => void) {
         rec.current = null;
         setState("idle");
         void record();
-      } else if (e.error === "not-allowed") setError("Allow microphone access in the browser to talk.");
+      } else if (e.error === "not-allowed" || e.error === "service-not-allowed") setError(BLOCKED);
       else if (e.error !== "no-speech" && e.error !== "aborted") setError(`Voice input stopped (${e.error}).`);
     };
     r.onend = () => {
@@ -161,12 +182,12 @@ export function useVoice(value: string, onChange: (v: string) => void) {
 
   useEffect(() => {
     if (!error) return;
-    const t = window.setTimeout(() => setError(null), 6000);
+    const t = window.setTimeout(() => setError(null), error === BLOCKED ? 30_000 : 6000);
     return () => window.clearTimeout(t);
   }, [error]);
 
-  const toggle = () => (state === "listening" || state === "recording" ? stopAll() : state === "idle" ? start() : undefined);
-  return { state, lang, setLang, error, toggle, active: state !== "idle" };
+  const toggle = () => (state === "listening" || state === "recording" ? stopAll() : state === "idle" ? void start() : undefined);
+  return { state, lang, setLang, error, blocked: error === BLOCKED, clearError: () => setError(null), toggle, active: state !== "idle" };
 }
 
 /** Dugme mikrofona + SR/EN. Stavi ga pored polja; tekst se dopisuje u polje. */
@@ -197,10 +218,35 @@ export function VoiceButton({ value, onChange, className = "", size = "md" }: { 
           {v.lang.toUpperCase()}
         </button>
       </span>
-      {v.error && (
-        <span role="status" className="absolute right-0 top-full z-10 mt-1 w-max max-w-[260px] rounded-md border border-danger/40 bg-surface px-2 py-1 text-[11.5px] text-danger shadow-float">
-          {v.error}
+      {v.blocked ? (
+        <span role="alertdialog" aria-label="Turn on the microphone" className="absolute right-0 top-full z-20 mt-1.5 w-[280px] rounded-lg border border-line bg-surface p-3 text-left text-[12px] leading-relaxed text-muted shadow-float">
+          <span className="mb-1 flex items-center gap-1.5 text-[12.5px] font-semibold text-fg">
+            <Mic size={13} className="text-danger" /> Microphone is blocked
+          </span>
+          {isIOS() ? (
+            <>iPhone: <b className="text-fg">Settings → Safari → Microphone → Allow</b>, then reload this page.</>
+          ) : isSafari() ? (
+            <>Safari menu → <b className="text-fg">Settings for This Website → Microphone → Allow</b>, then reload.</>
+          ) : (
+            <>
+              Click the <b className="text-fg">icon left of the address bar</b> (🔒 or ⚙︎) → <b className="text-fg">Microphone → Allow</b>, then reload the page.
+            </>
+          )}
+          <span className="mt-2 flex gap-2">
+            <button type="button" onClick={() => window.location.reload()} className="rounded-md bg-fg px-2.5 py-1 text-[11.5px] font-medium text-bg hover:opacity-90">
+              Reload
+            </button>
+            <button type="button" onClick={v.clearError} className="rounded-md border border-line px-2.5 py-1 text-[11.5px] hover:text-fg">
+              Close
+            </button>
+          </span>
         </span>
+      ) : (
+        v.error && (
+          <span role="status" className="absolute right-0 top-full z-10 mt-1 w-max max-w-[260px] rounded-md border border-danger/40 bg-surface px-2 py-1 text-[11.5px] text-danger shadow-float">
+            {v.error}
+          </span>
+        )
       )}
     </span>
   );
