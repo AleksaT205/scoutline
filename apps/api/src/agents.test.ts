@@ -58,9 +58,8 @@ describe.skipIf(!TEST_DB)("Build with Claude flow", () => {
     gh = await startFakeGitHub();
     Object.assign(process.env, { GITHUB_API_URL: gh.url, GITHUB_TOKEN: "fake", API_TOKEN: TOKEN, CLAUDE_CODE_OAUTH_TOKEN: "sk-ant-oat-test", DATABASE_URL: TEST_DB });
     const { createDb, projects } = await import("@radar/db");
-    const { migrate } = await import("drizzle-orm/postgres-js/migrator");
     db = createDb(TEST_DB);
-    await migrate(db, { migrationsFolder: fileURLToPath(new URL("../../../packages/db/migrations", import.meta.url)) });
+    await (await import("@radar/db")).migrateLocked(db, fileURLToPath(new URL("../../../packages/db/migrations", import.meta.url)), TEST_DB);
     const { eq } = await import("drizzle-orm");
     await db.delete(projects).where(eq(projects.key, "TST"));
     const [p] = await db.insert(projects).values({ key: "TST", name: "Test project", repoUrl: "https://github.com/acme/app", status: "active" }).returning();

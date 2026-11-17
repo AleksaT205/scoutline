@@ -13,9 +13,8 @@ describe.skipIf(!TEST_DB)("duplicates across sources", () => {
 
   beforeAll(async () => {
     const { createDb } = await import("@radar/db");
-    const { migrate } = await import("drizzle-orm/postgres-js/migrator");
     db = createDb(TEST_DB);
-    await migrate(db, { migrationsFolder: fileURLToPath(new URL("../../../../packages/db/migrations", import.meta.url)) });
+    await (await import("@radar/db")).migrateLocked(db, fileURLToPath(new URL("../../../../packages/db/migrations", import.meta.url)), TEST_DB);
   });
 
   it("hides the second copy and links it to the first", async () => {

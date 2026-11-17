@@ -12,4 +12,20 @@ export function createDb(url = process.env.DATABASE_URL) {
   return drizzle(client, { schema });
 }
 export type Db = ReturnType<typeof createDb>;
+
+/**
+ * Migracije pod zaključavanjem (pg advisory lock): kad više procesa krene istovremeno (testovi API-ja i worker-a
+ * u CI-ju, ili api + worker pri startu), samo jedan primenjuje migracije, ostali sačekaju.
+ */
+export async function migrateLocked(db: Db, migrationsFolder: string, url = process.env.DATABASE_URL) {
+  const { migrate } = await import("drizzle-orm/postgres-js/migrator");
+  const lock = postgres(url!, { max: 1, onnotice: () => undefined });
+  try {
+    await lock`select pg_advisory_lock(727272)`;
+    await migrate(db, { migrationsFolder });
+  } finally {
+    await lock`select pg_advisory_unlock(727272)`.catch(() => undefined);
+    await lock.end();
+  }
+}
 export * from "./github.js";

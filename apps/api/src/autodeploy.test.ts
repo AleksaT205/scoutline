@@ -26,9 +26,8 @@ describe.skipIf(!TEST_DB)("auto-deploy", () => {
     const url = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
     Object.assign(process.env, { GITHUB_API_URL: url, GITHUB_TOKEN: "fake", COOLIFY_API_URL: url, COOLIFY_API_TOKEN: "t", COOLIFY_RESOURCE_UUID: "u1", DEPLOY_REPO: "acme/scoutline", SOURCE_COMMIT: "old0000" });
     const { createDb } = await import("@radar/db");
-    const { migrate } = await import("drizzle-orm/postgres-js/migrator");
     db = createDb(TEST_DB);
-    await migrate(db, { migrationsFolder: fileURLToPath(new URL("../../../packages/db/migrations", import.meta.url)) });
+    await (await import("@radar/db")).migrateLocked(db, fileURLToPath(new URL("../../../packages/db/migrations", import.meta.url)), TEST_DB);
     tick = (await import("./autodeploy.js")).autodeployTick;
   });
   afterAll(() => new Promise<void>((ok) => server.close(() => ok())));
