@@ -518,10 +518,10 @@ function DeployView({ projectId }: { projectId: string }) {
 }
 
 /** Tab „Code“ na projektu. */
-export function CodeTab({ projectId }: { projectId: string }) {
+export function CodeTab({ projectId, initialSection }: { projectId: string; initialSection?: Section }) {
   const user = useSessionUser();
   const repos = useLoad<{ repos: Repo[] }>(`/delivery/projects/${projectId}/repos`);
-  const [section, setSection] = useState<Section>("insights");
+  const [section, setSection] = useState<Section>(initialSection ?? "insights");
   const [repo, setRepo] = useState<string>("");
   const [adding, setAdding] = useState({ repo: "", label: "" });
   const [err, setErr] = useState<string | null>(null);

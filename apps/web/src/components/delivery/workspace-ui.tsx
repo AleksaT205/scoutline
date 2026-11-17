@@ -229,7 +229,7 @@ export function SkillsView({ projectId, repo }: { projectId: string; repo: strin
 
 /** Pokreni lokalno: VS Code / Cursor / Codespaces + komande. */
 export function RunLocallyView({ projectId, repo }: { projectId: string; repo: string }) {
-  const [d, setD] = useState<{ stack: string; links: Record<string, string>; steps: Array<{ label: string; cmd: string }>; devcontainer?: boolean; error?: string } | null>(null);
+  const [d, setD] = useState<{ stack: string; links: Record<string, string>; steps: Array<{ label: string; cmd: string }>; localUrl?: string | null; note?: string | null; devcontainer?: boolean; error?: string } | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
   useEffect(() => {
@@ -247,7 +247,7 @@ export function RunLocallyView({ projectId, repo }: { projectId: string; repo: s
     setTimeout(() => setCopied(null), 1500);
   };
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
+    <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)] [&>*]:min-w-0">
       <section className="space-y-2 rounded-xl border border-line bg-surface p-4">
         <div className="text-[13px] font-semibold">Open the code</div>
         <p className="text-[12px] text-muted">A web app can't start programs on your computer, so these open your editor and clone the repo for you.</p>
@@ -288,6 +288,15 @@ export function RunLocallyView({ projectId, repo }: { projectId: string; repo: s
             </li>
           ))}
         </ol>
+        {d.note && <p className="mt-2 rounded-lg border border-line bg-bg px-3 py-2 text-[12.5px] text-muted">{d.note}</p>}
+        {d.localUrl && (
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <a href={d.localUrl} target="_blank" rel="noreferrer" className="inline-flex h-[32px] items-center gap-1.5 rounded-[7px] bg-fg px-3 text-[12.5px] font-medium text-bg hover:opacity-90">
+              <ExternalLink size={13} /> Open {d.localUrl.replace("http://", "")}
+            </a>
+            <span className="text-[12px] text-faint">after the last command is running in your terminal</span>
+          </div>
+        )}
         {d.error && <p className="mt-2 text-[12px] text-warning">{d.error}</p>}
         <p className="mt-3 text-[12px] text-faint">Previews per pull request: turn on Deploy Previews in Netlify or Preview Deployments in Coolify — the link then shows on each PR in Code → Pull requests.</p>
       </section>

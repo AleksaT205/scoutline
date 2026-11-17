@@ -320,6 +320,8 @@ export function workspaceRoutes(getDb: () => Db, g: Guards) {
     };
     const steps: Array<{ label: string; cmd: string }> = [{ label: "Clone", cmd: `git clone ${clone} && cd ${dir}` }];
     let stack = "unknown";
+    let localUrl: string | null = null; // adresa posle pokretanja (dugme „Open localhost“)
+    let note: string | null = null;
     try {
       const root = await ghJson<Array<{ name: string; type: string }>>(tok, `/repos/${r.full}/contents/`);
       const has = (n: string) => root.some((f) => f.name === n);
@@ -334,20 +336,37 @@ export function workspaceRoutes(getDb: () => Db, g: Guards) {
         const sc = pkg.scripts ?? {};
         if (has(".env.example")) steps.push({ label: "Environment", cmd: "cp .env.example .env   # then fill in the values" });
         for (const s of ["dev", "start", "test", "build"]) if (sc[s]) steps.push({ label: s[0]!.toUpperCase() + s.slice(1), cmd: run(s) });
+        // Uobičajen port po alatu iz dev/start skripte
+        const devScript = `${sc.dev ?? ""} ${sc.start ?? ""}`;
+        const port = /--port[ =](\d+)|-p (\d+)/.exec(devScript);
+        localUrl = `http://localhost:${port?.[1] ?? port?.[2] ?? (/vite/.test(devScript) ? 5173 : /astro/.test(devScript) ? 4321 : /ng serve/.test(devScript) ? 4200 : 3000)}`;
+        if (!sc.dev && !sc.start) localUrl = null;
+      } else if (has("index.html") || root.some((f) => f.type === "dir" && (f.name === "public" || f.name === "site"))) {
+        // Običan sajt (HTML/CSS/JS): dovoljan je mali lokalni server
+        stack = "Static site";
+        const dirArg = has("index.html") ? "." : root.some((f) => f.name === "public") ? "public" : "site";
+        steps.push({ label: "Run", cmd: `npx --yes serve ${dirArg} -l 3000   # or: python3 -m http.server 3000${dirArg === "." ? "" : ` -d ${dirArg}`}` });
+        localUrl = "http://localhost:3000";
       } else if (has("pyproject.toml") || has("requirements.txt")) {
         stack = "Python";
         steps.push({ label: "Virtual env", cmd: "python3 -m venv .venv && source .venv/bin/activate" });
         steps.push({ label: "Install", cmd: has("requirements.txt") ? "pip install -r requirements.txt" : "pip install -e ." });
-        if (has("manage.py")) steps.push({ label: "Run", cmd: "python manage.py runserver" });
+        if (has("manage.py")) {
+          steps.push({ label: "Run", cmd: "python manage.py runserver" });
+          localUrl = "http://localhost:8000";
+        }
       } else if (has("go.mod")) {
         stack = "Go";
         steps.push({ label: "Run", cmd: "go run ." });
       } else if (has("Gemfile")) {
         stack = "Ruby";
         steps.push({ label: "Install", cmd: "bundle install" });
+      } else if (root.every((f) => /^(readme|license|\.github|\.gitignore)/i.test(f.name))) {
+        stack = "Empty repo";
+        note = "Nothing to run yet — hand a task to Claude or Codex (or push code), then come back here.";
       }
       if (has("docker-compose.yml") || has("compose.yaml")) steps.push({ label: "Or with Docker", cmd: "docker compose up" });
-      return c.json({ repo: r.full, stack, links, steps, devcontainer: has(".devcontainer") });
+      return c.json({ repo: r.full, stack, links, steps, localUrl, note, devcontainer: has(".devcontainer") });
     } catch (e) {
       return c.json({ repo: r.full, stack, links, steps, error: (e as Error).message });
     }

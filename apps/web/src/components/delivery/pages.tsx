@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, Building2, Code2, Globe, MessagesSquare, Sparkles, CalendarDays, ExternalLink, FolderKanban, GitBranch, LayoutList, Loader2, Pencil, Plus, Search, SquareKanban, Users } from "lucide-react";
+import { ArrowLeft, Building2, Code2, Play, Globe, MessagesSquare, Sparkles, CalendarDays, ExternalLink, FolderKanban, GitBranch, LayoutList, Loader2, Pencil, Plus, Search, SquareKanban, Users } from "lucide-react";
 import { PROJECT_STATUSES, type IssueStatus, type ProjectStatus } from "@radar/shared";
 import { mutate, useCached } from "../../lib/cache";
 import { teamFetch } from "../../lib/team";
@@ -468,6 +468,7 @@ export function ProjectPage({ id }: { id: string }) {
   const [portalOpen, setPortalOpen] = useState(false);
   const [statusOpen, setStatusOpen] = useState(false);
   const [q, setQ] = useState("");
+  const [codeSection, setCodeSection] = useState<"local" | undefined>(undefined);
   useNewIssueShortcut(() => setNewOpen("todo"), editable && !!project.data);
   const setIssues = (f: (prev: Issue[]) => Issue[]) => issues.setData((d) => f(d ?? []));
   const p = project.data;
@@ -534,6 +535,11 @@ export function ProjectPage({ id }: { id: string }) {
                   <GitBranch size={12} /> Repo
                 </a>
               )}
+              {p.repoUrl && (
+                <button onClick={() => (setCodeSection("local"), pickView("code"))} className="inline-flex items-center gap-1 hover:text-fg" title="Open in your editor or run it on localhost">
+                  <Play size={12} /> Run locally
+                </button>
+              )}
               {p.leadId && (
                 <span className="inline-flex items-center gap-1 text-faint" title="Created from a won lead">
                   from lead
@@ -594,7 +600,7 @@ export function ProjectPage({ id }: { id: string }) {
 
       {issues.error && <ErrorNote>{issues.error}</ErrorNote>}
       {view === "code" ? (
-        <CodeTab projectId={id} />
+        <CodeTab key={codeSection ?? "code"} projectId={id} initialSection={codeSection} />
       ) : view === "ask" ? (
         <AskPanel projectId={id} hasRepo={!!p?.repoUrl} />
       ) : !issues.data ? (
