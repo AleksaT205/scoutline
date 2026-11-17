@@ -78,7 +78,8 @@ function StatusCard({ status, aiCostUsd }: { status: ApiStatus; aiCostUsd?: numb
 
 export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: { status: ApiStatus; open: boolean; onClose: () => void; leadCount?: number; aiCostUsd?: number; page: string }) {
   const inbox = useInboxCount(DELIVERY_PAGES.includes(page));
-  const only = onlySpace(useSessionUser()); // korisnik sa pristupom samo jednom delu nema prekidač
+  const user = useSessionUser();
+  const only = onlySpace(user); // korisnik sa pristupom samo jednom delu nema prekidač
   const org = useOrganization();
   return (
     <>
@@ -123,7 +124,7 @@ export function Sidebar({ status, open, onClose, leadCount, aiCostUsd, page }: {
         {DELIVERY_PAGES.includes(page) ? (
           <nav className="flex flex-col gap-0.5">
             <div className="px-2 pb-1.5 text-[11px] uppercase tracking-wider text-faint">Delivery</div>
-            {delivery.map((i) => (
+            {delivery.filter((i) => i.page !== "reports" || !user || user.role === "owner").map((i) => (
               <NavItem key={i.label} label={i.label} icon={i.icon} href={i.href} count={i.page === "inbox" && inbox ? inbox : undefined} active={page === i.page || (i.page === "projects" && page === "project")} />
             ))}
           </nav>

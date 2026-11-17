@@ -92,7 +92,8 @@ export function reportRoutes(getDb: () => Db, g: Guards) {
   });
 
   // ── Cene rada ──
-  app.get("/rates", member, async (c) => c.json({ rates: await loadRates(getDb()) }));
+  // Cene rada i izveštaj o zaradi vidi samo vlasnik (marža, trošak, satnice)
+  app.get("/rates", g.require("owner"), async (c) => c.json({ rates: await loadRates(getDb()) }));
   app.put("/rates", g.require("owner"), async (c) => {
     const rates = normalizeRates(await c.req.json().catch(() => ({})));
     await getDb()
@@ -119,7 +120,7 @@ export function reportRoutes(getDb: () => Db, g: Guards) {
 
   // ── Izveštaj ──
   // GET /delivery/reports?days=30|90|365|0 — period važi za vreme po osobi/nedelji i AI ukupno; profitabilnost projekta je ukupna (do danas)
-  app.get("/reports", member, async (c) => {
+  app.get("/reports", g.require("owner"), async (c) => {
     const db = getDb();
     const days = Math.max(0, Math.min(3650, Number(c.req.query("days") ?? 30) || 0));
     const since = days ? new Date(Date.now() - days * DAY) : null;

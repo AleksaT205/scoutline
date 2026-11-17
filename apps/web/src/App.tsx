@@ -267,7 +267,14 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
           ) : page === "cycles" ? (
             <CyclesPage />
           ) : page === "reports" ? (
-            <ReportsPage />
+            !user || user.role === "owner" ? (
+              <ReportsPage />
+            ) : (
+              <div className="rounded-xl border border-line bg-surface px-6 py-14 text-center">
+                <div className="text-[15px] font-medium">Reports are for the workspace owner</div>
+                <p className="mt-1 text-[13px] text-muted">Margins, costs and rates are visible only to the owner.</p>
+              </div>
+            )
           ) : page === "assistant" ? (
             <AssistantPage />
           ) : page === "tasks" ? (
