@@ -87,6 +87,11 @@ function UsageBar({ s }: { s: Summary }) {
             <span className="num text-fg">{fmtTok(tokens)}</span> tokens{m.turns ? ` · ${m.turns} steps` : ""}
           </span>
         )}
+        {tokens === 0 && m.sessions > 0 && (
+          <span className="text-faint" title="Sessions from before the latest “Set up automatically” didn't record token counts">
+            tokens & API value show for new sessions
+          </span>
+        )}
         {(m.cost ?? 0) > 0 && (
           <span title="What these sessions would cost on the pay-per-use API. On a Pro/Max subscription it's included — this just shows how much you're getting.">
             ≈ <span className="num text-fg">{fmtUsd(m.cost!)}</span> API value · included in your plan
