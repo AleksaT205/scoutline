@@ -22,6 +22,10 @@ Datum: 17. 11. 2026. Spisak želja iz razgovora, grupisan u faze. Urađeno odmah
 > **SDK, objašnjeno ukratko:** SDK (Claude Agent SDK / OpenAI) je biblioteka za poziv modela iz našeg koda. Plaća se po tokenu preko API ključa, ne preko pretplate. Zato je predlog: **pretplata za agente na GitHub-u** (besplatno u okviru plana), a **chat u aplikaciji** preko besplatnih modela ili ličnog ključa onoga ko ga uključi.
 
 ## Faza 14 — GitHub tok rada u aplikaciji
+- **GitHub kao izvor istine (prvo ovo):** za projekte koji rade samo na GitHub-u.
+  - **Dvosmerna sinhronizacija issue-a:** GitHub issues automatski postaju taskovi (naslov, opis, oznake, osoba po GitHub nalogu, milestone → sprint). Promena u Scoutline-u (status, osoba, oznake, zatvaranje) se upisuje nazad na GitHub.
+  - **Stanje i analiza iz GitHub-a:** commit-ovi i PR-ovi po nedelji, vreme do spajanja, otvoreni PR-ovi i koliko čekaju, CI uspešnost, ko šta radi, napredak milestone-a.
+  - Ovi podaci idu u Overview projekta, Reports i Status update.
 - **Više repoa po projektu:** frontend, backend, mobile; svaki sa ulogom.
 - **Grane:** lista grana po repou, grana po tasku (`acme-12-login`) jednim klikom, čišćenje spojenih.
 - **Pull request-ovi:** pregled, status provera (testovi/CI), **Approve / Merge** iz aplikacije.
