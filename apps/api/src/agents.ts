@@ -7,6 +7,9 @@ import { branchName } from "@radar/shared";
 import { issueEvents } from "@radar/db";
 import { claudeCodeTokenFor, customers, ghFetch, issues as tasks, projectRepoNames, projects, userGithubToken, users, type Db } from "@radar/db";
 import { runtime } from "./runtime.js";
+import { attachmentUrl, publicBase } from "./preview.js";
+import { attachments } from "@radar/db";
+import { inArray } from "drizzle-orm";
 
 /**
  * Faza 16 — Claude Code iz aplikacije (preko GitHub-a, na pretplati korisnika — bez API ključa):
@@ -25,7 +28,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const LABEL = "scoutline";
 const SECRET = "CLAUDE_CODE_OAUTH_TOKEN";
 const WORKFLOW_PATH = ".github/workflows/claude.yml";
-const MARKER = "# scoutline:claude-v5";
+const MARKER = "# scoutline:claude-v6";
 const MODELS = ["sonnet", "opus", "haiku"] as const;
 const EFFORTS = ["low", "medium", "high", "max"] as const;
 type Effort = (typeof EFFORTS)[number];
@@ -96,7 +99,7 @@ ${author ? `          bot_name: "${author.login}"\n          bot_id: "${author.i
           claude_args: |
             --max-turns 40
             \${{ (contains(toJSON(github.event.issue.labels), '"model:opus"') || contains(toJSON(github.event.pull_request.labels), '"model:opus"')) && '--model opus' || ((contains(toJSON(github.event.issue.labels), '"model:haiku"') || contains(toJSON(github.event.pull_request.labels), '"model:haiku"')) && '--model haiku' || ((contains(toJSON(github.event.issue.labels), '"model:sonnet"') || contains(toJSON(github.event.pull_request.labels), '"model:sonnet"')) && '--model sonnet' || '')) }}
-            --allowedTools "Bash(npm *),Bash(npx *),Bash(pnpm *),Bash(git *),Bash(gh pr create:*),Bash(gh pr view:*)"
+            --allowedTools "Bash(npm *),Bash(npx *),Bash(pnpm *),Bash(git *),Bash(gh pr create:*),Bash(gh pr view:*),Bash(curl *),Read"
       # Potrošnja za Scoutline (tokeni, koraci, trajanje, cena na API-ju) — samo brojevi, bez sadržaja
       - name: Scoutline usage
         if: always()
@@ -269,6 +272,22 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
       groups.length ? `Tasks in Scoutline (the team's plan — task keys like ${p.key}-1):\n\n${groups.join("\n\n")}` : "No tasks in Scoutline yet.",
       "",
       "</details>",
+    ].join("\n");
+  };
+
+  /** Slike iz razgovora: markdown slika (vide je ljudi na GitHub-u i u Scoutline-u) + kako da ih Claude preuzme i pogleda. */
+  const imageBlock = async (c: Context, projectId: string, ids: unknown) => {
+    const list = (Array.isArray(ids) ? ids : []).filter((x): x is string => typeof x === "string" && UUID.test(x)).slice(0, 6);
+    if (!list.length) return "";
+    const rows = await getDb().select({ id: attachments.id, mime: attachments.mime, projectId: attachments.projectId }).from(attachments).where(inArray(attachments.id, list));
+    const ok = rows.filter((r) => r.projectId === projectId);
+    if (!ok.length) return "";
+    const base = publicBase(c);
+    return [
+      "",
+      ...ok.map((r, i) => `![image ${i + 1}](${attachmentUrl(base, r.id, r.mime)})`),
+      "",
+      `<sub>Images: download each with \`curl -sL "URL" -o /tmp/image-N.png\` and open it with Read before you start.</sub>`,
     ].join("\n");
   };
 
@@ -531,7 +550,7 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
       const prComments = pr ? await gh<GhComment[]>(tok, `/repos/${r.full}/issues/${pr.number}/comments?per_page=100`).catch(() => [] as GhComment[]) : [];
       const view = (x: GhComment, where: "issue" | "pr") => ({ id: x.id, where, author: x.user?.login ?? "?", bot: x.user?.type === "Bot" || /\[bot\]$/.test(x.user?.login ?? ""), body: x.body, createdAt: x.created_at, updatedAt: x.updated_at, url: x.html_url });
       return c.json({
-        issue: { number: issue.number, title: issue.title, body: (issue.body ?? "").replace(/\n---\nWhen you're done:[\s\S]*$/, "").replace(/^@claude\s*/, "").replace(/\n*\((think|think hard|ultrathink)\)\s*$/, ""),
+        issue: { number: issue.number, title: issue.title, body: (issue.body ?? "").replace(/\n---\nWhen you're done:[\s\S]*$/, "").replace(/\n*<sub>Images: download[\s\S]*?<\/sub>/, "").replace(/^@claude\s*/, "").replace(/\n*\((think|think hard|ultrathink)\)/, "").trim(),
           model: ((issue as GhIssue & { labels?: Array<{ name: string }> }).labels ?? []).find((l) => l.name.startsWith("model:"))?.name.slice(6) ?? null, url: issue.html_url, state: issue.state, createdAt: issue.created_at, by: startedBy(issue.body) },
         comments: [...comments.map((x) => view(x, "issue")), ...prComments.map((x) => view(x, "pr"))].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
         pr: pullView(pr),
@@ -562,7 +581,7 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     if (!r) return c.json({ error: "Link a GitHub repo to the project first." }, 400);
     const tok = await ghToken(c);
     if (!tok) return c.json({ error: "No GitHub token yet — add yours in Settings → Integrations." }, 400);
-    const input = (await c.req.json().catch(() => ({}))) as { prompt?: string; model?: string; effort?: string };
+    const input = (await c.req.json().catch(() => ({}))) as { prompt?: string; model?: string; effort?: string; images?: unknown };
     const prompt = (input.prompt ?? "").trim().slice(0, 8000);
     const chosenModel = MODELS.includes(input.model as Model) ? (input.model as Model) : null;
     if (prompt.length < 3) return c.json({ error: "Describe what Claude should do." }, 400);
@@ -573,8 +592,9 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     const title = first.length > 90 ? `${first.slice(0, 87)}…` : first;
     const effort = pickEffort(input.effort, prompt);
     const model: Model = chosenModel ?? autoModel(effort);
+    const images = await imageBlock(c, r.p.id, input.images);
     const body = [
-      `@claude ${withEffort(prompt, effort)}`,
+      `@claude ${withEffort(prompt, effort)}${images}`,
       "",
       "---",
       "When you're done: commit to a new branch and open a pull request with `gh pr create` (short English title, summary of the changes, and `Closes #<this issue>`). Keep changes focused. If this is only a question, answer in a comment and don't change files.",
@@ -598,8 +618,8 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     if (!r || !Number.isInteger(n)) return c.json({ error: "Not found." }, 404);
     const tok = await ghToken(c);
     if (!tok) return c.json({ error: "No GitHub token yet." }, 400);
-    const b = (await c.req.json().catch(() => ({}))) as { text?: string; pr?: number; model?: string; effort?: string };
-    const text = (b.text ?? "").trim().slice(0, 8000);
+    const b = (await c.req.json().catch(() => ({}))) as { text?: string; pr?: number; model?: string; effort?: string; images?: unknown };
+    const text = ((b.text ?? "").trim() || (Array.isArray(b.images) && b.images.length ? "See the attached image(s)." : "")).slice(0, 8000);
     if (!text) return c.json({ error: "Write a message for Claude." }, 400);
     const blocked = await useMyClaude(c, tok, r.full);
     if (blocked) return c.json({ error: blocked }, 400);
@@ -608,7 +628,7 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     const target = Number.isInteger(b.pr) && b.pr! > 0 ? b.pr! : n;
     try {
       if (b.model !== undefined) await setModel(tok, r.full, target, MODELS.includes(b.model as Model) ? (b.model as Model) : autoModel(pickEffort(b.effort, text)));
-      await gh(tok, `/repos/${r.full}/issues/${target}/comments`, { method: "POST", body: JSON.stringify({ body: `@claude ${withEffort(text, pickEffort(b.effort, text))}\n\n<sub>From Scoutline by ${actor(c).name}</sub>` }) });
+      await gh(tok, `/repos/${r.full}/issues/${target}/comments`, { method: "POST", body: JSON.stringify({ body: `@claude ${withEffort(text, pickEffort(b.effort, text))}${await imageBlock(c, r.p.id, b.images)}\n\n<sub>From Scoutline by ${actor(c).name}</sub>` }) });
       return c.json({ ok: true, note });
     } catch (e) {
       return c.json({ error: (e as Error).message }, 502);

@@ -6,6 +6,7 @@ import { canEdit, useSessionUser } from "../../lib/session";
 import { Dialog, ErrorNote, btnPrimary, btnSecondary } from "./parts";
 import { CreateTasksButton } from "./tasks-from-text";
 import { useHashParam } from "../../lib/hashParams";
+import { AttachButton, AttachedThumbs, MessageImages, splitImages, useImageAttachments } from "./attachments";
 import { AskPanel, Md } from "./assistant";
 
 /**
@@ -504,6 +505,7 @@ function BuildPanel({ projectId }: { projectId: string }) {
   const [model, setModel] = useState(savedModel);
   const [effort, setEffort] = useState(savedEffort);
   const [localOpen, setLocalOpen] = useState(false);
+  const att = useImageAttachments(projectId);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
@@ -514,8 +516,9 @@ function BuildPanel({ projectId }: { projectId: string }) {
     setError(null);
     setNote(null);
     try {
-      const r = await teamFetch<{ number: number; note?: string | null; effort?: string; effortAuto?: boolean; model?: string; modelAuto?: boolean }>(`/delivery/projects/${projectId}/agent/runs?${repoQ(repo)}`, { method: "POST", body: JSON.stringify({ prompt, model: model || undefined, effort: effort || undefined }) });
+      const r = await teamFetch<{ number: number; note?: string | null; effort?: string; effortAuto?: boolean; model?: string; modelAuto?: boolean }>(`/delivery/projects/${projectId}/agent/runs?${repoQ(repo)}`, { method: "POST", body: JSON.stringify({ prompt, model: model || undefined, effort: effort || undefined, images: att.ids }) });
       setPrompt("");
+      att.clear();
       const cap = (x: string) => `${x[0]!.toUpperCase()}${x.slice(1)}`;
       const auto = [r.modelAuto && "model", r.effortAuto && "effort"].filter(Boolean).join(" and ");
       setNote([r.model ? `Model: ${cap(r.model)}` : "", r.effort ? `Effort: ${cap(r.effort)}` : ""].filter(Boolean).join(" · ") + (auto ? ` (${auto} picked automatically).` : ".") + (r.note ? ` ${r.note}` : ""));
@@ -556,23 +559,31 @@ function BuildPanel({ projectId }: { projectId: string }) {
               e.preventDefault();
               void start();
             }}
+            {...att.dropProps}
           >
             <textarea
               value={prompt}
+              onPaste={att.onPaste}
               onChange={(e) => setPrompt(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && (e.metaKey || e.ctrlKey) && (e.preventDefault(), void start())}
-              placeholder="What should Claude build or fix? e.g. “Add a contact page with a map and opening hours, mobile friendly.”"
+              placeholder="What should Claude build or fix? e.g. “Add a contact page with a map and opening hours, mobile friendly.” — paste a screenshot with ⌘V"
               className="h-24 w-full resize-none rounded-lg border border-line bg-bg px-3 py-2 text-[13.5px] outline-none placeholder:text-faint focus:border-accent/60"
             />
+            {att.items.length > 0 && (
+              <div className="mt-2">
+                <AttachedThumbs items={att.items} onRemove={att.remove} />
+              </div>
+            )}
             <div className="mt-2 flex flex-wrap items-center gap-2">
               <span className="text-[11.5px] text-faint">⌘ Enter to start · runs on your Claude subscription via GitHub Actions (usually 3–15 min)</span>
               <span className="ml-auto" />
+              <AttachButton onFiles={att.add} />
               <ModelSelect value={model} onChange={setModel} />
               <EffortSelect value={effort} onChange={setEffort} />
               <button type="button" disabled={prompt.trim().length < 3 || !repo} onClick={() => setLocalOpen(true)} className={btnSecondary} title="Run Claude Code on your computer instead of GitHub — live preview on localhost">
                 Work locally
               </button>
-              <button disabled={busy || prompt.trim().length < 3 || !repo} className={btnPrimary}>
+              <button disabled={busy || prompt.trim().length < 3 || !repo || att.uploading} className={btnPrimary} title={att.uploading ? "Uploading image…" : undefined}>
                 {busy ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />} Start
               </button>
             </div>
@@ -640,6 +651,7 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
   const working = run.status === "working" || run.status === "queued";
   const t = useCached<Thread>(`/delivery/projects/${projectId}/agent/runs/${run.number}?${repoQ(repo)}`, { staleMs: 3_000, refreshMs: working ? 10_000 : 0 });
   const [reply, setReply] = useState("");
+  const att = useImageAttachments(projectId);
   const [model, setModel] = useState<string | null>(null); // null = isti kao do sad
   const [effort, setEffort] = useState(savedEffort);
   const [busy, setBusy] = useState<string | null>(null);
@@ -652,12 +664,13 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
   const pr = t.data?.pr ?? run.pr;
 
   const send = async () => {
-    if (!reply.trim()) return;
+    if (!reply.trim() && !att.ids.length) return;
     setBusy("reply");
     setMsg(null);
     try {
-      const r = await teamFetch<{ note?: string | null }>(`/delivery/projects/${projectId}/agent/runs/${run.number}/reply?${repoQ(repo)}`, { method: "POST", body: JSON.stringify({ text: reply, pr: pr?.state === "open" ? pr.number : undefined, ...(model !== null ? { model } : {}), effort: effort || undefined }) });
+      const r = await teamFetch<{ note?: string | null }>(`/delivery/projects/${projectId}/agent/runs/${run.number}/reply?${repoQ(repo)}`, { method: "POST", body: JSON.stringify({ text: reply, pr: pr?.state === "open" ? pr.number : undefined, ...(model !== null ? { model } : {}), effort: effort || undefined, images: att.ids }) });
       setReply("");
+      att.clear();
       setMsg({ ok: true, text: r.note ?? "Sent — Claude picks it up in a minute." });
       await t.reload();
       onChanged();
@@ -706,7 +719,8 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
         {t.data && (
           <div className="ml-auto w-fit max-w-[90%] rounded-2xl rounded-br-md bg-accent-soft px-3.5 py-2 text-[13px]">
             <div className="mb-0.5 text-[11px] text-muted">{t.data.issue.by ?? "You"} · task</div>
-            <div className="whitespace-pre-wrap">{t.data.issue.body.trim()}</div>
+            <div className="whitespace-pre-wrap">{splitImages(t.data.issue.body).text}</div>
+            <MessageImages urls={splitImages(t.data.issue.body).images} />
           </div>
         )}
         {comments.map((c) =>
@@ -734,7 +748,20 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
               <div className="mb-0.5 text-[11px] text-muted">
                 {c.author} · {ago(c.createdAt)}
               </div>
-              <div className="whitespace-pre-wrap">{c.body.replace(/^@claude\s*/, "").replace(/\n*<sub>From Scoutline by [^<]+<\/sub>\s*$/, "").replace(/\n*\((think|think hard|ultrathink)\)\s*$/, "")}</div>
+              {(() => {
+                const clean = c.body
+                  .replace(/^@claude\s*/, "")
+                  .replace(/\n*<sub>From Scoutline by [^<]+<\/sub>\s*$/, "")
+                  .replace(/\n*<sub>Images: download[\s\S]*?<\/sub>/, "")
+                  .replace(/\n*\((think|think hard|ultrathink)\)/, "");
+                const parts = splitImages(clean);
+                return (
+                  <>
+                    {parts.text && <div className="whitespace-pre-wrap">{parts.text}</div>}
+                    <MessageImages urls={parts.images} />
+                  </>
+                );
+              })()}
             </div>
           ),
         )}
@@ -753,11 +780,18 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
             e.preventDefault();
             void send();
           }}
+          {...att.dropProps}
         >
-          <input value={reply} onChange={(e) => setReply(e.target.value)} placeholder={pr?.state === "open" ? "Ask Claude to change something in this PR…" : "Reply to Claude — e.g. “go ahead and build it”"} className="h-[36px] min-w-[200px] flex-1 rounded-lg border border-line bg-surface px-3 text-[13px] outline-none placeholder:text-faint focus:border-accent/60" />
+          {att.items.length > 0 && (
+            <div className="w-full">
+              <AttachedThumbs items={att.items} onRemove={att.remove} />
+            </div>
+          )}
+          <input value={reply} onPaste={att.onPaste} onChange={(e) => setReply(e.target.value)} placeholder={pr?.state === "open" ? "Ask Claude to change something in this PR…" : "Reply to Claude — e.g. “go ahead and build it”"} className="h-[36px] min-w-[200px] flex-1 rounded-lg border border-line bg-surface px-3 text-[13px] outline-none placeholder:text-faint focus:border-accent/60" />
+          <AttachButton onFiles={att.add} />
           <ModelSelect value={model ?? t.data?.issue.model ?? ""} onChange={setModel} />
           <EffortSelect value={effort} onChange={setEffort} />
-          <button disabled={busy === "reply" || !reply.trim()} className={btnPrimary} aria-label="Send to Claude">
+          <button disabled={busy === "reply" || (!reply.trim() && !att.ids.length) || att.uploading} className={btnPrimary} aria-label="Send to Claude">
             {busy === "reply" ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
           </button>
         </form>

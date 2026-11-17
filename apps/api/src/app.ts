@@ -68,7 +68,7 @@ export function createApp(getDb: () => Db) {
   const isDev = process.env.NODE_ENV !== "production";
   const secure = secureHeaders({ crossOriginResourcePolicy: false, crossOriginOpenerPolicy: false });
   // /preview/* = sajt iz repoa (ima svoja zaglavlja: sandbox CSP, sme u iframe u Scoutline-u)
-  app.use("*", (c, next) => (c.req.path.startsWith("/preview/") ? next() : secure(c, next)));
+  app.use("*", (c, next) => (c.req.path.startsWith("/preview/") || c.req.path.startsWith("/files/") ? next() : secure(c, next)));
   app.use(
     "*",
     cors({

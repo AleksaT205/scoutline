@@ -1,4 +1,4 @@
-import { boolean, doublePrecision, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { boolean, customType, doublePrecision, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
 import { INDUSTRIES, ISSUE_STATUSES, LEAD_STATUSES, LEAD_TYPES, PROJECT_STATUSES, SERVICE_CATEGORIES } from "@radar/shared";
 
 export const tierEnum = pgEnum("tier", ["T1", "T2", "T3", "DOMESTIC"]);
@@ -378,3 +378,22 @@ export const skills = pgTable("skills", {
   createdBy: text("created_by"),
   ...timestamps,
 });
+
+/** Binarni podaci (slike u chatu sa Claude-om). */
+const bytea = customType<{ data: Buffer }>({ dataType: () => "bytea" });
+
+/** Slike koje korisnik ubaci u razgovor sa Claude-om (Build with Claude) — služe se preko potpisanog linka. */
+export const attachments = pgTable(
+  "attachments",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    projectId: uuid("project_id").references(() => projects.id, { onDelete: "cascade" }),
+    mime: text("mime").notNull(),
+    name: text("name"),
+    size: integer("size").notNull(),
+    data: bytea("data").notNull(),
+    createdBy: text("created_by"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("attachments_project_idx").on(t.projectId)],
+);

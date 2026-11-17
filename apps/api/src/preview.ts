@@ -1,7 +1,7 @@
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { eq } from "drizzle-orm";
-import { ghFetch, projectRepoNames, projects, userGithubToken, type Db } from "@radar/db";
+import { attachments, ghFetch, projectRepoNames, projects, userGithubToken, type Db } from "@radar/db";
 import { runtime } from "./runtime.js";
 
 /**
@@ -12,6 +12,7 @@ import { runtime } from "./runtime.js";
  */
 interface Guards {
   readGuard: MiddlewareHandler;
+  require: (min: "viewer" | "member" | "owner") => MiddlewareHandler;
 }
 type Actor = { id: string | null; name: string };
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -72,9 +73,54 @@ const typeOf = (path: string) => TYPES[path.split(".").pop()?.toLowerCase() ?? "
 const page = (title: string, body: string) =>
   `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><body style="font:15px/1.5 system-ui,sans-serif;max-width:560px;margin:12vh auto;padding:0 20px;color:#333"><h2 style="margin:0 0 8px">${title}</h2>${body}</body>`;
 
+/** Javna adresa API-ja (iza Tailscale Funnel-a / proxy-ja: prava adresa i https). */
+export const publicBase = (c: Context) => {
+  const host = c.req.header("x-forwarded-host") ?? c.req.header("host") ?? new URL(c.req.url).host;
+  const proto = c.req.header("x-forwarded-proto") ?? (/^(localhost|127\.|\[::1\])/.test(host) ? "http" : "https");
+  return `${proto}://${host}`;
+};
+const IMAGE_TYPES: Record<string, string> = { "image/png": "png", "image/jpeg": "jpg", "image/webp": "webp", "image/gif": "gif" };
+/** Potpisan, nepogodiv link ka slici (bez prijave — da je Claude u GitHub Actions može preuzeti). */
+export const attachmentUrl = (base: string, id: string, mime: string) => `${base}/files/${id}/${sign(`file:${id}`)}.${IMAGE_TYPES[mime] ?? "bin"}`;
+
 export function previewRoutes(getDb: () => Db, g: Guards) {
   const app = new Hono();
   const actor = (c: Context) => (c.get("actor" as never) as Actor | undefined) ?? { id: null, name: "team" };
+
+  // POST /delivery/projects/:id/attachments { name, mime, data (base64) } → { id, url } — slika za razgovor sa Claude-om
+  app.post("/delivery/projects/:id/attachments", g.require("member"), async (c) => {
+    const id = c.req.param("id")!;
+    if (!UUID.test(id)) return c.json({ error: "Project not found." }, 404);
+    const b = (await c.req.json().catch(() => ({}))) as { name?: string; mime?: string; data?: string };
+    const mime = String(b.mime ?? "");
+    if (!IMAGE_TYPES[mime]) return c.json({ error: "Only PNG, JPG, WebP or GIF images." }, 400);
+    const data = Buffer.from(String(b.data ?? "").replace(/^data:[^,]+,/, ""), "base64");
+    if (!data.length) return c.json({ error: "Empty image." }, 400);
+    if (data.length > 5 * 1024 * 1024) return c.json({ error: "Image is over 5 MB." }, 400);
+    const [row] = await getDb()
+      .insert(attachments)
+      .values({ projectId: id, mime, name: String(b.name ?? "image").slice(0, 120), size: data.length, data, createdBy: actor(c).name })
+      .returning({ id: attachments.id });
+    return c.json({ id: row!.id, url: attachmentUrl(publicBase(c), row!.id, mime) }, 201);
+  });
+
+  // GET /files/:id/:sig.ext — slika (javno, ali samo sa potpisom)
+  app.get("/files/:id/:file", async (c) => {
+    const id = c.req.param("id")!;
+    const sig = c.req.param("file")!.replace(/\.[a-z]+$/, "");
+    if (!UUID.test(id) || sig.length !== 32 || !timingSafeEqual(Buffer.from(sig), Buffer.from(sign(`file:${id}`)))) return c.text("Not found", 404);
+    const [row] = await getDb().select().from(attachments).where(eq(attachments.id, id)).limit(1);
+    if (!row) return c.text("Not found", 404);
+    return new Response(new Uint8Array(row.data), {
+      headers: {
+        "Content-Type": row.mime,
+        "Cache-Control": "public, max-age=31536000, immutable",
+        "Content-Security-Policy": "sandbox",
+        "X-Content-Type-Options": "nosniff",
+        "Cross-Origin-Resource-Policy": "cross-origin",
+      },
+    });
+  });
 
   // POST /delivery/projects/:id/preview?repo=&ref= → { url } (potpisan link, 24 h)
   app.post("/delivery/projects/:id/preview", g.readGuard, async (c) => {
