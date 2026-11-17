@@ -90,17 +90,10 @@ function UsageBar({ s }: { s: Summary }) {
           {d.week && <Row label="This week" w={d.week} weekly />}
           {d.opusWeek && d.opusWeek.pct > 0 && <Row label="This week · Opus" w={d.opusWeek} weekly />}
         </>
-      ) : (
-        <div className="text-[11.5px] text-faint">
-          {d?.reason === "no_token"
-            ? "Add your Claude Code token in Settings → Integrations to see your plan usage here."
-            : d?.reason === "token"
-              ? "Claude didn't accept the saved token for usage — run claude setup-token and paste the new token in Settings → Integrations."
-              : d
-                ? "Plan usage isn't available right now."
-                : "Loading plan usage…"}
-        </div>
-      )}
+      ) : d?.reason === "no_token" ? (
+        <div className="text-[11.5px] text-faint">Add your Claude Code token in Settings → Integrations — Claude runs only on your own subscription.</div>
+      ) : null}
+      {/* Limiti plana (sesija / nedelja) dolaze samo ako ih Anthropic da za ovaj token; token iz `claude setup-token` ih ne dobija — tada samo pregled meseca */}
       <div className="text-[11px] text-faint">
         This month: {s.month.runs} tasks · {s.month.sessions} sessions · {s.month.merged} merged
       </div>
