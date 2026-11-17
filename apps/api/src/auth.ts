@@ -152,6 +152,32 @@ export function auth(getDb: () => Db) {
     return c.json({ token: signSession(u.id, u.tokenVersion), user: publicUser(u) });
   });
 
+  // Zaboravljena lozinka: bez email servera — nova lozinka se potvrđuje timskom lozinkom (API_TOKEN),
+  // isto kao prvo podešavanje. Ko ima API_TOKEN već ima pun pristup, pa ovo ne otvara ništa novo.
+  routes.post("/recover", async (c) => {
+    const input = await c.req.json<{ email?: string; password?: string; teamPassword?: string }>().catch(() => null);
+    const email = input?.email?.trim().toLowerCase() ?? "";
+    const key = `recover:${email}`;
+    const a = attempts.get(key);
+    if (a && a.until > Date.now() && a.n >= 10) return c.json({ error: "Too many attempts. Try again in 15 minutes." }, 429);
+    if (!isApiToken(input?.teamPassword ?? "")) {
+      const cur = attempts.get(key);
+      attempts.set(key, cur && cur.until > Date.now() ? { n: cur.n + 1, until: cur.until } : { n: 1, until: Date.now() + 15 * 60_000 });
+      return c.json({ error: "Wrong team password." }, 401);
+    }
+    if ((input?.password ?? "").length < 8) return c.json({ error: "New password must be at least 8 characters." }, 400);
+    const [u] = await getDb().select().from(users).where(eq(users.email, email)).limit(1);
+    if (!u) return c.json({ error: "No account with this email." }, 404);
+    const [updated] = await getDb()
+      .update(users)
+      .set({ passwordHash: await hashPassword(input!.password!), tokenVersion: u.tokenVersion + 1, lastLoginAt: new Date(), updatedAt: new Date() })
+      .where(eq(users.id, u.id))
+      .returning();
+    attempts.delete(key);
+    attempts.delete(email);
+    return c.json({ token: signSession(updated!.id, updated!.tokenVersion), user: publicUser(updated!) });
+  });
+
   routes.get("/me", require("viewer"), (c) => c.json({ user: c.get("actor" as never) }));
 
   // Promena profila / lozinke

@@ -72,7 +72,9 @@ const ErrorBox = ({ error }: { error: string | null }) =>
 export function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [recover, setRecover] = useState(false);
   const { busy, error, run } = useForm();
+  if (recover) return <RecoverPage email={email} onBack={() => setRecover(false)} />;
   return (
     <Shell title="Sign in" sub="Welcome back. Sign in to your workspace.">
       <form
@@ -90,7 +92,45 @@ export function LoginPage() {
         <ErrorBox error={error} />
         <Submit busy={busy} label="Sign in" disabled={!email || !password} />
       </form>
-      <p className="mt-4 text-center text-[12px] text-faint">No account? Ask the team owner for an invite link.</p>
+      <p className="mt-4 text-center text-[12px] text-faint">
+        <button type="button" onClick={() => setRecover(true)} className="text-muted underline-offset-2 hover:text-fg hover:underline">
+          Forgot password?
+        </button>
+        <span className="mx-1.5">·</span>No account? Ask the team owner for an invite link.
+      </p>
+    </Shell>
+  );
+}
+
+/** Nova lozinka uz timsku lozinku (API_TOKEN iz Coolify-ja) — nema email servera za reset link. */
+function RecoverPage({ email: initialEmail, onBack }: { email: string; onBack: () => void }) {
+  const [email, setEmail] = useState(initialEmail);
+  const [password, setPassword] = useState("");
+  const [teamPassword, setTeamPassword] = useState("");
+  const { busy, error, run } = useForm();
+  return (
+    <Shell title="Set a new password" sub="Confirm with the team password (API_TOKEN in your server settings). You'll be signed in right away.">
+      <form
+        className="space-y-3"
+        onSubmit={(e) => {
+          e.preventDefault();
+          void run(async () => {
+            const res = await post<{ token: string; user: SessionUser }>("/auth/recover", { email, password, teamPassword });
+            setSession(res.token, res.user);
+          });
+        }}
+      >
+        <input className={field} type="email" autoComplete="email" autoFocus placeholder="Account email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input className={field} type="password" autoComplete="new-password" placeholder="New password (8+ characters)" value={password} onChange={(e) => setPassword(e.target.value)} />
+        <input className={field} type="password" autoComplete="off" placeholder="Team password" value={teamPassword} onChange={(e) => setTeamPassword(e.target.value)} />
+        <ErrorBox error={error} />
+        <Submit busy={busy} label="Save and sign in" disabled={!email || password.length < 8 || !teamPassword} />
+      </form>
+      <p className="mt-4 text-center text-[12px] text-faint">
+        <button type="button" onClick={onBack} className="text-muted hover:text-fg">
+          ← Back to sign in
+        </button>
+      </p>
     </Shell>
   );
 }

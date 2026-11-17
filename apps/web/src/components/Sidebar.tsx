@@ -12,11 +12,11 @@ const prospecting = (leadCount: number | undefined) => [
   { label: "Sources", icon: Rss, href: "#/sources" },
 ];
 const delivery = [
-  { label: "Inbox", icon: Inbox, href: "#/delivery/inbox", page: "inbox" },
-  { label: "My issues", icon: CircleDot, href: "#/delivery/issues", page: "issues" },
-  { label: "Projects", icon: FolderKanban, href: "#/delivery", page: "projects" },
-  { label: "Cycles", icon: RefreshCcw, href: "#/delivery/cycles", page: "cycles" },
   { label: "Clients", icon: Building2, href: "#/delivery/clients", page: "clients" },
+  { label: "Projects", icon: FolderKanban, href: "#/delivery", page: "projects" },
+  { label: "My issues", icon: CircleDot, href: "#/delivery/issues", page: "issues" },
+  { label: "Inbox", icon: Inbox, href: "#/delivery/inbox", page: "inbox" },
+  { label: "Cycles", icon: RefreshCcw, href: "#/delivery/cycles", page: "cycles" },
   { label: "Reports", icon: BarChart3, href: "#/delivery/reports", page: "reports" },
   { label: "Assistant", icon: MessagesSquare, href: "#/delivery/assistant", page: "assistant" },
 ];
