@@ -45,7 +45,7 @@ Legenda statusa: ✅ može odmah · 🟡 proveriti uslove pre upotrebe · 🔴 n
 | HelloWorld.rs | RSS | 🟡 radi | Uslov: samo naslov i link, interno (hiring signal) |
 | Startit poslovi | RSS | ✅ radi | Hiring signal |
 | Netokracija, Forbes Srbija, Bizlife | RSS | 🟡 radi | Samo naslov i kratak odlomak; filter: investicije, runde, lansiranja |
-| Portal javnih nabavki RS | robots `Disallow: /`, nema API-ja | 📧 Email-in | Obaveštenja na email |
+| Portal javnih nabavki RS | robots `Disallow: /` (dozvoljena samo početna), `/api` traži prijavu; otvoreni podaci na data.gov.rs (Kancelarija za javne nabavke) staju na **2020** — stari portal, `portal.ujn.gov.rs` više ne odgovara (provereno 17. 11. 2026) | 📧 Email-in | Jedini legalan put za nove tendere: sačuvan filter (CPV 72/48) + email obaveštenja → Email-in |
 | UNDP, UNGM, EBRD, EOJN (HR), CEJN (ME), e-nabavki (MK), eKapija, Joberty, Poslovi.rs | robots zabrana / nema feed-a / 403 | 🔴 | Ne koristiti (TED pokriva HR/MK/ME) |
 | APR nove firme | Otvoreni podaci (58 MB mesečno) | ⏸ | Moguće kasnije; nove IT firme su uglavnom konkurencija, ne klijenti |
 
