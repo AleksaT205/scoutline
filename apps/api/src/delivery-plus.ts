@@ -326,7 +326,7 @@ export function portalRoutes(getDb: () => Db) {
         title,
         description: [details ?? "", "", `— Requested by ${name}${email ? ` <${email}>` : ""} via the client portal`].join("\n").trim(),
         status: "triage",
-        createdBy: `Client: ${name}`,
+        createdBy: str(b.name, 80) ? `Client: ${name}` : "Client portal", // bez imena: ne „Client: Client“
         labels: ["client"],
       })
       .returning({ id: issues.id, number: issues.number });

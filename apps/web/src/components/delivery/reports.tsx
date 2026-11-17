@@ -210,12 +210,11 @@ export function ReportsPage() {
         </div>
       )}
 
-      <section className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-5">
+      <section className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
         <Kpi label="Contract value" value={t ? eur2(t.revenue) : "—"} sub="fixed budgets + billable hours" />
         <Kpi label="Cost to date" value={t ? eur2(t.cost) : "—"} sub="time × cost/h + AI" />
         <Kpi label="Margin" value={t ? eur2(t.margin) : "—"} sub={marginPct !== null ? `${marginPct}% · value minus cost so far` : undefined} cls={marginCls(marginPct)} />
         <Kpi label="Hours logged" value={t ? `${t.hoursPeriod} h` : "—"} sub={t?.billablePct != null ? `${t.billablePct}% billable · period` : "period"} />
-        <Kpi label="AI savings" value={data ? eur2(data.ai.savingsEur) : "—"} sub={data ? `vs one premium model · ${data.ai.requests.toLocaleString()} requests` : undefined} cls="text-success" />
       </section>
 
       {/* Profitabilnost po projektu */}
@@ -368,11 +367,9 @@ export function ReportsPage() {
           <Bot size={15} className="text-accent" />
           <h2 className="text-[13.5px] font-semibold">AI this period</h2>
         </div>
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3">
           {[
             ["Spent on AI", data ? eur2(data.ai.spendEur) : "—", "free tiers are billed €0"],
-            ["Would cost on a premium model", data ? eur2(data.ai.baselineEur) : "—", "same tokens, one top model"],
-            ["Saved by routing", data ? eur2(data.ai.savingsEur) : "—", "AI Router (fast / smart)"],
             ["Issues done by AI agents", data ? String(data.ai.agentTasks) : "—", data ? `${data.ai.agentPoints} points · Claude / Codex` : ""],
           ].map(([l, v, s]) => (
             <div key={l} className="rounded-lg border border-line bg-bg px-3 py-3">

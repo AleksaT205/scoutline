@@ -6,7 +6,7 @@ import { issueEvents, issues, leads, projects, rawItems, type Db } from "@radar/
  * Zvonce u zaglavlju: šta je novo za tim i za mene (poslednjih 7 dana).
  * Bez posebne tabele — slaže se iz postojećih podataka; „pročitano“ pamti browser.
  */
-type Actor = { id: string | null; name: string };
+type Actor = { id: string | null; name: string; role?: string; access?: string };
 interface Note {
   id: string;
   kind: "lead" | "inbox" | "assigned" | "comment" | "github" | "done";
@@ -25,6 +25,10 @@ export function notificationRoutes(getDb: () => Db, readGuard: MiddlewareHandler
     const me = actor(c);
     const week = new Date(Date.now() - 7 * 86_400_000);
     const out: Note[] = [];
+    // Svako vidi samo deo aplikacije kojem ima pristup (Settings → Team → Access)
+    const limited = !!me?.id && me.role !== "owner" && !!me.access && me.access !== "all";
+    const canSales = !limited || me!.access === "sales";
+    const canDelivery = !limited || me!.access === "delivery";
 
     // Novi dobri leadovi (75+, poslednja 2 dana)
     const good = await db
@@ -33,7 +37,7 @@ export function notificationRoutes(getDb: () => Db, readGuard: MiddlewareHandler
       .innerJoin(rawItems, eq(leads.rawItemId, rawItems.id))
       .where(and(gte(leads.score, 75), ne(leads.status, "hidden"), gte(leads.createdAt, new Date(Date.now() - 2 * 86_400_000)), ne(leads.leadType, "hiring_signal")))
       .orderBy(desc(leads.score))
-      .limit(8);
+      .limit(canSales ? 8 : 0);
     for (const l of good) out.push({ id: `lead:${l.id}`, kind: "lead", title: l.title, sub: `New ${l.type ?? "lead"} · score ${l.score}`, at: l.at.toISOString(), href: "#/" });
 
     // Inbox (zahtevi klijenata / GitHub)
@@ -43,7 +47,7 @@ export function notificationRoutes(getDb: () => Db, readGuard: MiddlewareHandler
       .innerJoin(projects, eq(issues.projectId, projects.id))
       .where(eq(issues.status, "triage"))
       .orderBy(desc(issues.createdAt))
-      .limit(8);
+      .limit(canDelivery ? 8 : 0);
     for (const i of triage) out.push({ id: `inbox:${i.id}`, kind: "inbox", title: i.title, sub: `${i.key}-${i.number} · request from ${i.by ?? "client"}`, at: i.at.toISOString(), href: "#/delivery/inbox" });
 
     // Događaji na taskovima: dodeljeno meni, komentari na mojim taskovima, PR-ovi i završeni taskovi
@@ -54,7 +58,7 @@ export function notificationRoutes(getDb: () => Db, readGuard: MiddlewareHandler
       .innerJoin(projects, eq(issues.projectId, projects.id))
       .where(and(gte(issueEvents.createdAt, week), inArray(issueEvents.type, ["assignee", "comment", "github", "status"])))
       .orderBy(desc(issueEvents.createdAt))
-      .limit(200);
+      .limit(canDelivery ? 200 : 0);
     for (const e of ev) {
       if (me?.name && e.actorName === me.name) continue; // sopstvene radnje ne javljamo
       const d = (e.data ?? {}) as { to?: unknown; state?: string; pr?: number };
@@ -71,7 +75,7 @@ export function notificationRoutes(getDb: () => Db, readGuard: MiddlewareHandler
     const seen = new Set<string>();
     const unique = out.filter((n) => (seen.has(`${n.kind}|${n.title}|${n.sub}`) ? false : (seen.add(`${n.kind}|${n.title}|${n.sub}`), true)));
     const [inboxCount] = await db.select({ n: sql<number>`count(*)::int` }).from(issues).where(eq(issues.status, "triage"));
-    return c.json({ items: unique.slice(0, 30), inbox: inboxCount?.n ?? 0 });
+    return c.json({ items: unique.slice(0, 30), inbox: canDelivery ? (inboxCount?.n ?? 0) : 0 });
   });
 
   return app;

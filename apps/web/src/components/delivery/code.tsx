@@ -573,7 +573,7 @@ export function CodeTab({ projectId }: { projectId: string }) {
             }}
           >
             <input className={`${inp} num h-[30px] w-44`} value={adding.repo} onChange={(e) => setAdding({ ...adding, repo: e.target.value })} placeholder="owner/repo" />
-            <input className={`${inp} h-[30px] w-28`} value={adding.label} onChange={(e) => setAdding({ ...adding, label: e.target.value })} placeholder="frontend…" />
+            <input className={`${inp} h-[30px] w-36`} value={adding.label} onChange={(e) => setAdding({ ...adding, label: e.target.value })} placeholder="Label (optional)" aria-label="Repo label, e.g. frontend" />
             <button disabled={!adding.repo.trim()} className={small}>
               <Plus size={12} /> {list.length ? "Add repo" : "Link repo"}
             </button>

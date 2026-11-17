@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Building2, Code2, Globe, MessagesSquare, Sparkles, CalendarDays, ExternalLink, FolderKanban, GitBranch, LayoutList, Loader2, Pencil, Plus, Search, SquareKanban, Users } from "lucide-react";
 import { PROJECT_STATUSES, type IssueStatus, type ProjectStatus } from "@radar/shared";
+import { useCached } from "../../lib/cache";
 import { teamFetch } from "../../lib/team";
 import { canEdit, useSessionUser } from "../../lib/session";
 import { fmtDate, fmtEur, toDateInput, typing, useCustomers, useIssues, useMembers, useProject, useProjects, type Customer, type Issue, type Project } from "../../lib/delivery";
@@ -48,7 +49,7 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
   const customers = useCustomers();
   const members = useMembers();
   const [f, setF] = useState({ name: "", customerId: "", customerName: "", status: "planned" as ProjectStatus, budgetEur: "", dueDate: "", ownerId: "", repoUrl: "", description: "", githubImport: false, githubSync: false, billing: "fixed" as "fixed" | "hourly", hourlyRateEur: "", aiClientId: "" });
-  const [aiClients, setAiClients] = useState<Array<{ id: string; name: string; projectId: string | null }>>([]);
+  const [aiClients] = useState<Array<{ id: string; name: string; projectId: string | null }>>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   useEffect(() => {
@@ -70,14 +71,7 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
       hourlyRateEur: project?.hourlyRateEur ? String(project.hourlyRateEur) : "",
       aiClientId: "",
     });
-    // Ključevi AI Router-a (AI trošak klijenta ide na projekat u izveštajima)
-    teamFetch<{ clients: Array<{ id: string; name: string; projectId: string | null }> }>("/delivery/ai-clients")
-      .then((d) => {
-        setAiClients(d.clients);
-        const linked = project ? d.clients.find((c) => c.projectId === project.id) : undefined;
-        setF((cur) => ({ ...cur, aiClientId: linked?.id ?? "" }));
-      })
-      .catch(() => setAiClients([]));
+    // AI Router je izbačen iz menija — polje za njegov ključ se više ne prikazuje (aiClients ostaje prazno)
   }, [open, project]);
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => setF({ ...f, [k]: e.target.value });
   const label = "mb-1 block text-[12px] text-muted";
@@ -380,6 +374,34 @@ export function ProjectsPage() {
 }
 
 // ── Jedan projekat: tabla, lista, pregled ──
+/** Brojke projekta u kartici Overview: taskovi, vreme, budžet i rok. */
+function ProjectFacts({ project: p, issues, done }: { project: Project; issues: Issue[]; done: number }) {
+  const time = useCached<{ totalMinutes?: number }>(`/delivery/time?projectId=${p.id}`, { staleMs: 5_000 });
+  const mins = time.data?.totalMinutes ?? 0;
+  const overdue = issues.filter((i) => i.dueDate && i.status !== "done" && i.status !== "canceled" && Date.parse(i.dueDate) < Date.now()).length;
+  const daysLeft = p.dueDate ? Math.ceil((Date.parse(p.dueDate) - Date.now()) / 86_400_000) : null;
+  const rows: Array<[string, string | number, string?]> = [
+    ["Backlog / Todo", issues.filter((i) => i.status === "backlog" || i.status === "todo").length],
+    ["In progress / review", issues.filter((i) => i.status === "in_progress" || i.status === "in_review").length],
+    ["Done", done],
+    ["Overdue issues", overdue, overdue ? "text-danger" : undefined],
+    ["Story points done", issues.filter((i) => i.status === "done").reduce((a, i) => a + (i.estimate ?? 0), 0)],
+    ["Time logged", time.data ? `${Math.floor(mins / 60)}h ${mins % 60 ? `${mins % 60}m` : ""}`.trim() : "…"],
+    ["Budget", fmtEur(p.budgetEur)],
+    ["Target date", p.dueDate ? `${fmtDate(p.dueDate)} · ${daysLeft! < 0 ? `${-daysLeft!} d late` : daysLeft === 0 ? "today" : `${daysLeft} d left`}` : "—", daysLeft !== null && daysLeft < 0 && p.status !== "done" ? "text-danger" : undefined],
+  ];
+  return (
+    <>
+      {rows.map(([l, v, cls]) => (
+        <div key={l} className="flex justify-between gap-3">
+          <span className="text-muted">{l}</span>
+          <span className={`num font-medium ${cls ?? ""}`}>{v}</span>
+        </div>
+      ))}
+    </>
+  );
+}
+
 export function ProjectPage({ id }: { id: string }) {
   const user = useSessionUser();
   const editable = canEdit(user);
@@ -387,7 +409,8 @@ export function ProjectPage({ id }: { id: string }) {
   const issues = useIssues(`projectId=${id}`);
   const [view, setView] = useState<"board" | "list" | "overview" | "ask" | "code">(() => {
     try {
-      return (localStorage.getItem("delivery-view") as "board" | "list" | null) ?? "board";
+      // Na telefonu je lista preglednija od table (kolone su preširoke za uzan ekran)
+      return (localStorage.getItem("delivery-view") as "board" | "list" | null) ?? (window.innerWidth < 640 ? "list" : "board");
     } catch {
       return "board";
     }
@@ -472,7 +495,7 @@ export function ProjectPage({ id }: { id: string }) {
             </div>
           )}
         </div>
-        <div className="flex gap-2 sm:ml-auto">
+        <div className="flex w-full flex-wrap gap-2 sm:ml-auto sm:w-auto [&>button]:whitespace-nowrap">
           {p && (
             <button onClick={() => setStatusOpen(true)} className={btnSecondary} title="AI summary for the team or the client">
               <Sparkles size={13} /> Status update
@@ -489,15 +512,16 @@ export function ProjectPage({ id }: { id: string }) {
             </button>
           )}
           {editable && p && (
-            <button onClick={() => setNewOpen("todo")} className={btnPrimary} title="Shortcut: C">
-              <Plus size={14} /> New issue <kbd className="ml-1 rounded border border-bg/30 px-1 text-[10px] opacity-70">C</kbd>
+            <button onClick={() => setNewOpen("todo")} className={`${btnPrimary} order-first sm:order-none`} title="Shortcut: C">
+              <Plus size={14} /> New issue <kbd className="ml-1 hidden rounded border border-bg/30 px-1 text-[10px] opacity-70 sm:inline">C</kbd>
             </button>
           )}
         </div>
       </div>
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div className="inline-flex rounded-lg border border-line bg-surface p-0.5 text-[12.5px]">
+        <div className="-mx-4 max-w-[calc(100%+2rem)] overflow-x-auto px-4 sm:mx-0 sm:max-w-full sm:px-0 [scrollbar-width:none]">
+        <div className="inline-flex whitespace-nowrap rounded-lg border border-line bg-surface p-0.5 text-[12.5px]">
           {(
             [
               ["board", "Board", SquareKanban],
@@ -512,8 +536,9 @@ export function ProjectPage({ id }: { id: string }) {
             </button>
           ))}
         </div>
+        </div>
         {(view === "board" || view === "list") && (
-          <label className="ml-auto flex h-[32px] w-64 items-center gap-2 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-faint focus-within:border-accent/55">
+          <label className="flex h-[32px] w-full items-center sm:ml-auto sm:w-64 gap-2 rounded-lg border border-line bg-surface px-2.5 text-[13px] text-faint focus-within:border-accent/55">
             <Search size={13} />
             <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Filter issues…" className="w-full bg-transparent text-fg outline-none placeholder:text-faint" />
           </label>
@@ -539,17 +564,7 @@ export function ProjectPage({ id }: { id: string }) {
               <div className="whitespace-pre-wrap text-[13.5px] leading-relaxed text-muted">{p.description || "No description yet. Click Edit to add the goal and scope."}</div>
             </div>
             <div className="space-y-2 rounded-xl border border-line bg-surface p-4 text-[13px]">
-              {[
-                ["Backlog / Todo", live ? (issues.data ?? []).filter((i) => i.status === "backlog" || i.status === "todo").length : 0],
-                ["In progress / review", (issues.data ?? []).filter((i) => i.status === "in_progress" || i.status === "in_review").length],
-                ["Done", live?.done ?? 0],
-                ["Story points done", (issues.data ?? []).filter((i) => i.status === "done").reduce((a, i) => a + (i.estimate ?? 0), 0)],
-              ].map(([l, v]) => (
-                <div key={String(l)} className="flex justify-between">
-                  <span className="text-muted">{l}</span>
-                  <span className="num font-medium">{v}</span>
-                </div>
-              ))}
+              <ProjectFacts project={p} issues={issues.data ?? []} done={live?.done ?? 0} />
               <div className="border-t border-line pt-2 text-[12px] text-faint">Started {fmtDate(p.startDate ?? p.createdAt)}</div>
             </div>
           </div>

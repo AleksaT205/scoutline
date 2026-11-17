@@ -74,7 +74,7 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const { busy, error, run } = useForm();
   return (
-    <Shell title="Sign in" sub="Welcome back. Sign in to see your leads.">
+    <Shell title="Sign in" sub="Welcome back. Sign in to your workspace.">
       <form
         className="space-y-3"
         onSubmit={(e) => {

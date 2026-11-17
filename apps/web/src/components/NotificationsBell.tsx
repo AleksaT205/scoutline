@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useDismiss } from "../lib/useDismiss";
 import { Bell, CheckCheck, CircleDot, GitMerge, Inbox, MessageSquare, Sparkles, UserPlus } from "lucide-react";
 import { useCached } from "../lib/cache";
 
@@ -37,16 +38,18 @@ const ago = (iso: string) => {
 const NONE: Note[] = [];
 
 export function NotificationsBell() {
-  const items = useCached<{ items: Note[] }>("/notifications", { staleMs: 30_000, refreshMs: 60_000 }).data?.items ?? NONE;
+  const res = useCached<{ items: Note[] }>("/notifications", { staleMs: 30_000, refreshMs: 60_000 });
+  const items = res.data?.items ?? NONE;
+  // Prihvaćen/odbijen zahtev u Inboxu → osveži zvonce odmah
+  useEffect(() => {
+    const on = () => void res.reload();
+    window.addEventListener("inbox-changed", on);
+    return () => window.removeEventListener("inbox-changed", on);
+  }, [res.reload]);
   const [open, setOpen] = useState(false);
   const [seen, setSeen] = useState(readSeen);
   const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const off = (e: MouseEvent) => !ref.current?.contains(e.target as Node) && setOpen(false);
-    document.addEventListener("mousedown", off);
-    return () => document.removeEventListener("mousedown", off);
-  }, [open]);
+  useDismiss(ref, open, () => setOpen(false));
   const unread = items.filter((i) => i.at > seen).length;
   const markRead = () => {
     const now = new Date().toISOString();

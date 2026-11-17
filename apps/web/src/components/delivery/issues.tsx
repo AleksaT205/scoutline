@@ -192,10 +192,14 @@ function Card({ issue, onOpen, onDragStart, dragging, editable, onChange }: { is
         </span>
         <div className="line-clamp-3 text-[13px] font-medium leading-snug">{issue.title}</div>
       </div>
+      {/* Red sa oznakama samo kad ima šta da pokaže (bez praznog „no priority“) */}
+      {(issue.priority > 0 || issue.labels.length > 0 || !!issue.estimate || !!issue.dueDate) && (
       <div className="mt-2 flex flex-wrap items-center gap-1 text-[11.5px] text-muted">
-        <span className="rounded border border-line">
-          <PriorityMenu value={issue.priority} onChange={(priority) => onChange({ priority })} disabled={!editable} showLabel={false} />
-        </span>
+        {issue.priority > 0 && (
+          <span className="rounded border border-line">
+            <PriorityMenu value={issue.priority} onChange={(priority) => onChange({ priority })} disabled={!editable} showLabel={false} />
+          </span>
+        )}
         {issue.labels.map((l) => (
           <span key={l} className="inline-flex h-[22px] items-center gap-1 rounded-full border border-line px-1.5 text-[11px]">
             <span className="size-1.5 rounded-full bg-accent" /> {l}
@@ -208,6 +212,7 @@ function Card({ issue, onOpen, onDragStart, dragging, editable, onChange }: { is
           </span>
         )}
       </div>
+      )}
     </div>
   );
 }
@@ -339,10 +344,15 @@ export function IssueList({ issues, onOpen, showProject, empty = "No issues yet.
             <span className="num text-faint">{g.items.length}</span>
           </div>
           {g.items.map((i) => (
-            <button key={i.id} onClick={() => onOpen(i)} className="flex w-full items-center gap-3 border-b border-line px-4 py-2 text-left text-[13px] last:border-b-0 hover:bg-surface-2">
-              <PriorityIcon priority={i.priority} />
-              <span className="num w-[72px] shrink-0 text-[12px] text-faint">{i.key}</span>
-              <StatusIcon status={i.status} />
+            <button key={i.id} onClick={() => onOpen(i)} className="flex w-full items-center gap-2.5 border-b border-line px-3 py-2.5 text-left text-[13px] last:border-b-0 hover:bg-surface-2 sm:gap-3 sm:px-4 sm:py-2">
+              {/* Na telefonu: bez prazne ikone prioriteta i uža šifra — više mesta za naslov */}
+              <span className={i.priority > 0 ? "" : "hidden sm:inline-flex"}>
+                <PriorityIcon priority={i.priority} />
+              </span>
+              <span className="num w-[52px] shrink-0 text-[11.5px] text-faint sm:w-[72px] sm:text-[12px]">{i.key}</span>
+              <span className="hidden sm:inline-flex">
+                <StatusIcon status={i.status} />
+              </span>
               <span className="min-w-0 flex-1 truncate">{i.title}</span>
               {i.labels.slice(0, 2).map((l) => (
                 <span key={l} className="hidden h-[20px] items-center rounded-full border border-line px-1.5 text-[11px] text-muted md:inline-flex">

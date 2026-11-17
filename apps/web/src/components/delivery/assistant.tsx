@@ -78,7 +78,7 @@ function Md({ text }: { text: string }) {
   return <div className="text-[13.5px] leading-relaxed text-muted" dangerouslySetInnerHTML={{ __html: html }} />;
 }
 
-const SUGGESTIONS = ["Where is the login handled and how does it work?", "Which issues are blocked or overdue?", "Kako radi deploy u ovom projektu?", "What should we work on next?"];
+const SUGGESTIONS = ["Where is the login handled and how does it work?", "Which issues are blocked or overdue?", "How is this project deployed?", "What should we work on next?"];
 
 /** Chat sa projektom: odgovori iz repoa i taskova, sa linkovima na fajlove. */
 export function AskPanel({ projectId, hasRepo }: { projectId?: string; hasRepo?: boolean }) {

@@ -68,7 +68,7 @@ export function InboxPage() {
               <button onClick={() => setSelected(i.id)} className="min-w-0 flex-1 text-left">
                 <div className="truncate text-[13.5px] font-medium hover:underline">{i.title}</div>
                 <div className="mt-0.5 truncate text-[12px] text-muted">
-                  <span className="num">{i.key}</span> · {i.projectName} · {i.createdBy ?? "team"} · {ago(i.createdAt)}
+                  <span className="num">{i.key}</span> · {i.projectName} · {i.createdBy === "Client: Client" ? "Client portal" : (i.createdBy ?? "team")} · {ago(i.createdAt)}
                 </div>
               </button>
               {editable && (

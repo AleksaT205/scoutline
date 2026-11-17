@@ -1,4 +1,5 @@
-import { Suspense, startTransition, useDeferredValue, useEffect, useMemo, useState } from "react";
+import { Suspense, startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import { useDismiss } from "./lib/useDismiss";
 import { AssistantPage, ClientsPage, CyclesPage, InboxPage, MyIssuesPage, OverviewPage, PipelinePage, ProjectPage, ProjectsPage, ReportsPage, RouterPage, SettingsPage, SourcesPage, TasksPage, warmUp } from "./pages";
 import { BellRing, Menu, Moon, Plus, RefreshCw, Search, Sun } from "lucide-react";
 import { useApiStatus, useLeads } from "./lib/api";
@@ -131,6 +132,8 @@ export function App() {
 function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: string; needsSetup: boolean }) {
   const user = useSessionUser();
   const [userMenu, setUserMenu] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  useDismiss(userMenuRef, userMenu, () => setUserMenu(false));
   const [theme, toggleTheme] = useTheme();
   const status = useApiStatus();
   const space = onlySpace(user);
@@ -207,16 +210,17 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
             {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
           </button>
           <NotificationsBell />
-          <div className="relative">
+          <div className="relative" ref={userMenuRef}>
             <button
               onClick={() => setUserMenu((v) => !v)}
+              aria-expanded={userMenu}
               className="grid size-[30px] place-items-center rounded-full border border-line-2 bg-gradient-to-br from-zinc-600 to-zinc-800 text-xs font-medium text-white"
               aria-label="Account menu"
             >
               {(user?.name ?? "Team").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()}
             </button>
             {userMenu && (
-              <div className="absolute right-0 z-30 mt-2 w-56 rounded-xl border border-line bg-surface p-1.5 shadow-float" onMouseLeave={() => setUserMenu(false)}>
+              <div className="absolute right-0 z-30 mt-2 w-56 rounded-xl border border-line bg-surface p-1.5 shadow-float">
                 <div className="px-2.5 py-2">
                   <div className="text-[13px] font-medium">{user?.name ?? "Team password"}</div>
                   <div className="truncate text-[12px] text-muted">{user ? `${user.email} · ${user.role}` : "Not signed in"}</div>
