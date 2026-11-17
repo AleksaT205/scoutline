@@ -12,8 +12,8 @@ const prospecting = (leadCount: number | undefined) => [
   { label: "Sources", icon: Rss, href: "#/sources" },
 ];
 const delivery = [
-  { label: "Clients", icon: Building2, href: "#/delivery/clients", page: "clients" },
   { label: "Projects", icon: FolderKanban, href: "#/delivery", page: "projects" },
+  { label: "Clients", icon: Building2, href: "#/delivery/clients", page: "clients" },
   { label: "My issues", icon: CircleDot, href: "#/delivery/issues", page: "issues" },
   { label: "Inbox", icon: Inbox, href: "#/delivery/inbox", page: "inbox" },
   { label: "Cycles", icon: RefreshCcw, href: "#/delivery/cycles", page: "cycles" },
