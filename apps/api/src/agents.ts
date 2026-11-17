@@ -76,6 +76,64 @@ jobs:
             --allowedTools "Bash(npm *),Bash(npx *),Bash(pnpm *),Bash(git *),Bash(gh pr create:*),Bash(gh pr view:*)"
 `;
 
+// Terminal iz Scoutline-a: komanda se izvršava u GitHub Actions (čista mašina, samo čitanje repoa, bez tajni)
+const TERMINAL_PATH = ".github/workflows/scoutline-terminal.yml";
+const TERMINAL_MARKER = "# scoutline:terminal-v1";
+export const TERMINAL_WORKFLOW = `${TERMINAL_MARKER}
+# Terminal iz Scoutline-a (Code → Terminal): komanda radi na čistoj GitHub mašini sa ovim repoom.
+# Samo čitanje repoa i bez tajni — ne može da menja kod ni da vidi ključeve.
+name: Scoutline terminal
+run-name: terminal \${{ inputs.id }}
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: Command to run
+        required: true
+      ref:
+        description: Branch (empty = default)
+        required: false
+        default: ""
+      id:
+        description: Scoutline run id
+        required: false
+        default: ""
+permissions:
+  contents: read
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: \${{ inputs.ref || github.ref }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run command
+        env:
+          CMD: \${{ inputs.command }}
+        run: bash -lc "$CMD"
+`;
+
+/** Izlaz komande iz GitHub log-a: bez vremena i bez koraka pripreme (checkout, node). */
+const commandOutput = (log: string) => {
+  const lines = log.split(/\r?\n/).map((l) => l.replace(/^\d{4}-\d\d-\d\dT[\d:.]+Z ?/, ""));
+  const start = lines.findIndex((l) => /^##\[group\]Run bash -lc/.test(l));
+  if (start < 0) return lines.slice(-200).join("\n");
+  let i = start + 1;
+  while (i < lines.length && !lines[i]!.startsWith("##[endgroup]")) i++;
+  const out: string[] = [];
+  for (i = i + 1; i < lines.length; i++) {
+    const l = lines[i]!;
+    if (/^##\[group\](Post |Run actions\/)|^Post job cleanup|^Cleaning up orphan/.test(l)) break;
+    out.push(l.replace(/^##\[error\]/, "✕ "));
+  }
+  const text = out.join("\n").trim();
+  return text.length > 60_000 ? `…\n${text.slice(-60_000)}` : text;
+};
+
 interface GhIssue {
   number: number;
   title: string;
@@ -198,11 +256,12 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
       canPush: boolean;
       defaultBranch: string | null;
       workflow: "missing" | "outdated" | "ok";
+      terminal: "missing" | "outdated" | "ok";
       secret: boolean | null; // null = token nema dozvolu „Secrets“ pa ne znamo
       claudeToken: "personal" | "workspace" | "server" | null;
       appInstallUrl: string;
       error?: string;
-    } = { repo: full, access: false, canPush: false, defaultBranch: null, workflow: "missing", secret: null, claudeToken: null, appInstallUrl: APP_INSTALL_URL };
+    } = { repo: full, access: false, canPush: false, defaultBranch: null, workflow: "missing", terminal: "missing", secret: null, claudeToken: null, appInstallUrl: APP_INSTALL_URL };
     out.claudeToken = (await claudeCodeTokenFor(getDb(), actor(c).id))?.owner ?? null;
     try {
       const r = await gh<{ default_branch: string; permissions?: { push?: boolean } }>(tok, `/repos/${full}`);
@@ -215,6 +274,8 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     }
     const wf = await ghFetch(tok, `/repos/${full}/contents/${WORKFLOW_PATH}`, { headers: { Accept: "application/vnd.github.raw" } });
     if (wf.ok) out.workflow = (await wf.text()).includes(MARKER) ? "ok" : "outdated";
+    const tw = await ghFetch(tok, `/repos/${full}/contents/${TERMINAL_PATH}`, { headers: { Accept: "application/vnd.github.raw" } });
+    if (tw.ok) out.terminal = (await tw.text()).includes(TERMINAL_MARKER) ? "ok" : "outdated";
     const sec = await ghFetch(tok, `/repos/${full}/actions/secrets/${SECRET}`);
     out.secret = sec.status === 200 ? true : sec.status === 404 ? false : null;
     return out;
@@ -246,6 +307,17 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     } catch (e) {
       const status = (e as { status?: number }).status;
       notes.push(status === 403 || status === 404 ? "Couldn't write the workflow — the GitHub token needs “Contents: Read and write” and “Workflows: Read and write” on this repo." : (e as Error).message);
+    }
+    // Terminal workflow (Code → Terminal)
+    try {
+      const cur = await ghFetch(tok, `/repos/${r.full}/contents/${TERMINAL_PATH}`);
+      const sha = cur.ok ? ((await cur.json()) as { sha?: string }).sha : undefined;
+      await gh(tok, `/repos/${r.full}/contents/${TERMINAL_PATH}`, {
+        method: "PUT",
+        body: JSON.stringify({ message: "Add Scoutline terminal (from Scoutline)", content: Buffer.from(TERMINAL_WORKFLOW).toString("base64"), ...(sha ? { sha } : {}) }),
+      });
+    } catch (e) {
+      if (!notes.length) notes.push(`Couldn't add the terminal workflow: ${(e as Error).message}`);
     }
     const cc = await claudeCodeTokenFor(getDb(), actor(c).id);
     if (cc) {
@@ -392,6 +464,53 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
       if (b.model !== undefined) await setModel(tok, r.full, target, MODELS.includes(b.model as Model) ? (b.model as Model) : null);
       await gh(tok, `/repos/${r.full}/issues/${target}/comments`, { method: "POST", body: JSON.stringify({ body: `@claude ${text}\n\n<sub>From Scoutline by ${actor(c).name}</sub>` }) });
       return c.json({ ok: true, note });
+    } catch (e) {
+      return c.json({ error: (e as Error).message }, 502);
+    }
+  });
+
+  // ── Terminal: POST pokreće komandu (GitHub Actions), GET vraća status i izlaz ──
+  app.post("/projects/:id/terminal", member, async (c) => {
+    const r = await repoOf(c);
+    if (!r) return c.json({ error: "Link a GitHub repo to the project first." }, 400);
+    const tok = await ghToken(c);
+    if (!tok) return c.json({ error: "No GitHub token yet." }, 400);
+    const b = (await c.req.json().catch(() => ({}))) as { command?: string; ref?: string };
+    const command = (b.command ?? "").trim().slice(0, 2000);
+    if (!command) return c.json({ error: "Type a command." }, 400);
+    const ref = (b.ref ?? "").trim().slice(0, 200);
+    try {
+      const repo = await gh<{ default_branch: string }>(tok, `/repos/${r.full}`);
+      const tw = await ghFetch(tok, `/repos/${r.full}/contents/${TERMINAL_PATH}`);
+      if (!tw.ok) return c.json({ error: "The terminal isn't set up on this repo yet — click “Set up automatically” on the Code tab." }, 400);
+      const id = Math.random().toString(36).slice(2, 10);
+      await gh(tok, `/repos/${r.full}/actions/workflows/scoutline-terminal.yml/dispatches`, { method: "POST", body: JSON.stringify({ ref: repo.default_branch, inputs: { command, ref, id } }) });
+      return c.json({ id, command, ref: ref || repo.default_branch }, 201);
+    } catch (e) {
+      return c.json({ error: (e as Error).message }, 502);
+    }
+  });
+
+  app.get("/projects/:id/terminal/:tid", g.readGuard, async (c) => {
+    const r = await repoOf(c);
+    const tid = c.req.param("tid")!;
+    if (!r || !/^[a-z0-9]{4,12}$/.test(tid)) return c.json({ error: "Not found." }, 404);
+    const tok = await ghToken(c);
+    if (!tok) return c.json({ error: "No GitHub token yet." }, 400);
+    try {
+      const runs = await gh<{ workflow_runs: GhRun[] }>(tok, `/repos/${r.full}/actions/workflows/scoutline-terminal.yml/runs?event=workflow_dispatch&per_page=30`);
+      const run = runs.workflow_runs.find((w) => w.display_title === `terminal ${tid}`);
+      if (!run) return c.json({ status: "queued", output: "" });
+      if (run.status !== "completed") return c.json({ status: run.status === "in_progress" ? "running" : "queued", url: run.html_url, output: "" });
+      const jobs = await gh<{ jobs: Array<{ id: number }> }>(tok, `/repos/${r.full}/actions/runs/${run.id}/jobs`);
+      const job = jobs.jobs[0];
+      let output = "";
+      if (job) {
+        const log = await ghFetch(tok, `/repos/${r.full}/actions/jobs/${job.id}/logs`, { redirect: "follow" });
+        output = log.ok ? commandOutput(await log.text()) : "(logs aren't available yet — open the run on GitHub)";
+      }
+      const seconds = Math.round((Date.parse(run.updated_at) - Date.parse(run.run_started_at ?? run.created_at)) / 1000);
+      return c.json({ status: "done", ok: run.conclusion === "success", conclusion: run.conclusion, url: run.html_url, seconds, output });
     } catch (e) {
       return c.json({ error: (e as Error).message }, 502);
     }

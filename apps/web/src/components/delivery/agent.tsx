@@ -16,6 +16,7 @@ interface Setup {
   canPush: boolean;
   defaultBranch: string | null;
   workflow: "missing" | "outdated" | "ok";
+  terminal?: "missing" | "outdated" | "ok";
   secret: boolean | null;
   claudeToken: "personal" | "workspace" | "server" | null;
   appInstallUrl: string;
@@ -147,7 +148,7 @@ export function ClaudeSetup({ projectId, repo, compact }: { projectId: string; r
   const [notes, setNotes] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
   const d = s.data;
-  const ready = !!d && d.access && d.workflow === "ok" && d.secret !== false;
+  const ready = !!d && d.access && d.workflow === "ok" && d.secret !== false && d.terminal !== "missing";
   const run = async () => {
     setBusy(true);
     setNotes([]);
@@ -194,6 +195,7 @@ export function ClaudeSetup({ projectId, repo, compact }: { projectId: string; r
       <ul className="space-y-2">
         <Row ok={d.access} title={d.access ? "Scoutline can reach the repo" : "Scoutline can't reach the repo"} hint={!d.access ? (d.error ?? "Add this repo to your GitHub token's access (Settings → Integrations).") : !d.canPush ? "Read-only access — the token needs write access." : undefined} />
         <Row ok={d.workflow === "ok"} title={d.workflow === "ok" ? "Claude workflow is in the repo" : d.workflow === "outdated" ? "Claude workflow is an older version" : "Claude workflow is missing"} hint={d.workflow !== "ok" ? "“Set up automatically” adds .github/workflows/claude.yml (opens pull requests, no co-author lines)." : undefined} />
+        <Row ok={d.terminal === "ok"} warn={d.terminal === "outdated"} title={d.terminal === "ok" ? "Terminal is set up" : "Terminal workflow is missing"} hint={d.terminal !== "ok" ? "Adds .github/workflows/scoutline-terminal.yml so you can run commands from Code → Terminal." : undefined} />
         <Row
           ok={d.secret === true}
           warn={d.secret === null}

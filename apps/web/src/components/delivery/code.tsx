@@ -5,6 +5,7 @@ import { canEdit, useSessionUser } from "../../lib/session";
 import { fmtDate } from "../../lib/delivery";
 import { ErrorNote, field } from "./parts";
 import { ClaudeSetup, PreviewButton } from "./agent";
+import { TerminalView } from "./terminal";
 import { RunLocallyView, SkillsView } from "./workspace-ui";
 
 /** Faza 14 — tab „Code“: GitHub iz aplikacije (analitika, PR-ovi, grane, Actions, deploy). */
@@ -14,7 +15,7 @@ interface Repo {
   label: string | null;
   primary: boolean;
 }
-type Section = "insights" | "pulls" | "branches" | "actions" | "deploy" | "skills" | "local";
+type Section = "insights" | "pulls" | "branches" | "actions" | "deploy" | "skills" | "local" | "terminal";
 const ago = (iso: string) => {
   const m = Math.round((Date.now() - Date.parse(iso)) / 60_000);
   if (m < 60) return `${Math.max(1, m)}m ago`;
@@ -599,6 +600,7 @@ export function CodeTab({ projectId, initialSection }: { projectId: string; init
                   ["deploy", "Deploy"],
                   ["skills", "Skills"],
                   ["local", "Run locally"],
+                  ["terminal", "Terminal"],
                 ] as const
               ).map(([k, l]) => (
                 <button key={k} onClick={() => setSection(k)} className={seg(section === k)}>
@@ -614,6 +616,7 @@ export function CodeTab({ projectId, initialSection }: { projectId: string; init
           {section === "deploy" && <DeployView projectId={projectId} />}
           {section === "skills" && repo && <SkillsView key={repo} projectId={projectId} repo={repo} />}
           {section === "local" && repo && <RunLocallyView key={repo} projectId={projectId} repo={repo} />}
+          {section === "terminal" && repo && <TerminalView key={repo} projectId={projectId} repo={repo} />}
         </>
       )}
     </div>
