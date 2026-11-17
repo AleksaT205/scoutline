@@ -447,7 +447,8 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
   /**
    * Claude (GitHub akcija) sam imenuje granu („feature/issue-9-20261117-1415“) i ne otvara PR uvek.
    * Kad sesija završi: grana se preimenuje po standardu (feature/pzs-1-align-header-logo), a PR otvara
-   * Scoutline korisnikovim tokenom — autor PR-a je korisnik, ne bot. Otvoren PR GitHub sam prebaci na novo ime.
+   * Scoutline korisnikovim tokenom — autor PR-a je korisnik, ne bot.
+   * Grana koja već ima PR se NE dira: GitHub zatvara PR kad mu se preimenuje grana.
    */
   const uglyBranch = (n: number, ref: string) => new RegExp(`(^|/)issue-${n}-\\d{8}-\\d{4}$`).test(ref);
   const finished = new Map<string, string>(); // repo#n → oznaka poslednje obrađene sesije (da se ne proverava stalno)
@@ -456,13 +457,24 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     const k = `${full}#${n}`;
     if (finished.get(k) === stamp) return null;
     finished.set(k, stamp);
-    if (pr && (pr.state !== "open" || !uglyBranch(n, pr.head.ref))) return null;
+    // Popravka: PR koji je GitHub zatvorio kad mu je grana preimenovana → novi PR sa preimenovane grane
+    const closedByRename = !!pr && pr.state === "closed" && !pr.merged_at && uglyBranch(n, pr.head.ref);
+    if (pr && !closedByRename) return null;
     try {
       const enc = (b: string) => b.split("/").map(encodeURIComponent).join("/");
       const repo = await gh<{ default_branch: string }>(tok, `/repos/${full}`);
-      let from = pr?.head.ref ?? null;
+      if (pr && closedByRename) {
+        if ((await ghFetch(tok, `/repos/${full}/branches/${enc(pr.head.ref)}`)).ok) return null; // grana nije preimenovana — PR je zatvorio korisnik
+        const base = branchName({ title: pr.title.replace(/^\[[^\]]+\]\s*/, "") }).replace(/^(feature|fix)\//, "");
+        for (const name of [`feature/${base}`, `feature/${base}-${n}`, `fix/${base}`, `fix/${base}-${n}`]) {
+          const cmp = await gh<{ ahead_by: number }>(tok, `/repos/${full}/compare/${enc(repo.default_branch)}...${enc(name)}`).catch(() => null);
+          if (cmp && cmp.ahead_by > 0) return await gh<GhPull>(tok, `/repos/${full}/pulls`, { method: "POST", body: JSON.stringify({ title: pr.title, head: name, base: repo.default_branch, body: `${(pr.body ?? "").replace(/\s*Closes #\d+\s*$/i, "").trim()}\n\nCloses #${n}`.trim() }) });
+        }
+        return null;
+      }
+      let from: string | null = null;
       let commits: Array<{ commit: { message: string } }> = [];
-      if (!from) {
+      {
         const refs = (
           await Promise.all(["feature", "claude", "fix"].map((pre) => gh<Array<{ ref: string }>>(tok, `/repos/${full}/git/matching-refs/heads/${pre}/issue-${n}-`).catch(() => [] as Array<{ ref: string }>)))
         )
@@ -479,17 +491,16 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
             break;
           }
         }
-        if (!from) return null; // samo pitanje — nema izmena
       }
+      if (!from) return null; // samo pitanje — nema izmena
       // Ključ taska (npr. PZS-1) ako je sesija pokrenuta iz taska
       const head = (issue.body ?? "").split("\n---\n")[0] ?? "";
       const num = new RegExp(`\\b${projectKey}-(\\d+)\\b`, "i").exec(head)?.[1];
       const firstCommit = commits[0]?.commit.message.split("\n")[0]?.trim();
-      const title = pr?.title ?? firstCommit ?? issue.title;
+      const title = firstCommit ?? issue.title;
       let name = branchName({ key: num ? projectKey : null, number: num ? Number(num) : null, title: title.replace(/^\[[^\]]+\]\s*/, "") });
       if ((await ghFetch(tok, `/repos/${full}/branches/${enc(name)}`)).ok) name = `${name}-${n}`;
       await gh(tok, `/repos/${full}/branches/${enc(from)}/rename`, { method: "POST", body: JSON.stringify({ new_name: name }) });
-      if (pr) return { ...pr, head: { ref: name } };
       const prTitle = num ? `[${projectKey.toUpperCase()}-${num}] ${title}` : title;
       const list = commits.map((x) => `- ${x.commit.message.split("\n")[0]}`).slice(0, 15).join("\n");
       const body = `${list ? `${list}\n\n` : ""}Closes #${n}`;
