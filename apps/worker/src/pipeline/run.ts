@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { and, desc, eq, gte, isNull, lt, ne, sql } from "drizzle-orm";
-import { leads, rawItems, settings, sources, type Db } from "@radar/db";
-import { detectCountry, normalizeAlerts, remoteFriendly, tierOf, type AlertSettings } from "@radar/shared";
+import { leadEvents, leads, rawItems, settings, sources, type Db } from "@radar/db";
+import { detectCountry, normalizeAlerts, remoteFriendly, tierOf, titleKey, titleKeyIsSpecific, type AlertSettings } from "@radar/shared";
 import { CONTRACT, aiActive, passesPrefilter, scoreItem } from "@radar/scoring";
 import type { Connector } from "../connectors/types.js";
 import { sendLeadToTelegram, telegramConfigured } from "@radar/scoring";
@@ -68,6 +68,7 @@ export async function ingest(db: Db, c: Connector) {
           deadline: it.deadline && !Number.isNaN(it.deadline.getTime()) ? it.deadline : null,
           budgetHintEur: it.budgetEur ?? null,
           countryHint: it.country ?? null,
+          titleKey: titleKey(it.title),
         })
         .onConflictDoNothing({ target: rawItems.urlHash })
         .returning({ id: rawItems.id });
@@ -79,14 +80,31 @@ export async function ingest(db: Db, c: Connector) {
       if (it.deadline && it.deadline.getTime() < Date.now()) continue; // rok prošao
       const country = it.country ?? detectCountry({ location: it.location, salaryText: it.salaryText });
       const leadType = type === "hiring_signal" && CONTRACT.test(`${it.title}\n${it.body.slice(0, 2000)}`) ? "project" : type;
-      await db.insert(leads).values({
-        rawItemId: row.id,
-        leadType,
-        budgetEur: it.budgetEur ?? null,
-        country,
-        tier: country ? tierOf(country) : null,
-        remoteOk: remoteFriendly(`${it.location ?? ""}\n${it.body.slice(0, 3000)}`),
-      });
+      // Isti oglas već stigao iz drugog izvora (poslednjih 60 dana) → sakrij ovaj, poveži sa prvim
+      const key = titleKey(it.title);
+      const sameCompany = it.companyName ? sql`lower(${rawItems.companyName}) = ${it.companyName.toLowerCase()}` : sql`false`;
+      const [dup] =
+        key && (titleKeyIsSpecific(key) || it.companyName)
+          ? await db
+              .select({ id: leads.id })
+              .from(leads)
+              .innerJoin(rawItems, eq(leads.rawItemId, rawItems.id))
+              .where(and(eq(rawItems.titleKey, key), ne(rawItems.sourceId, it.sourceId ?? c.id), gte(rawItems.createdAt, new Date(Date.now() - 60 * 86_400_000)), isNull(leads.duplicateOf), titleKeyIsSpecific(key) ? sql`true` : sameCompany))
+              .limit(1)
+          : [];
+      const [lead] = await db
+        .insert(leads)
+        .values({
+          rawItemId: row.id,
+          leadType,
+          budgetEur: it.budgetEur ?? null,
+          country,
+          tier: country ? tierOf(country) : null,
+          remoteOk: remoteFriendly(`${it.location ?? ""}\n${it.body.slice(0, 3000)}`),
+          ...(dup ? { status: "hidden" as const, duplicateOf: dup.id } : {}),
+        })
+        .returning({ id: leads.id });
+      if (dup && lead) await db.insert(leadEvents).values({ leadId: lead.id, type: "duplicate", data: { of: dup.id, source: it.sourceId ?? c.id }, actor: "Scoutline" });
       created++;
     }
     await db.update(sources).set({ lastSuccessAt: new Date(), lastError: null, updatedAt: new Date() }).where(eq(sources.id, c.id));
@@ -108,7 +126,7 @@ export async function scorePending(db: Db, aiBatch: number) {
       .from(leads)
       .innerJoin(rawItems, eq(leads.rawItemId, rawItems.id))
       .innerJoin(sources, eq(rawItems.sourceId, sources.id));
-  const rows = await select().where(isNull(leads.scoredAt)).orderBy(desc(rawItems.postedAt)).limit(limit);
+  const rows = await select().where(and(isNull(leads.scoredAt), isNull(leads.duplicateOf))).orderBy(desc(rawItems.postedAt)).limit(limit); // duplikati se ne ocenjuju
   // Kad je AI dostupan, postepeno preocenjujemo i one koje su ranije ocenila pravila (najsvežije prvo).
   if (aiActive() && rows.length < limit) {
     rows.push(

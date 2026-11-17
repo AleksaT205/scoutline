@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Search, X } from "lucide-react";
+import { Loader2, Search, X, AlarmClock } from "lucide-react";
 import { LEAD_TYPES, type LeadStatus, type LeadType } from "@radar/shared";
 import type { UiLead } from "../data/demo";
 import { changeStatus } from "./LeadCrm";
@@ -35,6 +35,11 @@ function Card({ lead, busy, selected, onDragStart, onOpen }: { lead: UiLead; bus
           <div className="mb-0.5 flex flex-wrap items-center gap-1">
             <TypeBadge type={lead.leadType} />
             {lead.deadline && <DeadlineChip deadline={lead.deadline} />}
+            {lead.followUpAt && (
+              <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 text-[10.5px] ${Date.parse(lead.followUpAt) <= Date.now() ? "bg-warning/15 text-warning" : "bg-surface-2 text-muted"}`} title="Follow-up reminder">
+                <AlarmClock size={10} /> {new Date(lead.followUpAt).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+              </span>
+            )}
           </div>
           <div className="line-clamp-2 text-[12.5px] font-medium leading-snug">{lead.title}</div>
           <div className="mt-0.5 truncate text-[11.5px] text-muted">{lead.company}</div>

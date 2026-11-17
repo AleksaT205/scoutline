@@ -164,5 +164,7 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 
 - **Praćenje grešaka** (ugrađeno): greške iz aplikacije (web) i servera (api) u bazi, grupisane po vrsti; nova greška → Telegram (najviše jednom na sat); pregled u Settings → System (vlasnik), Resolve / Resolve all.
 
+- **Sales:** AI nacrt odgovora na leadu (mejl / ponuda, EN / SR, besplatni modeli), podsetnici „Follow up“ (Telegram + zvonce + oznaka na Pipeline kartici), duplikati iz drugih izvora se sakriju („Also on“), nedeljni izveštaj ponedeljkom u 8h na Telegram.
+
 ## Otvoreno
 - Konačan naziv (predlog: Scoutline)

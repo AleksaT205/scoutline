@@ -39,7 +39,7 @@ interface AiResult {
   tokensOut: number;
 }
 
-async function callFree(group: "fast" | "smart", system: string, messages: Array<{ role: "user" | "assistant"; content: string }>, maxTokens: number): Promise<AiResult> {
+export async function callFree(group: "fast" | "smart", system: string, messages: Array<{ role: "user" | "assistant"; content: string }>, maxTokens: number): Promise<AiResult> {
   const url = process.env.LITELLM_URL ?? "http://localhost:4000";
   const key = process.env.LITELLM_KEY ?? "";
   if (!key) throw new Error("Free AI models aren't configured on the server (LiteLLM).");

@@ -48,9 +48,10 @@ export const rawItems = pgTable(
     budgetHintEur: integer("budget_hint_eur"),
     countryHint: text("country_hint"),
     payload: jsonb("payload"),
+    titleKey: text("title_key"), // normalizovan naslov — isti oglas iz drugog izvora (duplikat)
     ...timestamps,
   },
-  (t) => [uniqueIndex("raw_items_url_hash_idx").on(t.urlHash), index("raw_items_source_idx").on(t.sourceId)],
+  (t) => [uniqueIndex("raw_items_url_hash_idx").on(t.urlHash), index("raw_items_source_idx").on(t.sourceId), index("raw_items_title_key_idx").on(t.titleKey)],
 );
 
 export const companies = pgTable("companies", {
@@ -92,9 +93,12 @@ export const leads = pgTable(
     scoredAt: timestamp("scored_at", { withTimezone: true }),
     notifiedAt: timestamp("notified_at", { withTimezone: true }),
     status: statusEnum("status").default("new").notNull(),
+    followUpAt: timestamp("follow_up_at", { withTimezone: true }), // podsetnik „javi se ponovo“
+    followUpNotifiedAt: timestamp("follow_up_notified_at", { withTimezone: true }),
+    duplicateOf: uuid("duplicate_of"), // isti oglas već postoji iz drugog izvora (ovaj je sakriven)
     ...timestamps,
   },
-  (t) => [index("leads_score_idx").on(t.score), index("leads_status_idx").on(t.status), index("leads_raw_item_idx").on(t.rawItemId)],
+  (t) => [index("leads_follow_up_idx").on(t.followUpAt), index("leads_score_idx").on(t.score), index("leads_status_idx").on(t.status), index("leads_raw_item_idx").on(t.rawItemId)],
 );
 
 /** Istorija: promene statusa, beleške, poslati email-ovi. */

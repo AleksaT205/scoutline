@@ -1,5 +1,5 @@
 import { Hono, type Context, type MiddlewareHandler } from "hono";
-import { and, desc, eq, gte, inArray, ne, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, isNotNull, lte, ne, notInArray, sql } from "drizzle-orm";
 import { issueEvents, issues, leads, projects, rawItems, type Db } from "@radar/db";
 
 /**
@@ -9,7 +9,7 @@ import { issueEvents, issues, leads, projects, rawItems, type Db } from "@radar/
 type Actor = { id: string | null; name: string; role?: string; access?: string };
 interface Note {
   id: string;
-  kind: "lead" | "inbox" | "assigned" | "comment" | "github" | "done";
+  kind: "lead" | "inbox" | "assigned" | "comment" | "github" | "done" | "followup";
   title: string;
   sub: string;
   at: string;
@@ -39,6 +39,16 @@ export function notificationRoutes(getDb: () => Db, readGuard: MiddlewareHandler
       .orderBy(desc(leads.score))
       .limit(canSales ? 8 : 0);
     for (const l of good) out.push({ id: `lead:${l.id}`, kind: "lead", title: l.title, sub: `New ${l.type ?? "lead"} · score ${l.score}`, at: l.at.toISOString(), href: "#/" });
+
+    // Podsetnici „javi se ponovo“ koji su stigli
+    const due = await db
+      .select({ id: leads.id, title: rawItems.title, at: leads.followUpAt, status: leads.status })
+      .from(leads)
+      .innerJoin(rawItems, eq(leads.rawItemId, rawItems.id))
+      .where(and(isNotNull(leads.followUpAt), lte(leads.followUpAt, new Date()), notInArray(leads.status, ["hidden", "won", "lost"])))
+      .orderBy(desc(leads.followUpAt))
+      .limit(canSales ? 8 : 0);
+    for (const l of due) out.push({ id: `follow:${l.id}`, kind: "followup", title: l.title, sub: `Follow up · ${l.status}`, at: l.at!.toISOString(), href: "#/pipeline" });
 
     // Inbox (zahtevi klijenata / GitHub)
     const triage = await db

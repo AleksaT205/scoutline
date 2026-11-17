@@ -26,6 +26,7 @@ export interface UiLead {
   urgency: string;
   why: string[];
   email: { subject: string; body: string };
+  followUpAt?: string | null; // podsetnik „javi se ponovo“
 }
 
 /** Primeri dok worker ne počne da skuplja prave oglase (Faza 1). Firme su izmišljene. */

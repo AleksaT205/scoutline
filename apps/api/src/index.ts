@@ -7,6 +7,7 @@ import { startWatchdog } from "./monitor.js";
 import { startAgentPoller } from "./agents.js";
 import { recordError } from "./errors.js";
 import { startAutodeploy } from "./autodeploy.js";
+import { startSalesJobs } from "./sales.js";
 import { refreshRuntime } from "./runtime.js";
 import { ensureEnvOwner } from "./auth.js";
 
@@ -29,6 +30,7 @@ const app = createApp(() => db);
 startWatchdog(() => db);
 startAgentPoller(() => db);
 startAutodeploy(() => db);
+startSalesJobs(() => db);
 // Greške van zahteva (pozadinski poslovi): zabeleži, ne obaraj server
 process.on("unhandledRejection", (e) => {
   const err = e instanceof Error ? e : new Error(String(e));

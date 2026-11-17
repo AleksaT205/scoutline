@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useDismiss } from "../lib/useDismiss";
-import { Bell, CheckCheck, CircleDot, GitMerge, Inbox, MessageSquare, Sparkles, UserPlus } from "lucide-react";
+import { Bell, CheckCheck, CircleDot, GitMerge, Inbox, MessageSquare, Sparkles, UserPlus, AlarmClock } from "lucide-react";
 import { useCached } from "../lib/cache";
 
 /** Zvonce u zaglavlju: novi dobri leadovi, zahtevi u Inboxu, dodele, komentari, PR-ovi. „Pročitano“ pamti browser. */
 interface Note {
   id: string;
-  kind: "lead" | "inbox" | "assigned" | "comment" | "github" | "done";
+  kind: "lead" | "inbox" | "assigned" | "comment" | "github" | "done" | "followup";
   title: string;
   sub: string;
   at: string;
@@ -27,6 +27,7 @@ const ICON: Record<Note["kind"], React.ReactNode> = {
   comment: <MessageSquare size={14} className="text-muted" />,
   github: <GitMerge size={14} className="text-accent" />,
   done: <CircleDot size={14} className="text-success" />,
+  followup: <AlarmClock size={14} className="text-warning" />,
 };
 const ago = (iso: string) => {
   const m = Math.round((Date.now() - Date.parse(iso)) / 60_000);
