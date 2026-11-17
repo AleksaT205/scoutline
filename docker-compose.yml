@@ -65,6 +65,12 @@ services:
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
       DASHBOARD_URL: ${DASHBOARD_URL:-https://scoutline-app.netlify.app}
+      # Auto-deploy (server sam pokrene Redeploy kad CI na main prođe) — vidi docs/PRODUCTION.md
+      COOLIFY_API_URL: ${COOLIFY_API_URL:-}
+      COOLIFY_API_TOKEN: ${COOLIFY_API_TOKEN:-}
+      COOLIFY_RESOURCE_UUID: ${COOLIFY_RESOURCE_UUID:-}
+      SOURCE_COMMIT: ${SOURCE_COMMIT:-}
+      DEPLOY_REPO: ${DEPLOY_REPO:-}
     ports:
       - "${API_PORT:-3100}:3000"
     healthcheck:

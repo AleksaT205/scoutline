@@ -63,16 +63,17 @@ Zamenjuje Tailscale Funnel (lični plan je za nekomercijalnu upotrebu).
 
 AI Router endpoint za klijente postaje `https://api.tvojdomen.com/llm/v1`.
 
-## 4. Auto-deploy na push
+## 4. Auto-deploy na push (bez domena)
 
-Coolify treba da bude dostupan GitHub-u. Sa domenom:
+Server sam pokrene Redeploy kad commit na `main` prođe CI (testovi + build). Ako CI padne — ne deploy-uje i javi na Telegram. Ne treba javni domen ni webhook.
 
-1. U Cloudflare tunelu dodaj hostname `coolify.tvojdomen.com` → `http://host.docker.internal:8000` (ili IP servera:8000).
-2. Zaštiti ga: Cloudflare **Access** aplikacija za `coolify.tvojdomen.com` (samo tvoj email), sa izuzetkom (*Bypass*) za putanju `/webhooks/*`.
-3. Coolify → Sources → GitHub App → izmeni *Webhook URL* na novi domen.
-4. Push na `main` → automatski deploy.
-
-Dok nema domena: posle push-a klikni **Redeploy** u Coolify-ju.
+1. Coolify → **Keys & Tokens → API tokens** → napravi token sa dozvolom **deploy**.
+2. Coolify → projekat → **Environment Variables**:
+   - `COOLIFY_API_TOKEN` = taj token
+   - `COOLIFY_API_URL` = adresa Coolify-ja kako je vidi server, npr. `http://192.168.100.60:8000`
+   - `DEPLOY_REPO` = `AleksaT205/scoutline` (GitHub token u Settings → Integrations mora da vidi taj repo)
+3. U podešavanjima projekta uključi **Include Source Commit in Build** (Coolify tada sam daje `SOURCE_COMMIT` i `COOLIFY_RESOURCE_UUID`).
+4. Redeploy jednom. Stanje se vidi u **Settings → System → Auto-deploy** (i dugme *Check now*).
 
 ## 5. Plaćeni AI modeli za klijente (AI Router)
 
@@ -84,5 +85,5 @@ Kad klijenti počnu da koriste router u produkciji, besplatni modeli nisu dovolj
 - [ ] UptimeRobot na `/health/deep`
 - [ ] Prvi backup kopiran na Mac
 - [ ] Domen + Cloudflare Tunnel
-- [ ] Auto-deploy preko Coolify webhook-a
+- [ ] Auto-deploy (Coolify API token u env-u, Settings → System)
 - [ ] Plaćeni modeli u `fast`/`smart` (kad dođu klijenti)

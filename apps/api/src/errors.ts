@@ -3,6 +3,7 @@ import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { and, desc, eq, sql } from "drizzle-orm";
 import { appErrors, type Db } from "@radar/db";
 import { sendTelegramText } from "@radar/scoring";
+import { autodeployStatus, autodeployTick } from "./autodeploy.js";
 
 /**
  * Praćenje grešaka (ugrađeno, bez spoljnog servisa):
@@ -92,6 +93,12 @@ export function errorRoutes(getDb: () => Db, a: { require: (r: "owner" | "member
   app.post("/system/errors/clear-resolved", a.require("owner"), async (c) => {
     await getDb().delete(appErrors).where(and(eq(appErrors.resolved, true)));
     return c.json({ ok: true });
+  });
+  // Auto-deploy (Settings → System): stanje i „Check now“
+  app.get("/system/deploy", a.require("owner"), async (c) => c.json(await autodeployStatus(getDb())));
+  app.post("/system/deploy/check", a.require("owner"), async (c) => {
+    await autodeployTick(getDb()).catch(() => undefined);
+    return c.json(await autodeployStatus(getDb()));
   });
   return app;
 }
