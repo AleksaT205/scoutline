@@ -21,4 +21,5 @@
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    # Mikrofon je dozvoljen samo našem sajtu (unos glasom u AI polja); kamera i lokacija ostaju zabranjene
+    Permissions-Policy = "camera=(), microphone=(self), geolocation=()"
