@@ -62,6 +62,7 @@ function AlsoOn({ id }: { id: string }) {
 /** Podsetnik „javi se ponovo“: sutra / 3 dana / nedelja / datum. Kad stigne — Telegram i zvonce. */
 function FollowUp({ lead, onUpdated }: { lead: UiLead; onUpdated: (l: UiLead) => void }) {
   const [busy, setBusy] = useState(false);
+  const [pick, setPick] = useState(false);
   const set = async (at: Date | null) => {
     setBusy(true);
     try {
@@ -96,13 +97,21 @@ function FollowUp({ lead, onUpdated }: { lead: UiLead; onUpdated: (l: UiLead) =>
               {l}
             </button>
           ))}
-          <input
-            type="date"
-            aria-label="Pick a date"
-            className={`${chip} w-[132px] bg-bg`}
-            min={new Date().toISOString().slice(0, 10)}
-            onChange={(e) => e.target.value && void set(new Date(`${e.target.value}T09:00:00`))}
-          />
+          {pick ? (
+            <input
+              type="date"
+              autoFocus
+              aria-label="Pick a date"
+              className={`${chip} w-[132px] bg-bg`}
+              min={new Date().toISOString().slice(0, 10)}
+              onBlur={() => setPick(false)}
+              onChange={(e) => e.target.value && void set(new Date(`${e.target.value}T09:00:00`))}
+            />
+          ) : (
+            <button onClick={() => setPick(true)} disabled={busy} className={chip}>
+              Date…
+            </button>
+          )}
         </>
       )}
     </div>

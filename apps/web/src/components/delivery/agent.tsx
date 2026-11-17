@@ -550,11 +550,9 @@ function BuildPanel({ projectId }: { projectId: string }) {
     <div className="space-y-3">
       {repo && <ClaudeSetup projectId={projectId} repo={repo} quiet />}
       <section className="rounded-xl border border-line bg-surface">
-        <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2.5">
-          <Sparkles size={15} className="text-accent" />
-          <span className="text-[13.5px] font-medium">Build with Claude</span>
-          <span className="hidden text-[12px] text-faint sm:inline">Claude works in the repo on GitHub and opens a pull request</span>
-          {(repos.data?.repos.length ?? 0) > 1 && (
+        {(repos.data?.repos.length ?? 0) > 1 && (
+          <div className="flex flex-wrap items-center gap-2 border-b border-line px-4 py-2.5">
+            <span className="text-[12.5px] text-muted">Repository</span>
             <select value={repo} onChange={(e) => (setRepo(e.target.value), setSel(null))} className="ml-auto h-[28px] rounded-md border border-line bg-bg px-2 text-[12.5px]" aria-label="Repository">
               {repos.data!.repos.map((r) => (
                 <option key={r.full} value={r.full}>
@@ -563,8 +561,8 @@ function BuildPanel({ projectId }: { projectId: string }) {
                 </option>
               ))}
             </select>
-          )}
-        </div>
+          </div>
+        )}
         {summary && <UsageBar s={summary} />}
         {canEdit(user) && (
           <form

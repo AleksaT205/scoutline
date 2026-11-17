@@ -507,8 +507,8 @@ export function ProjectPage({ id }: { id: string }) {
       <a href="#/delivery" className="mb-3 inline-flex items-center gap-1 text-[12.5px] text-muted hover:text-fg">
         <ArrowLeft size={13} /> Projects
       </a>
-      <div className="mb-4 flex flex-wrap items-start gap-4">
-        <div className="min-w-0">
+      <div className="mb-4 flex flex-wrap items-start gap-x-4 gap-y-3">
+        <div className="min-w-0 flex-1 basis-[320px]">
           <div className="flex items-center gap-2">
             {p && <span className="num rounded bg-surface-2 px-1.5 py-px text-[12px] text-muted ring-1 ring-line">{p.key}</span>}
             <h1 className="truncate text-2xl font-semibold tracking-tight">{p?.name ?? "…"}</h1>
@@ -563,7 +563,7 @@ export function ProjectPage({ id }: { id: string }) {
             </div>
           )}
         </div>
-        <div className="grid w-full grid-cols-2 gap-2 sm:ml-auto sm:flex sm:w-auto sm:flex-wrap [&>button]:whitespace-nowrap">
+        <div className="grid w-full grid-cols-2 gap-2 sm:ml-auto sm:flex sm:w-auto sm:shrink-0 [&>button]:whitespace-nowrap">
           {p && (
             <button onClick={() => setStatusOpen(true)} className={btnSecondary} title="AI summary for the team or the client">
               <Sparkles size={13} /> Status update

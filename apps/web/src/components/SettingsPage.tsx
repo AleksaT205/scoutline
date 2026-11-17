@@ -349,6 +349,7 @@ export function SettingsPage({ initialTab = "profile", onOpenAlerts }: { initial
         ))}
       </div>
       </div>
+      <div className={tab === "system" || tab === "integrations" ? "max-w-[980px]" : "max-w-[760px]"}>
       {tab === "profile" && <Profile />}
       {tab === "integrations" && <IntegrationsSettings />}
       {tab === "system" && role === "owner" && <SystemSettings />}
@@ -362,6 +363,7 @@ export function SettingsPage({ initialTab = "profile", onOpenAlerts }: { initial
           </button>
         </Card>
       )}
+      </div>
     </>
   );
 }
