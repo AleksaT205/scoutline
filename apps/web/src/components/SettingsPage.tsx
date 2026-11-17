@@ -4,6 +4,7 @@ import { getSessionUser, setSession, useSessionUser, type SessionUser } from "..
 import { teamFetch } from "../lib/team";
 import { IntegrationsSettings } from "./IntegrationsSettings";
 import { useHashParam } from "../lib/hashParams";
+import { askConfirm } from "../lib/confirm";
 import { OrganizationSettings } from "./OrganizationSettings";
 
 type Tab = "profile" | "organization" | "team" | "shares" | "alerts" | "integrations";
@@ -150,7 +151,7 @@ function Team() {
                       <option value="delivery">Delivery only</option>
                     </select>
                   )}
-                  <button onClick={() => window.confirm(`Remove ${u.name} from the team?`) && act(() => teamFetch(`/team/users/${u.id}`, { method: "DELETE" }))} className="text-faint hover:text-danger" aria-label={`Remove ${u.name}`}>
+                  <button onClick={async () => (await askConfirm(`Remove ${u.name} from the team?`)) && act(() => teamFetch(`/team/users/${u.id}`, { method: "DELETE" }))} className="text-faint hover:text-danger" aria-label={`Remove ${u.name}`}>
                     <Trash2 size={14} />
                   </button>
                 </>
@@ -170,7 +171,7 @@ function Team() {
             <button
               onClick={() =>
                 act(async () => {
-                  if (hasDemo && !window.confirm("Set a new demo password? Anyone signed in with the old one is signed out.")) return;
+                  if (hasDemo && !await askConfirm("Set a new demo password? Anyone signed in with the old one is signed out.")) return;
                   setDemo(await teamFetch<{ email: string; password: string }>("/team/demo", { method: "POST", body: "{}" }));
                 })
               }
@@ -300,7 +301,7 @@ function Shares() {
             </div>
             <button
               onClick={async () => {
-                if (!window.confirm(`Revoke “${s.label}”? The link stops working immediately.`)) return;
+                if (!await askConfirm(`Revoke “${s.label}”? The link stops working immediately.`)) return;
                 await teamFetch(`/team/shares/${s.id}`, { method: "DELETE" });
                 await load();
               }}

@@ -12,6 +12,7 @@ import { PortalDialog } from "./more";
 import { StatusDialog } from "./assistant";
 import { ProjectAI } from "./agent";
 import { useHashParam, useOptionalHashParam } from "../../lib/hashParams";
+import { askConfirm } from "../../lib/confirm";
 import { CodeTab } from "./code";
 
 function PageHead({ title, sub, children }: { title: React.ReactNode; sub?: React.ReactNode; children?: React.ReactNode }) {
@@ -227,7 +228,7 @@ function ProjectDialog({ open, onClose, project, onSaved }: { open: boolean; onC
             <button
               type="button"
               onClick={async () => {
-                if (!window.confirm(`Delete “${project.name}”? Its tasks, logged time and client links are deleted too. This can't be undone.`)) return;
+                if (!await askConfirm(`Delete “${project.name}”? Its tasks, logged time and client links are deleted too. This can't be undone.`)) return;
                 try {
                   await teamFetch(`/delivery/projects/${project.id}`, { method: "DELETE" });
                   mutate<{ projects: Project[] }>("/delivery/projects", (d) => (d ? { ...d, projects: d.projects.filter((x) => x.id !== project.id) } : d));

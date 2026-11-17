@@ -7,6 +7,7 @@ import { ErrorNote, field } from "./parts";
 import { ClaudeSetup, PreviewButton } from "./agent";
 import { TerminalView } from "./terminal";
 import { useHashParam } from "../../lib/hashParams";
+import { askConfirm } from "../../lib/confirm";
 import { RunLocallyView, SkillsView } from "./workspace-ui";
 
 /** Faza 14 — tab „Code“: GitHub iz aplikacije (analitika, PR-ovi, grane, Actions, deploy). */
@@ -238,6 +239,7 @@ interface Pull {
   state?: "open" | "merged" | "closed";
   mergedAt?: string | null;
   closedAt?: string | null;
+  branchExists?: boolean;
 }
 function PullsView({ projectId, repo }: { projectId: string; repo: string }) {
   const user = useSessionUser();
@@ -246,8 +248,32 @@ function PullsView({ projectId, repo }: { projectId: string; repo: string }) {
   const list = (data?.pulls ?? []).filter((p) => filter === "all" || filter === "open" || (p.state ?? "open") === filter);
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  // Posle Merge obriši granu na GitHub-u (pamti se izbor)
+  const [delBranch, setDelBranch] = useState(() => {
+    try {
+      return localStorage.getItem("scoutline-delete-branch") !== "0";
+    } catch {
+      return true;
+    }
+  });
+  const deleteBranch = async (p: Pull) => {
+    if (!await askConfirm(`Delete branch ${p.branch} on GitHub? The pull request is ${p.state}, so nothing is lost.`)) return;
+    setBusy(`${p.number}:delete`);
+    setMsg(null);
+    try {
+      await teamFetch(`/delivery/projects/${projectId}/branches?repo=${encodeURIComponent(repo)}&name=${encodeURIComponent(p.branch)}`, { method: "DELETE" });
+      setMsg({ ok: true, text: `Deleted branch ${p.branch} on GitHub.` });
+      reload();
+    } catch (e) {
+      setMsg({ ok: false, text: (e as Error).message });
+    } finally {
+      setBusy(null);
+    }
+  };
   const act = async (n: number, action: "approve" | "merge" | "review", body: object = {}) => {
-    if (action === "merge" && !window.confirm(`Merge PR #${n} (squash)?`)) return;
+    const branch = data?.pulls.find((x) => x.number === n)?.branch;
+    if (action === "merge" && !(await askConfirm({ title: `Merge pull request #${n}?`, message: `Changes are squashed into the main branch.${delBranch && branch ? `\nBranch ${branch} will be deleted on GitHub after merging.` : ""}`, confirmLabel: "Merge" }))) return;
+    if (action === "merge") body = { ...body, deleteBranch: delBranch };
     setBusy(`${n}:${action}`);
     setMsg(null);
     try {
@@ -262,12 +288,32 @@ function PullsView({ projectId, repo }: { projectId: string; repo: string }) {
   };
   const seg = (on: boolean) => `h-[28px] rounded-md px-3 text-[12.5px] ${on ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`;
   const filters = (
-    <div className="inline-flex rounded-lg border border-line bg-surface p-0.5">
-      {(["open", "merged", "closed", "all"] as const).map((f) => (
-        <button key={f} onClick={() => setFilter(f)} className={seg(filter === f)}>
-          {f === "open" ? "Open" : f === "merged" ? "Merged" : f === "closed" ? "Closed" : "All"}
-        </button>
-      ))}
+    <div className="flex flex-wrap items-center gap-3">
+      <div className="inline-flex rounded-lg border border-line bg-surface p-0.5">
+        {(["open", "merged", "closed", "all"] as const).map((f) => (
+          <button key={f} onClick={() => setFilter(f)} className={seg(filter === f)}>
+            {f === "open" ? "Open" : f === "merged" ? "Merged" : f === "closed" ? "Closed" : "All"}
+          </button>
+        ))}
+      </div>
+      {canEdit(user) && (
+        <label className="inline-flex items-center gap-1.5 text-[12px] text-muted" title="After a merge, the PR's branch is deleted on GitHub (never the main or a protected branch)">
+          <input
+            type="checkbox"
+            checked={delBranch}
+            onChange={(e) => {
+              setDelBranch(e.target.checked);
+              try {
+                localStorage.setItem("scoutline-delete-branch", e.target.checked ? "1" : "0");
+              } catch {
+                /* ništa */
+              }
+            }}
+            className="accent-[var(--accent)]"
+          />
+          Delete branch after merge
+        </label>
+      )}
     </div>
   );
   if (error) return <div className="space-y-2">{filters}<ErrorNote>{error}</ErrorNote></div>;
@@ -294,6 +340,15 @@ function PullsView({ projectId, repo }: { projectId: string; repo: string }) {
                 {p.draft && <span className="text-faint">draft</span>}
                 {p.state === "merged" && <span className="rounded-full bg-accent-soft px-2 py-px text-[11px] text-accent">merged {p.mergedAt ? ago(p.mergedAt) : ""}</span>}
                 {p.state === "closed" && <span className="rounded-full bg-danger/10 px-2 py-px text-[11px] text-danger">closed {p.closedAt ? ago(p.closedAt) : ""}</span>}
+                {p.state && p.state !== "open" && (p.branchExists ? (
+                  canEdit(user) && (
+                    <button onClick={() => void deleteBranch(p)} disabled={!!busy} className="inline-flex items-center gap-1 rounded-full border border-line px-2 py-px text-[11px] text-muted hover:border-danger/50 hover:text-danger disabled:opacity-50">
+                      {busy === `${p.number}:delete` ? <Loader2 size={10} className="animate-spin" /> : <Trash2 size={10} />} Delete branch
+                    </button>
+                  )
+                ) : (
+                  <span className="text-[11px] text-faint">branch deleted</span>
+                ))}
               </div>
               {(p.state ?? "open") === "open" && (
               <div className="mt-1.5 flex flex-wrap items-center gap-2 text-[11.5px]">
@@ -391,7 +446,7 @@ function BranchesView({ projectId, repo }: { projectId: string; repo: string }) 
             {canEdit(user) && !b.isDefault && b.pr && b.pr.state === "closed" && (
               <button
                 onClick={async () => {
-                  if (!window.confirm(`Delete branch ${b.name}? Its pull request is ${b.pr!.merged ? "merged" : "closed"}.`)) return;
+                  if (!await askConfirm(`Delete branch ${b.name}? Its pull request is ${b.pr!.merged ? "merged" : "closed"}.`)) return;
                   try {
                     await teamFetch(`/delivery/projects/${projectId}/branches?repo=${encodeURIComponent(repo)}&name=${encodeURIComponent(b.name)}`, { method: "DELETE" });
                     reload();
@@ -502,7 +557,7 @@ function DeployView({ projectId }: { projectId: string }) {
             <button
               disabled={!canEdit(user) || !!busy}
               onClick={async () => {
-                if (!window.confirm(`Deploy “${h.name}” now?`)) return;
+                if (!await askConfirm(`Deploy “${h.name}” now?`)) return;
                 setBusy(h.id);
                 setMsg(null);
                 try {
@@ -522,7 +577,7 @@ function DeployView({ projectId }: { projectId: string }) {
             {owner && (
               <button
                 onClick={async () => {
-                  if (!window.confirm(`Remove deploy hook “${h.name}”?`)) return;
+                  if (!await askConfirm(`Remove deploy hook “${h.name}”?`)) return;
                   await teamFetch(`/delivery/projects/${projectId}/deploy-hooks/${h.id}`, { method: "DELETE" });
                   reload();
                 }}
@@ -614,7 +669,7 @@ export function CodeTab({ projectId, initialSection }: { projectId: string; init
                 role="button"
                 onClick={async (e) => {
                   e.stopPropagation();
-                  if (!window.confirm(`Unlink ${r.full} from this project?`)) return;
+                  if (!await askConfirm(`Unlink ${r.full} from this project?`)) return;
                   await teamFetch(`/delivery/projects/${projectId}/repos/${r.id}`, { method: "DELETE" });
                   repos.reload();
                 }}

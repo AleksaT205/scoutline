@@ -547,13 +547,14 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
         gh<GhPull[]>(tok, `/repos/${r.full}/pulls?state=all&per_page=60&sort=created&direction=desc`).catch(() => [] as GhPull[]),
       ]);
       const pr = matchPull(pulls, n);
+      const branchExists = pr && pr.state !== "open" ? (await ghFetch(tok, `/repos/${r.full}/branches/${pr.head.ref.split("/").map(encodeURIComponent).join("/")}`)).ok : null;
       const prComments = pr ? await gh<GhComment[]>(tok, `/repos/${r.full}/issues/${pr.number}/comments?per_page=100`).catch(() => [] as GhComment[]) : [];
       const view = (x: GhComment, where: "issue" | "pr") => ({ id: x.id, where, author: x.user?.login ?? "?", bot: x.user?.type === "Bot" || /\[bot\]$/.test(x.user?.login ?? ""), body: x.body, createdAt: x.created_at, updatedAt: x.updated_at, url: x.html_url });
       return c.json({
         issue: { number: issue.number, title: issue.title, body: (issue.body ?? "").replace(/\n---\nWhen you're done:[\s\S]*$/, "").replace(/\n*<sub>Images: download[\s\S]*?<\/sub>/, "").replace(/^@claude\s*/, "").replace(/\n*\((think|think hard|ultrathink)\)/, "").trim(),
           model: ((issue as GhIssue & { labels?: Array<{ name: string }> }).labels ?? []).find((l) => l.name.startsWith("model:"))?.name.slice(6) ?? null, url: issue.html_url, state: issue.state, createdAt: issue.created_at, by: startedBy(issue.body) },
         comments: [...comments.map((x) => view(x, "issue")), ...prComments.map((x) => view(x, "pr"))].sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
-        pr: pullView(pr),
+        pr: pr ? { ...pullView(pr)!, branchExists } : null,
       });
     } catch (e) {
       return c.json({ error: (e as Error).message }, 502);

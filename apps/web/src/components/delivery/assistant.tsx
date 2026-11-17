@@ -4,6 +4,7 @@ import { useCached } from "../../lib/cache";
 import { teamFetch } from "../../lib/team";
 import { useProjects } from "../../lib/delivery";
 import { CreateTasksButton } from "./tasks-from-text";
+import { askConfirm } from "../../lib/confirm";
 import { Dialog, ErrorNote, Menu, btnPrimary } from "./parts";
 
 /** Faza 13: AI asistent — „pitaj projekat“ i brzi status izveštaj. */
@@ -167,7 +168,7 @@ export function AskPanel({ projectId, hasRepo }: { projectId?: string; hasRepo?:
           {turns.length > 0 && (
             <button
               onClick={async () => {
-                if (!window.confirm("Delete this chat? Your questions and answers here are removed.")) return;
+                if (!await askConfirm("Delete this chat? Your questions and answers here are removed.")) return;
                 await teamFetch(`/assistant/history${projectId ? `?projectId=${projectId}` : ""}`, { method: "DELETE" }).catch((e) => setError((e as Error).message));
                 setTurns([]);
               }}

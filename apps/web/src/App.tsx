@@ -1,5 +1,6 @@
 import { Suspense, startTransition, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { useDismiss } from "./lib/useDismiss";
+import { ConfirmHost } from "./lib/confirm";
 import { AssistantPage, ClientsPage, CyclesPage, InboxPage, MyIssuesPage, OverviewPage, PipelinePage, ProjectPage, ProjectsPage, ReportsPage, RouterPage, SettingsPage, SourcesPage, TasksPage, warmUp } from "./pages";
 import { BellRing, Menu, Moon, Plus, RefreshCw, Search, Sun } from "lucide-react";
 import { useApiStatus, useLeads } from "./lib/api";
@@ -403,6 +404,7 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
         </div>
       </main>
       <AlertsDialog open={alertsOpen} onClose={() => setAlertsOpen(false)} />
+      <ConfirmHost />
       <AddLeadDialog
         open={addOpen}
         onClose={() => setAddOpen(false)}

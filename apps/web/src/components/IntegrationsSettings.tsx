@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Bot, Check, GitBranch, Loader2, Mail, Send, ShieldCheck, Landmark, Plug } from "lucide-react";
 import { teamFetch } from "../lib/team";
+import { askConfirm } from "../lib/confirm";
 import { useSessionUser } from "../lib/session";
 
 /** Bez automatskog popunjavanja (Chrome, 1Password, LastPass, Bitwarden): ovo su ključevi, ne prijava. */
@@ -166,7 +167,7 @@ function IntegrationCard({
               <button
                 type="button"
                 disabled={!!busy}
-                onClick={() => window.confirm(`Remove ${title} settings saved in the app?`) && void save(Object.fromEntries(fields.filter((f) => f.secret).map((f) => [f.key, null])), "remove")}
+                onClick={async () => (await askConfirm(`Remove ${title} settings saved in the app?`)) && void save(Object.fromEntries(fields.filter((f) => f.secret).map((f) => [f.key, null])), "remove")}
                 className="ml-auto h-[32px] rounded-[7px] px-2 text-[12.5px] text-muted hover:text-danger"
               >
                 Remove

@@ -7,6 +7,7 @@ import { cycleLabel, fmtDate, patchIssue, toDateInput, useCycles, useMembers, ty
 import { TimeBox } from "./time";
 import { FigmaBox } from "./workspace-ui";
 import { LocalWorkDialog } from "./agent";
+import { askConfirm } from "../../lib/confirm";
 import { Avatar, BOARD_STATUSES, Dialog, ErrorNote, ISSUE_STATUS_META, Menu, PRIORITY_META, PriorityIcon, StatusIcon, btnPrimary, btnSecondary } from "./parts";
 
 const ESTIMATES = [null, 1, 2, 3, 5, 8];
@@ -541,7 +542,7 @@ export function IssueDetail({ issue, onClose, onChanged, onDeleted }: { issue: I
             {editable && (
               <button
                 onClick={async () => {
-                  if (!window.confirm(`Delete ${issue.key}? This can't be undone.`)) return;
+                  if (!await askConfirm(`Delete ${issue.key}? This can't be undone.`)) return;
                   try {
                     await teamFetch(`/delivery/issues/${issue.id}`, { method: "DELETE" });
                     onDeleted(issue.id);

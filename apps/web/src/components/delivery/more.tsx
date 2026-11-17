@@ -5,6 +5,7 @@ import { teamFetch } from "../../lib/team";
 import { canEdit, useSessionUser } from "../../lib/session";
 import { cycleLabel, fmtDate, inboxChanged, patchIssue, useCycles, useIssues, type Issue } from "../../lib/delivery";
 import { Dialog, ErrorNote, ProgressRing, StatusIcon, btnPrimary, btnSecondary, field } from "./parts";
+import { askConfirm } from "../../lib/confirm";
 import { IssueDetail, IssueList } from "./issues";
 
 const ago = (iso: string) => {
@@ -356,7 +357,7 @@ export function PortalDialog({ open, onClose, projectId, projectName }: { open: 
               <span className="text-faint">· {p.lastViewedAt ? `viewed ${ago(p.lastViewedAt)}` : "not opened yet"}</span>
               <button
                 onClick={async () => {
-                  if (!window.confirm(`Revoke “${p.label}”? The link stops working immediately.`)) return;
+                  if (!await askConfirm(`Revoke “${p.label}”? The link stops working immediately.`)) return;
                   await teamFetch(`/delivery/portals/${p.id}`, { method: "DELETE" }).catch((e) => setError((e as Error).message));
                   void load();
                 }}

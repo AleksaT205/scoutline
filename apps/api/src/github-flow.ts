@@ -185,6 +185,8 @@ export function githubFlowRoutes(getDb: () => Db, g: Guards) {
         tok,
         `/repos/${r.full}/pulls?state=${ghState}&per_page=30&sort=updated&direction=desc`,
       );
+      // Grane koje još postoje (za „Delete branch“ na spojenim / zatvorenim PR-ovima)
+      const existing = ghState !== "open" ? new Set((await ghJson<Array<{ name: string }>>(tok, `/repos/${r.full}/branches?per_page=100`).catch(() => [] as Array<{ name: string }>)).map((x) => x.name)) : null;
       const linkOf = async (n: number) => {
         const [link] = await getDb().select({ issueId: issueLinks.issueId }).from(issueLinks).where(and(eq(issueLinks.kind, "pr"), eq(issueLinks.repo, r.full), eq(issueLinks.number, n))).limit(1);
         const issue = link ? (await getDb().select({ number: issues.number }).from(issues).where(eq(issues.id, link.issueId)).limit(1))[0] : undefined;
@@ -194,7 +196,7 @@ export function githubFlowRoutes(getDb: () => Db, g: Guards) {
         pulls.map(async (pr) => {
           const base = { number: pr.number, title: pr.title, url: pr.html_url, draft: pr.draft, author: pr.user.login, branch: pr.head.ref, base: pr.base.ref, createdAt: pr.created_at, state: pr.merged_at ? "merged" : pr.state, mergedAt: pr.merged_at, closedAt: pr.closed_at };
           // Zatvoreni / spojeni: bez skupih provera (CI, review, preview)
-          if (pr.state !== "open") return { ...base, checks: null, approved: false, changesRequested: false, issueKey: await linkOf(pr.number), preview: null };
+          if (pr.state !== "open") return { ...base, checks: null, approved: false, changesRequested: false, issueKey: await linkOf(pr.number), preview: null, branchExists: existing?.has(pr.head.ref) ?? false };
           let checks: { total: number; ok: number; failed: number; pending: number } | null = null;
           const cr = await ghFetch(tok, `/repos/${r.full}/commits/${pr.head.sha}/check-runs?per_page=50`);
           if (cr.ok) {
@@ -246,9 +248,22 @@ export function githubFlowRoutes(getDb: () => Db, g: Guards) {
         return c.json({ ok: true, message: "Approved." });
       }
       if (action === "merge") {
-        const method = (await c.req.json().catch(() => ({})) as { method?: string }).method;
+        const b = (await c.req.json().catch(() => ({}))) as { method?: string; deleteBranch?: boolean };
+        const method = b.method;
+        const pr = await ghJson<{ head: { ref: string; repo: { full_name: string } | null }; base: { repo: { default_branch: string } } }>(tok, `/repos/${r.full}/pulls/${n}`);
         const res = await ghJson<{ merged?: boolean; message?: string }>(tok, `/repos/${r.full}/pulls/${n}/merge`, { method: "PUT", body: JSON.stringify({ merge_method: method === "merge" || method === "rebase" ? method : "squash" }) });
-        return c.json({ ok: !!res.merged, message: res.message ?? "Merged." });
+        if (!res.merged) return c.json({ ok: false, message: res.message ?? "Not merged." });
+        // Posle spajanja: obriši granu na GitHub-u (podrazumevano) — nikad glavnu, zaštićenu ili granu iz tuđeg repoa (fork)
+        if (b.deleteBranch !== false) {
+          const ref = pr.head.ref;
+          if (pr.head.repo?.full_name !== r.full) return c.json({ ok: true, message: "Merged. The branch is in another repo (fork), so it was kept." });
+          if (ref === pr.base.repo.default_branch) return c.json({ ok: true, message: "Merged." });
+          const br = await ghFetch(tok, `/repos/${r.full}/branches/${ref.split("/").map(encodeURIComponent).join("/")}`);
+          if (br.ok && ((await br.json()) as { protected?: boolean }).protected) return c.json({ ok: true, message: `Merged. Branch ${ref} is protected, so it was kept.` });
+          const del = await ghFetch(tok, `/repos/${r.full}/git/refs/heads/${ref.split("/").map(encodeURIComponent).join("/")}`, { method: "DELETE" });
+          return c.json({ ok: true, branchDeleted: del.ok || del.status === 422, message: del.ok || del.status === 422 ? `Merged and deleted branch ${ref} on GitHub.` : `Merged. Couldn't delete branch ${ref} (GitHub: HTTP ${del.status}).` });
+        }
+        return c.json({ ok: true, message: res.message ?? "Merged." });
       }
       if (action === "review") {
         const agent = ((await c.req.json().catch(() => ({}))) as { agent?: string }).agent === "codex" ? "codex" : "claude";

@@ -3,6 +3,7 @@ import { Check, Copy, ExternalLink, Loader2, PenTool, Pencil, Plus, Sparkles, Te
 import { teamFetch } from "../../lib/team";
 import { canEdit, useSessionUser } from "../../lib/session";
 import { PreviewButton, makePreview } from "./agent";
+import { askConfirm } from "../../lib/confirm";
 import { Dialog, ErrorNote, btnPrimary, btnSecondary, field } from "./parts";
 
 /** Faza 15 — Skills (PR u repo), Pokreni lokalno, Figma u tasku. */
@@ -360,7 +361,7 @@ export function SkillsView({ projectId, repo }: { projectId: string; repo: strin
                       type="button"
                       onClick={async (e) => {
                         e.preventDefault();
-                        if (!window.confirm(`Delete “${s.name}” from the library?`)) return;
+                        if (!await askConfirm(`Delete “${s.name}” from the library?`)) return;
                         await teamFetch(`/delivery/skills/${s.id}`, { method: "DELETE" });
                         load();
                       }}

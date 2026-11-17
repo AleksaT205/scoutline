@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Check, Copy, KeyRound, Loader2, Lock, Plus, Route, ShieldOff, X, Zap } from "lucide-react";
 import { API_URL } from "../lib/api";
+import { askConfirm } from "../lib/confirm";
 import { ApiError, getTeamToken, setTeamToken, teamFetch, usd } from "../lib/team";
 
 interface Client {
@@ -350,7 +351,7 @@ function ClientDetail({ client, onChanged }: { client: Client; onChanged: () => 
         <button
           disabled={busy !== null}
           onClick={async () => {
-            if (!window.confirm(`Revoke ${client.name}'s key? Their apps stop working immediately. History is kept.`)) return;
+            if (!await askConfirm(`Revoke ${client.name}'s key? Their apps stop working immediately. History is kept.`)) return;
             setBusy("revoke");
             setError(null);
             try {

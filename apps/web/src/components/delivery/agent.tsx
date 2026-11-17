@@ -7,6 +7,7 @@ import { Dialog, ErrorNote, btnPrimary, btnSecondary } from "./parts";
 import { CreateTasksButton } from "./tasks-from-text";
 import { useHashParam } from "../../lib/hashParams";
 import { AttachButton, AttachedThumbs, MessageImages, splitImages, useImageAttachments } from "./attachments";
+import { askConfirm } from "../../lib/confirm";
 import { AskPanel, Md } from "./assistant";
 
 /**
@@ -36,7 +37,7 @@ interface Run {
   minutes: number;
   sessions: number;
   model?: string;
-  pr: { number: number; url: string; title: string; state: string; branch: string } | null;
+  pr: { number: number; url: string; title: string; state: string; branch: string; branchExists?: boolean | null } | null;
 }
 interface Agg {
   runs: number;
@@ -681,12 +682,12 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
     }
   };
   const merge = async () => {
-    if (!pr || !window.confirm(`Merge PR #${pr.number} into the main branch?`)) return;
+    if (!pr || !(await askConfirm({ title: `Merge pull request #${pr.number}?`, message: `Changes go into the main branch.\nBranch ${pr.branch} will be deleted on GitHub after merging.`, confirmLabel: "Merge" }))) return;
     setBusy("merge");
     setMsg(null);
     try {
-      await teamFetch(`/delivery/projects/${projectId}/pulls/${pr.number}/merge?${repoQ(repo)}`, { method: "POST", body: "{}" });
-      setMsg({ ok: true, text: "Merged." });
+      const r = await teamFetch<{ message?: string }>(`/delivery/projects/${projectId}/pulls/${pr.number}/merge?${repoQ(repo)}`, { method: "POST", body: JSON.stringify({ deleteBranch: true }) });
+      setMsg({ ok: true, text: r.message ?? "Merged." });
       await t.reload();
       onChanged();
     } catch (e) {
@@ -708,6 +709,28 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
           <a href={previewUrl(repo, pr.branch)} target="_blank" rel="noreferrer" className="text-[12px] text-muted hover:text-fg" title="For apps with a build step (React, Next…)">
             StackBlitz ↗
           </a>
+          {pr.state !== "open" && pr.branchExists && canEdit(user) && (
+            <button
+              onClick={async () => {
+                if (!await askConfirm(`Delete branch ${pr.branch} on GitHub?`)) return;
+                setBusy("branch");
+                setMsg(null);
+                try {
+                  await teamFetch(`/delivery/projects/${projectId}/branches?${repoQ(repo)}&name=${encodeURIComponent(pr.branch)}`, { method: "DELETE" });
+                  setMsg({ ok: true, text: `Deleted branch ${pr.branch} on GitHub.` });
+                  await t.reload();
+                } catch (e) {
+                  setMsg({ ok: false, text: (e as Error).message });
+                } finally {
+                  setBusy(null);
+                }
+              }}
+              disabled={!!busy}
+              className={btnSecondary}
+            >
+              {busy === "branch" ? <Loader2 size={13} className="animate-spin" /> : null} Delete branch
+            </button>
+          )}
           {pr.state === "open" && canEdit(user) && (
             <button onClick={() => void merge()} disabled={!!busy} className={btnPrimary}>
               {busy === "merge" ? <Loader2 size={14} className="animate-spin" /> : <GitMerge size={14} />} Merge
@@ -804,7 +827,7 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
         {canEdit(user) && (
           <button
             onClick={async () => {
-              if (!window.confirm("Delete this conversation? It's closed on GitHub and removed from this list (any pull request stays).")) return;
+              if (!await askConfirm("Delete this conversation? It's closed on GitHub and removed from this list (any pull request stays).")) return;
               setBusy("delete");
               try {
                 await teamFetch(`/delivery/projects/${projectId}/agent/runs/${run.number}/delete?${repoQ(repo)}`, { method: "POST", body: "{}" });
