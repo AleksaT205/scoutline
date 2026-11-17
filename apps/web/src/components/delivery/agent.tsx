@@ -171,7 +171,8 @@ const tidy = (md: string) =>
   md
     .replace(/^\*\*Claude (finished|is working)[^*]*\*\*[^\n]*\n?/i, "")
     .replace(/<details><summary>Project context from Scoutline<\/summary>[\s\S]*?<\/details>/, "")
-    .replace(/^\s*[·•]\s*branch\s+`?[\w./-]+`?\s*$/gim, "")
+    .replace(/^\s*[·•]\s*\[?\s*`?branch\b[^\n]*$/gim, "")
+    .replace(/^\s*[·•]?\s*\[?`?[\w.-]+\/issue-\d+-\d{8}-\d{4}`?\]?(\([^)\s]*\))?\s*$/gim, "")
     .replace(/\s*•?\s*\[Create PR ➔\]\([^)]*\)/g, "")
     .replace(/^(\s*)[-*] \[x\]\s*/gim, "$1✓ ")
     .replace(/^(\s*)[-*] \[ \]\s*/gm, "$1○ ")
