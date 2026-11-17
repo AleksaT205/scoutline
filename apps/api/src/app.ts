@@ -183,6 +183,14 @@ export function createApp(getDb: () => Db) {
     return c.json({ items: rows.map(toUiLead) });
   });
 
+  // GET /leads/:id — jedan lead (link iz obaveštenja otvara lead i kad nije u učitanoj listi)
+  app.get("/leads/:id", a.readGuard, async (c) => {
+    const id = c.req.param("id")!;
+    if (!/^[0-9a-f-]{36}$/i.test(id)) return c.json({ error: "Lead not found." }, 404);
+    const [row] = await selectLeads().where(eq(leads.id, id)).limit(1);
+    return row ? c.json({ lead: toUiLead(row) }) : c.json({ error: "Lead not found." }, 404);
+  });
+
   // ── CRM: status, beleške, istorija (izmene traže timsku lozinku) ─────────────
   const requireTeam = a.require("member");
 

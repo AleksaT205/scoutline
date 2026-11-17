@@ -38,7 +38,7 @@ export function notificationRoutes(getDb: () => Db, readGuard: MiddlewareHandler
       .where(and(gte(leads.score, 75), ne(leads.status, "hidden"), gte(leads.createdAt, new Date(Date.now() - 2 * 86_400_000)), ne(leads.leadType, "hiring_signal")))
       .orderBy(desc(leads.score))
       .limit(canSales ? 8 : 0);
-    for (const l of good) out.push({ id: `lead:${l.id}`, kind: "lead", title: l.title, sub: `New ${l.type ?? "lead"} · score ${l.score}`, at: l.at.toISOString(), href: "#/" });
+    for (const l of good) out.push({ id: `lead:${l.id}`, kind: "lead", title: l.title, sub: `New ${l.type ?? "lead"} · score ${l.score}`, at: l.at.toISOString(), href: `#/?lead=${l.id}` });
 
     // Podsetnici „javi se ponovo“ koji su stigli
     const due = await db
@@ -48,7 +48,7 @@ export function notificationRoutes(getDb: () => Db, readGuard: MiddlewareHandler
       .where(and(isNotNull(leads.followUpAt), lte(leads.followUpAt, new Date()), notInArray(leads.status, ["hidden", "won", "lost"])))
       .orderBy(desc(leads.followUpAt))
       .limit(canSales ? 8 : 0);
-    for (const l of due) out.push({ id: `follow:${l.id}`, kind: "followup", title: l.title, sub: `Follow up · ${l.status}`, at: l.at!.toISOString(), href: "#/pipeline" });
+    for (const l of due) out.push({ id: `follow:${l.id}`, kind: "followup", title: l.title, sub: `Follow up · ${l.status}`, at: l.at!.toISOString(), href: `#/?lead=${l.id}` });
 
     // Inbox (zahtevi klijenata / GitHub)
     const triage = await db

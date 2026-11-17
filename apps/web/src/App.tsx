@@ -19,6 +19,9 @@ import { SharePage } from "./components/SharePage";
 import { AcceptInvitePage, LoginPage, SetupPage } from "./components/AuthPages";
 import { clearSession, getSessionToken, onlySpace, setSession, useSessionUser, type SessionUser } from "./lib/session";
 import { API_URL } from "./lib/api";
+import { teamFetch } from "./lib/team";
+import { getHashParam, setHashParam } from "./lib/hashParams";
+import type { UiLead } from "./data/demo";
 
 type Theme = "light" | "dark";
 const systemTheme = (): Theme => (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
@@ -194,11 +197,38 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
     window.addEventListener("select-lead", on);
     return () => window.removeEventListener("select-lead", on);
   }, []);
+  // Link #/?lead=<id> (klik na obaveštenje): zapamti koji lead treba otvoriti i skloni parametar iz adrese,
+  // da isti link radi i drugi put
+  const [wantLead, setWantLead] = useState<string | null>(null);
+  useEffect(() => {
+    const fromHash = () => {
+      if (pageOf(window.location.hash) !== "leads") return;
+      const id = getHashParam("lead");
+      if (!id) return;
+      setHashParam("lead", null);
+      setWantLead(id);
+    };
+    fromHash();
+    window.addEventListener("hashchange", fromHash);
+    return () => window.removeEventListener("hashchange", fromHash);
+  }, []);
 
   // Pravi leadovi iz API-ja; dok ih nema, prikazuju se primeri.
   // Bez probnih podataka: dok se učitava prikazuje se skeleton, a ne lažni brojevi
   const loading = api.leads === null;
   const allLeads = useMemo(() => api.leads ?? [], [api.leads]);
+  // Kad se lista učita: otvori traženi lead; ako nije među učitanima (stariji ili slabije ocenjen), dovuci ga
+  useEffect(() => {
+    if (!wantLead || loading) return;
+    setSelectedId(wantLead);
+    if (window.innerWidth < 1280) setSheet(true);
+    if (!allLeads.some((l) => l.id === wantLead))
+      void teamFetch<{ lead: UiLead }>(`/leads/${wantLead}`)
+        .then((d) => api.add(d.lead))
+        .catch(() => undefined);
+    setWantLead(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wantLead, loading]);
   // Kucanje u pretrazi ostaje glatko: lista se preračuna odmah posle, bez kočenja unosa
   const deferredFilters = useDeferredValue(filters);
   const leads = useMemo(() => applyFilters(allLeads, deferredFilters), [allLeads, deferredFilters]);
