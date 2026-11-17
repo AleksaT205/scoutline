@@ -35,6 +35,81 @@ interface Run {
   sessions: number;
   pr: { number: number; url: string; title: string; state: string; branch: string } | null;
 }
+interface Agg {
+  runs: number;
+  minutes: number;
+  tokens?: number;
+  cost?: number;
+}
+interface Summary {
+  month: { runs: number; sessions: number; minutes: number; prs: number; merged: number; tokensIn?: number; tokensOut?: number; cost?: number; turns?: number };
+  byPerson: Record<string, Agg>;
+  byModel?: Record<string, Agg>;
+}
+const fmtTok = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `${Math.round(n / 1000)}k` : String(n));
+const fmtUsd = (n: number) => (n >= 10 ? `$${Math.round(n)}` : `$${n.toFixed(2)}`);
+
+/** Potrošnja Claude Code-a u aplikaciji (iz samih sesija): tokeni, koraci, trajanje i vrednost na API-ju — po osobi i modelu. */
+function UsageBar({ s }: { s: Summary }) {
+  const [open, setOpen] = useState(false);
+  const m = s.month;
+  const tokens = (m.tokensIn ?? 0) + (m.tokensOut ?? 0);
+  const table = (title: string, rows: Record<string, Agg> | undefined) =>
+    rows && Object.keys(rows).length > 0 ? (
+      <div>
+        <div className="mb-1 text-[11px] font-medium uppercase tracking-wider text-faint">{title}</div>
+        <table className="w-full text-[12px]">
+          <tbody>
+            {Object.entries(rows)
+              .sort((a, b) => (b[1].tokens ?? 0) - (a[1].tokens ?? 0) || b[1].runs - a[1].runs)
+              .map(([k, v]) => (
+                <tr key={k} className="border-t border-line">
+                  <td className="py-1 pr-2 capitalize text-fg">{k}</td>
+                  <td className="num py-1 pr-2 text-right">{v.runs} tasks</td>
+                  <td className="num py-1 pr-2 text-right">{v.minutes} min</td>
+                  <td className="num py-1 pr-2 text-right">{fmtTok(v.tokens ?? 0)} tok</td>
+                  <td className="num py-1 text-right text-muted">{v.cost ? fmtUsd(v.cost) : "—"}</td>
+                </tr>
+              ))}
+          </tbody>
+        </table>
+      </div>
+    ) : null;
+  return (
+    <div className="border-b border-line bg-bg px-4 py-1.5 text-[11.5px] text-muted">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5">
+        <span className="font-medium text-fg">This month</span>
+        <span>
+          <span className="num text-fg">{m.runs}</span> tasks · <span className="num text-fg">{m.sessions}</span> sessions · <span className="num text-fg">{m.minutes}</span> min
+        </span>
+        {tokens > 0 && (
+          <span title="Tokens Claude used in these sessions (input incl. cached context + output)">
+            <span className="num text-fg">{fmtTok(tokens)}</span> tokens{m.turns ? ` · ${m.turns} steps` : ""}
+          </span>
+        )}
+        {(m.cost ?? 0) > 0 && (
+          <span title="What these sessions would cost on the pay-per-use API. On a Pro/Max subscription it's included — this just shows how much you're getting.">
+            ≈ <span className="num text-fg">{fmtUsd(m.cost!)}</span> API value · included in your plan
+          </span>
+        )}
+        <span>
+          <span className="num">{m.prs}</span> PRs · <span className="num">{m.merged}</span> merged
+        </span>
+        <button type="button" onClick={() => setOpen(!open)} className="ml-auto text-muted hover:text-fg">
+          {open ? "Hide details" : "Details"}
+        </button>
+      </div>
+      {open && (
+        <div className="mt-2 grid gap-3 pb-1 sm:grid-cols-2">
+          {table("By person", s.byPerson)}
+          {table("By model", s.byModel)}
+          <p className="text-[11px] text-faint sm:col-span-2">Counted from the Claude sessions in this repo (sessions after the latest “Set up automatically”). Anthropic doesn't share plan limits (5-hour / weekly) with other apps — Claude Code warns you in a session when you get close.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
 interface Thread {
   issue: { number: number; title: string; body: string; url: string; state: string; createdAt: string; by: string | null; model: string | null };
   comments: Array<{ id: number; where: "issue" | "pr"; author: string; bot: boolean; body: string; createdAt: string; updatedAt: string; url: string }>;
@@ -382,7 +457,7 @@ function BuildPanel({ projectId }: { projectId: string }) {
     if (list.length && !list.some((r) => r.full === repo)) setRepo(list[0]!.full);
   }, [repos.data, repo]);
   const [anyWorking, setAnyWorking] = useState(false);
-  const runs = useCached<{ runs: Run[]; summary: { month: { runs: number; sessions: number; minutes: number; prs: number; merged: number }; byPerson: Record<string, { runs: number; minutes: number }> } | null; error?: string }>(repo ? `/delivery/projects/${projectId}/agent/runs?${repoQ(repo)}` : null, { staleMs: 5_000, refreshMs: anyWorking ? 15_000 : 60_000 });
+  const runs = useCached<{ runs: Run[]; summary: Summary | null; error?: string }>(repo ? `/delivery/projects/${projectId}/agent/runs?${repoQ(repo)}` : null, { staleMs: 5_000, refreshMs: anyWorking ? 15_000 : 60_000 });
   useEffect(() => setAnyWorking(!!runs.data?.runs.some((r) => r.status === "working" || r.status === "queued")), [runs.data]);
   const [sel, setSel] = useState<number | null>(null);
   const [prompt, setPrompt] = useState("");
@@ -431,25 +506,7 @@ function BuildPanel({ projectId }: { projectId: string }) {
             </select>
           )}
         </div>
-        {summary && (
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 border-b border-line bg-bg px-4 py-1.5 text-[11.5px] text-muted">
-            <span className="font-medium text-fg">This month</span>
-            <span>
-              <span className="num text-fg">{summary.month.runs}</span> tasks · <span className="num text-fg">{summary.month.sessions}</span> Claude sessions · <span className="num text-fg">{summary.month.minutes}</span> min
-            </span>
-            <span>
-              <span className="num">{summary.month.prs}</span> PRs · <span className="num">{summary.month.merged}</span> merged
-            </span>
-            {Object.entries(summary.byPerson).map(([who, v]) => (
-              <span key={who}>
-                {who}: <span className="num">{v.runs}</span> · <span className="num">{v.minutes}</span> min
-              </span>
-            ))}
-            <a href="https://claude.ai/settings/usage" target="_blank" rel="noreferrer" className="ml-auto inline-flex items-center gap-1 hover:text-fg" title="Your subscription limits are shown on claude.ai">
-              Subscription limits <ExternalLink size={11} />
-            </a>
-          </div>
-        )}
+        {summary && <UsageBar s={summary} />}
         {canEdit(user) && (
           <form
             className="border-b border-line p-3"

@@ -24,7 +24,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const LABEL = "scoutline";
 const SECRET = "CLAUDE_CODE_OAUTH_TOKEN";
 const WORKFLOW_PATH = ".github/workflows/claude.yml";
-const MARKER = "# scoutline:claude-v3";
+const MARKER = "# scoutline:claude-v4";
 const MODELS = ["sonnet", "opus", "haiku"] as const;
 const EFFORTS = ["low", "medium", "high", "max"] as const;
 type Effort = (typeof EFFORTS)[number];
@@ -78,6 +78,7 @@ jobs:
         with:
           fetch-depth: 1
       - uses: anthropics/claude-code-action@v1
+        id: claude
         env:
           GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
         with:
@@ -89,6 +90,14 @@ jobs:
             --max-turns 40
             \${{ (contains(toJSON(github.event.issue.labels), '"model:opus"') || contains(toJSON(github.event.pull_request.labels), '"model:opus"')) && '--model opus' || ((contains(toJSON(github.event.issue.labels), '"model:haiku"') || contains(toJSON(github.event.pull_request.labels), '"model:haiku"')) && '--model haiku' || ((contains(toJSON(github.event.issue.labels), '"model:sonnet"') || contains(toJSON(github.event.pull_request.labels), '"model:sonnet"')) && '--model sonnet' || '')) }}
             --allowedTools "Bash(npm *),Bash(npx *),Bash(pnpm *),Bash(git *),Bash(gh pr create:*),Bash(gh pr view:*)"
+      # Potrošnja za Scoutline (tokeni, koraci, trajanje, cena na API-ju) — samo brojevi, bez sadržaja
+      - name: Scoutline usage
+        if: always()
+        continue-on-error: true
+        env:
+          F: \${{ steps.claude.outputs.execution_file }}
+        run: |
+          [ -f "$F" ] && node -e 'const a=[].concat(JSON.parse(require("fs").readFileSync(process.env.F,"utf8")));const r=a.reverse().find(m=>m&&m.type==="result")||{};const u=r.usage||{};console.log("SCOUTLINE_USAGE "+JSON.stringify({cost:r.total_cost_usd??null,turns:r.num_turns??null,ms:r.duration_ms??null,in:(u.input_tokens||0)+(u.cache_read_input_tokens||0)+(u.cache_creation_input_tokens||0),out:u.output_tokens||0}))' || true
 `;
 
 // Terminal iz Scoutline-a: komanda se izvršava u GitHub Actions (čista mašina, samo čitanje repoa, bez tajni)
@@ -346,6 +355,26 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     return c.json({ ...(await setupState(c, tok, r.full)), notes });
   });
 
+  // ── Potrošnja po sesiji: red „SCOUTLINE_USAGE {...}“ iz log-a (keš — log se čita jednom po sesiji) ──
+  type Usage = { cost: number | null; turns: number | null; ms: number | null; in: number; out: number };
+  const usageCache = new Map<string, Usage | null>();
+  const usageOf = async (tok: string, full: string, runId: number): Promise<Usage | null> => {
+    const k = `${full}#${runId}`;
+    if (usageCache.has(k)) return usageCache.get(k)!;
+    try {
+      const jobs = await gh<{ jobs: Array<{ id: number }> }>(tok, `/repos/${full}/actions/runs/${runId}/jobs`);
+      const job = jobs.jobs[0];
+      if (!job) return null;
+      const log = await ghFetch(tok, `/repos/${full}/actions/jobs/${job.id}/logs`);
+      const m = log.ok ? /SCOUTLINE_USAGE (\{[^\n]*\})/.exec(await log.text()) : null;
+      const u = m ? (JSON.parse(m[1]!) as Usage) : null;
+      usageCache.set(k, u);
+      return u;
+    } catch {
+      return null;
+    }
+  };
+
   // ── Sesije ──
   const matchPull = (pulls: GhPull[], n: number) =>
     pulls.find((p) => new RegExp(`(^|/)issue-${n}(-|$)`).test(p.head.ref) || new RegExp(`(close[sd]?|fix(e[sd])?|resolve[sd]?)\\s+#${n}\\b`, "i").test(p.body ?? "")) ?? null;
@@ -371,24 +400,61 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
         gh<GhPull[]>(tok, `/repos/${r.full}/pulls?state=all&per_page=60&sort=created&direction=desc`).catch(() => [] as GhPull[]),
         gh<{ workflow_runs: GhRun[] }>(tok, `/repos/${r.full}/actions/workflows/claude.yml/runs?per_page=100`).catch(() => ({ workflow_runs: [] as GhRun[] })),
       ]);
-      const runs = issues
-        .filter((i) => !i.pull_request)
-        .map((i) => {
-          const pr = matchPull(pulls, i.number);
-          const mine = wf.workflow_runs.filter((w) => w.display_title === i.title || (pr && w.display_title === pr.title));
-          return { number: i.number, title: i.title, url: i.html_url, createdAt: i.created_at, by: startedBy(i.body) ?? i.user?.login ?? null, status: statusOf(i, pr, mine), minutes: minutesOf(mine), sessions: mine.length, pr: pullView(pr) };
-        });
+      const month0 = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).getTime();
+      let budget = 25; // najviše novih log-ova po zahtevu (ostalo je u kešu)
+      const runs = await Promise.all(
+        issues
+          .filter((i) => !i.pull_request)
+          .map(async (i) => {
+            const pr = matchPull(pulls, i.number);
+            const mine = wf.workflow_runs.filter((w) => w.display_title === i.title || (pr && w.display_title === pr.title));
+            const model = ((i as GhIssue & { labels?: Array<{ name: string }> }).labels ?? []).find((l) => l.name.startsWith("model:"))?.name.slice(6) ?? "default";
+            const usage = { in: 0, out: 0, cost: 0, turns: 0, known: 0 };
+            if (Date.parse(i.created_at) >= month0)
+              for (const w of mine.filter((x) => x.status === "completed")) {
+                if (!usageCache.has(`${r.full}#${w.id}`) && budget-- <= 0) continue;
+                const u = await usageOf(tok, r.full, w.id);
+                if (!u) continue;
+                usage.in += u.in;
+                usage.out += u.out;
+                usage.cost += u.cost ?? 0;
+                usage.turns += u.turns ?? 0;
+                usage.known++;
+              }
+            return { number: i.number, title: i.title, url: i.html_url, createdAt: i.created_at, by: startedBy(i.body) ?? i.user?.login ?? null, model, status: statusOf(i, pr, mine), minutes: minutesOf(mine), sessions: mine.length, pr: pullView(pr), usage: usage.known ? usage : null };
+          }),
+      );
       // Potrošnja ovog meseca: sesije (pokretanja Actions-a) i minuti, po osobi
       const month = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).getTime();
       const thisMonth = runs.filter((x) => Date.parse(x.createdAt) >= month);
-      const byPerson: Record<string, { runs: number; minutes: number }> = {};
+      type Agg = { runs: number; minutes: number; tokens: number; cost: number };
+      const add = (m: Record<string, Agg>, k: string, x: (typeof runs)[number]) => {
+        const a = m[k] ?? { runs: 0, minutes: 0, tokens: 0, cost: 0 };
+        m[k] = { runs: a.runs + 1, minutes: a.minutes + x.minutes, tokens: a.tokens + (x.usage ? x.usage.in + x.usage.out : 0), cost: a.cost + (x.usage?.cost ?? 0) };
+      };
+      const byPerson: Record<string, Agg> = {};
+      const byModel: Record<string, Agg> = {};
       for (const x of thisMonth) {
-        const k = x.by ?? "unknown";
-        byPerson[k] = { runs: (byPerson[k]?.runs ?? 0) + 1, minutes: (byPerson[k]?.minutes ?? 0) + x.minutes };
+        add(byPerson, x.by ?? "unknown", x);
+        add(byModel, x.model, x);
       }
       return c.json({
         runs,
-        summary: { month: { runs: thisMonth.length, sessions: thisMonth.reduce((a, x) => a + x.sessions, 0), minutes: thisMonth.reduce((a, x) => a + x.minutes, 0), prs: thisMonth.filter((x) => x.pr).length, merged: thisMonth.filter((x) => x.pr?.state === "merged").length }, byPerson },
+        summary: {
+          month: {
+            runs: thisMonth.length,
+            sessions: thisMonth.reduce((a, x) => a + x.sessions, 0),
+            minutes: thisMonth.reduce((a, x) => a + x.minutes, 0),
+            prs: thisMonth.filter((x) => x.pr).length,
+            merged: thisMonth.filter((x) => x.pr?.state === "merged").length,
+            tokensIn: thisMonth.reduce((a, x) => a + (x.usage?.in ?? 0), 0),
+            tokensOut: thisMonth.reduce((a, x) => a + (x.usage?.out ?? 0), 0),
+            cost: Math.round(thisMonth.reduce((a, x) => a + (x.usage?.cost ?? 0), 0) * 100) / 100,
+            turns: thisMonth.reduce((a, x) => a + (x.usage?.turns ?? 0), 0),
+          },
+          byPerson,
+          byModel,
+        },
       });
     } catch (e) {
       return c.json({ error: (e as Error).message }, 502);
@@ -422,14 +488,18 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
   });
 
   /** Pre rada: lični Claude Code token korisnika ide u secret repoa, da sesija troši njegovu pretplatu. */
-  const useMyClaude = async (c: Context, tok: string, full: string) => {
+  /**
+   * Pre svakog rada repo dobija token OSOBE KOJA POKREĆE (ili zajednički token firme, ako ga je vlasnik postavio).
+   * Bez toga se rad odbija — niko ne može da troši tuđu pretplatu preko tokena koji je ostao u repou.
+   */
+  const useMyClaude = async (c: Context, tok: string, full: string): Promise<string | null> => {
     const cc = await claudeCodeTokenFor(getDb(), actor(c).id);
-    if (cc?.owner !== "personal") return null;
+    if (!cc) return "Add your Claude Code token in Settings → Integrations first — Claude runs only on your own subscription.";
     try {
       await setRepoSecret(tok, full, cc.token);
       return null;
     } catch {
-      return "Couldn't switch the repo to your Claude Code token (the GitHub token needs “Secrets: Read and write”) — the repo's current token is used.";
+      return "Couldn't switch the repo to your Claude Code token — the GitHub token needs “Secrets: Read and write”. Stopped, so nobody else's subscription is used.";
     }
   };
 
@@ -442,7 +512,9 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     const prompt = (input.prompt ?? "").trim().slice(0, 8000);
     const model = MODELS.includes(input.model as Model) ? (input.model as Model) : null;
     if (prompt.length < 3) return c.json({ error: "Describe what Claude should do." }, 400);
-    const note = await useMyClaude(c, tok, r.full);
+    const blocked = await useMyClaude(c, tok, r.full);
+    if (blocked) return c.json({ error: blocked }, 400);
+    const note = null;
     const first = prompt.split("\n")[0]!.replace(/\s+/g, " ").trim();
     const title = first.length > 90 ? `${first.slice(0, 87)}…` : first;
     const effort = pickEffort(input.effort, prompt);
@@ -473,7 +545,9 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
     const b = (await c.req.json().catch(() => ({}))) as { text?: string; pr?: number; model?: string; effort?: string };
     const text = (b.text ?? "").trim().slice(0, 8000);
     if (!text) return c.json({ error: "Write a message for Claude." }, 400);
-    const note = await useMyClaude(c, tok, r.full);
+    const blocked = await useMyClaude(c, tok, r.full);
+    if (blocked) return c.json({ error: blocked }, 400);
+    const note = null;
     // Ako postoji PR, odgovor ide tamo (Claude onda menja isti PR), inače na issue
     const target = Number.isInteger(b.pr) && b.pr! > 0 ? b.pr! : n;
     try {
