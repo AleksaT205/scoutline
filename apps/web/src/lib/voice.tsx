@@ -40,10 +40,15 @@ const SpeechCtor = (): (new () => SpeechRec) | null => {
 };
 const BLOCKED = "__mic_blocked__";
 /** Traži mikrofon odmah (pregledač tada sam pokaže prozor „Allow“). Ako je ranije odbijen — vraća false. */
+let micReason = ""; // poslednji razlog zašto mikrofon ne radi (prikazuje se u uputstvu)
 async function askMic(): Promise<boolean> {
+  micReason = "";
   try {
     const st = await navigator.permissions?.query({ name: "microphone" as PermissionName });
-    if (st?.state === "denied") return false;
+    if (st?.state === "denied") {
+      micReason = "denied";
+      return false;
+    }
   } catch {
     /* neki pregledači ne znaju za ovo pitanje — samo probaj */
   }
@@ -52,7 +57,8 @@ async function askMic(): Promise<boolean> {
     const s = await navigator.mediaDevices.getUserMedia({ audio: true });
     s.getTracks().forEach((t) => t.stop());
     return true;
-  } catch {
+  } catch (e) {
+    micReason = (e as DOMException).name || "error";
     return false;
   }
 }
@@ -221,9 +227,18 @@ export function VoiceButton({ value, onChange, className = "", size = "md" }: { 
       {v.blocked ? (
         <span role="alertdialog" aria-label="Turn on the microphone" className="absolute right-0 top-full z-20 mt-1.5 w-[280px] rounded-lg border border-line bg-surface p-3 text-left text-[12px] leading-relaxed text-muted shadow-float">
           <span className="mb-1 flex items-center gap-1.5 text-[12.5px] font-semibold text-fg">
-            <Mic size={13} className="text-danger" /> Microphone is blocked
+            <Mic size={13} className="text-danger" /> Microphone isn't available
+            {micReason && <span className="ml-auto font-mono text-[10px] font-normal text-faint">{micReason}</span>}
           </span>
-          {isIOS() ? (
+          {micReason === "NotFoundError" || micReason === "OverconstrainedError" ? (
+            <>No microphone found. Plug one in, or pick the right one in <b className="text-fg">chrome://settings/content/microphone</b> (the menu at the top), then reload.</>
+          ) : micReason === "NotReadableError" || micReason === "AbortError" ? (
+            <>The microphone is busy or macOS blocks it. Close other apps using it (Zoom, Meet…), and check <b className="text-fg">System Settings → Privacy &amp; Security → Microphone → Google Chrome</b> is on, then restart Chrome.</>
+          ) : micReason === "NotAllowedError" ? (
+            <>
+              The browser blocked the request without asking. Look for a <b className="text-fg">crossed-out mic icon at the right end of the address bar</b> → <b className="text-fg">Always allow</b>. If there's none, check <b className="text-fg">System Settings → Privacy &amp; Security → Microphone → Google Chrome</b>, restart Chrome and try again.
+            </>
+          ) : isIOS() ? (
             <>iPhone: <b className="text-fg">Settings → Safari → Microphone → Allow</b>, then reload this page.</>
           ) : isSafari() ? (
             <>Safari menu → <b className="text-fg">Settings for This Website → Microphone → Allow</b>, then reload.</>
