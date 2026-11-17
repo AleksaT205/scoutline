@@ -100,6 +100,8 @@ function Team() {
   const [role, setRole] = useState("member");
   const [email, setEmail] = useState("");
   const [link, setLink] = useState<string | null>(null);
+  const [demo, setDemo] = useState<{ email: string; password: string } | null>(null);
+  const hasDemo = !!data?.users.some((u) => u.email === "demo@scoutline.demo");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const load = useCallback(() => teamFetch<{ users: Member[]; invites: Invite[] }>("/team").then(setData, (e) => setMsg({ ok: false, text: (e as Error).message })), []);
   useEffect(() => void load(), [load]);
@@ -160,6 +162,38 @@ function Team() {
         </ul>
         <Msg msg={msg} />
       </Card>
+
+      {isOwner && (
+        <Card title="Demo login" sub="A ready account so someone can sign in and try everything — Sales and Delivery, as a Member (no Reports, team or integration settings, can't delete projects).">
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() =>
+                act(async () => {
+                  if (hasDemo && !window.confirm("Set a new demo password? Anyone signed in with the old one is signed out.")) return;
+                  setDemo(await teamFetch<{ email: string; password: string }>("/team/demo", { method: "POST", body: "{}" }));
+                })
+              }
+              className="inline-flex h-[36px] items-center gap-1.5 rounded-[7px] bg-fg px-3.5 text-[13px] font-medium text-bg"
+            >
+              <UserPlus size={14} /> {hasDemo ? "New demo password" : "Create demo login"}
+            </button>
+            {hasDemo && !demo && <span className="text-[12.5px] text-muted">Demo account exists. Remove it in the list above when you're done.</span>}
+          </div>
+          {demo && (
+            <div className="mt-3 space-y-2">
+              <div className="grid gap-2 sm:grid-cols-[110px_1fr] sm:items-center">
+                <span className="text-[12.5px] text-muted">App</span>
+                <CopyBox value={base()} />
+                <span className="text-[12.5px] text-muted">Email</span>
+                <CopyBox value={demo.email} />
+                <span className="text-[12.5px] text-muted">Password</span>
+                <CopyBox value={demo.password} />
+              </div>
+              <p className="text-[12px] text-faint">Shown once — copy it now. Tip: open Projects → “Sample project” to give the demo a started project.</p>
+            </div>
+          )}
+        </Card>
+      )}
 
       {isOwner && (
         <Card title="Invite a teammate" sub="Creates a one-time link valid for 7 days. Send it on Slack, email or Telegram.">

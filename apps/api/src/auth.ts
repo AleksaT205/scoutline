@@ -12,6 +12,9 @@ import { invites, shareLinks, users, type Db } from "@radar/db";
  * API_TOKEN (stara timska lozinka) i dalje radi kao "owner" ključ — za skripte i za prvo podešavanje.
  */
 export type Role = "owner" | "member" | "viewer";
+/** Email demo naloga (nije pravi sandučić — služi samo za prijavu). */
+export const DEMO_EMAIL = "demo@scoutline.demo";
+
 export interface Actor {
   id: string | null; // null = API_TOKEN
   email: string;
@@ -246,6 +249,23 @@ export function auth(getDb: () => Db) {
       .insert(invites)
       .values({ tokenHash: sha256(token), email: input?.email?.trim().toLowerCase() || null, role, createdBy: actor.id, expiresAt: new Date(Date.now() + 7 * 86_400_000) });
     return c.json({ token, role, expiresInDays: 7 }, 201);
+  });
+  // Demo nalog jednim klikom (Settings → Team): Member sa pristupom svemu, nasumična lozinka koju vidi samo vlasnik.
+  // Ponovni klik = nova lozinka (stara prijava prestaje da važi). Uklanja se kao svaki član.
+  team.post("/demo", require("owner"), async (c) => {
+    const db = getDb();
+    const password = `demo-${randomBytes(8).toString("base64url").replace(/[-_]/g, "x")}`;
+    const [existing] = await db.select().from(users).where(eq(users.email, DEMO_EMAIL)).limit(1);
+    if (existing) {
+      await db
+        .update(users)
+        .set({ passwordHash: await hashPassword(password), tokenVersion: existing.tokenVersion + 1, role: existing.role === "owner" ? "member" : existing.role, access: "all", updatedAt: new Date() })
+        .where(eq(users.id, existing.id));
+      return c.json({ email: DEMO_EMAIL, password, created: false });
+    }
+    await db.insert(users).values({ email: DEMO_EMAIL, name: "Demo", passwordHash: await hashPassword(password), role: "member", access: "all" });
+    usersExistCache = true;
+    return c.json({ email: DEMO_EMAIL, password, created: true }, 201);
   });
   team.delete("/invites/:id", require("owner"), async (c) => {
     await getDb().update(invites).set({ expiresAt: new Date() }).where(eq(invites.id, c.req.param("id")!));
