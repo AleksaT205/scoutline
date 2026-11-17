@@ -25,7 +25,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const LABEL = "scoutline";
 const SECRET = "CLAUDE_CODE_OAUTH_TOKEN";
 const WORKFLOW_PATH = ".github/workflows/claude.yml";
-const MARKER = "# scoutline:claude-v4";
+const MARKER = "# scoutline:claude-v5";
 const MODELS = ["sonnet", "opus", "haiku"] as const;
 const EFFORTS = ["low", "medium", "high", "max"] as const;
 type Effort = (typeof EFFORTS)[number];
@@ -43,8 +43,11 @@ const withEffort = (text: string, e: Effort) => (EFFORT_WORD[e] ? `${text}\n\n($
 type Model = (typeof MODELS)[number];
 export const APP_INSTALL_URL = "https://github.com/apps/claude/installations/new";
 
-/** Workflow koji Scoutline upisuje u repo. Claude sam otvara PR (gh pr create) i ne dopisuje sebe u commit-e. */
-export const CLAUDE_WORKFLOW = `${MARKER}
+/**
+ * Workflow koji Scoutline upisuje u repo. Claude sam otvara PR (gh pr create).
+ * Nigde u git-u nema „Claude“: autor commit-a je vlasnik (bot_name/bot_id), grane su feature/…, bez co-author linija.
+ */
+export const claudeWorkflow = (author?: { login: string; id: number } | null) => `${MARKER}
 # @claude u issue-u ili komentaru → Claude Code radi task i otvara pull request.
 # Radi na Claude Pro/Max pretplati: secret CLAUDE_CODE_OAUTH_TOKEN (claude setup-token). Postavlja ga Scoutline.
 name: Claude Code
@@ -84,7 +87,8 @@ jobs:
           GH_TOKEN: \${{ secrets.GITHUB_TOKEN }}
         with:
           claude_code_oauth_token: \${{ secrets.${SECRET} }}
-          settings: |
+          branch_prefix: "feature/"
+${author ? `          bot_name: "${author.login}"\n          bot_id: "${author.id}"\n` : ""}          settings: |
             { "includeCoAuthoredBy": false }
           # Model bira Scoutline oznakom na issue-u / PR-u (model:opus, model:sonnet, model:haiku); bez oznake = podrazumevani
           claude_args: |
@@ -358,7 +362,7 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
       const sha = cur.ok ? ((await cur.json()) as { sha?: string }).sha : undefined;
       await gh(tok, `/repos/${r.full}/contents/${WORKFLOW_PATH}`, {
         method: "PUT",
-        body: JSON.stringify({ message: "Set up Claude Code (from Scoutline)", content: Buffer.from(CLAUDE_WORKFLOW).toString("base64"), ...(sha ? { sha } : {}) }),
+        body: JSON.stringify({ message: "Set up project automation", content: Buffer.from(claudeWorkflow(await gh<{ login: string; id: number }>(tok, "/user").catch(() => null))).toString("base64"), ...(sha ? { sha } : {}) }),
       });
     } catch (e) {
       const status = (e as { status?: number }).status;
@@ -370,7 +374,7 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
       const sha = cur.ok ? ((await cur.json()) as { sha?: string }).sha : undefined;
       await gh(tok, `/repos/${r.full}/contents/${TERMINAL_PATH}`, {
         method: "PUT",
-        body: JSON.stringify({ message: "Add Scoutline terminal (from Scoutline)", content: Buffer.from(TERMINAL_WORKFLOW).toString("base64"), ...(sha ? { sha } : {}) }),
+        body: JSON.stringify({ message: "Add project terminal", content: Buffer.from(TERMINAL_WORKFLOW).toString("base64"), ...(sha ? { sha } : {}) }),
       });
     } catch (e) {
       if (!notes.length) notes.push(`Couldn't add the terminal workflow: ${(e as Error).message}`);
@@ -570,7 +574,8 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
       `@claude ${withEffort(prompt, effort)}`,
       "",
       "---",
-      "When you're done: commit to a new branch and open a pull request with `gh pr create` (short English title, summary of the changes, and `Closes #<this issue>`). Keep changes focused. Don't add yourself as a co-author. If this is only a question, answer in a comment and don't change files.",
+      "When you're done: commit to a new branch and open a pull request with `gh pr create` (short English title, summary of the changes, and `Closes #<this issue>`). Keep changes focused. If this is only a question, answer in a comment and don't change files.",
+      "Git hygiene: never mention Claude, AI, assistants or co-authors anywhere in git — not in commit messages, branch names, PR titles or PR descriptions — and no “Generated with …” footers. Write them as the developer would.",
       "",
       await projectContext(r.p),
       "",
@@ -655,8 +660,9 @@ export function agentRoutes(getDb: () => Db, g: Guards) {
       "How we work:",
       "1. Make the changes in this repo. Keep them focused and production quality.",
       "2. Start a local preview so I can check it (plain website: `npx --yes serve . -l 3000`; Node app: `npm install && npm run dev`) and tell me the URL. Keep it running while we iterate.",
-      `3. When I say it's done: commit with a clear message (no co-author lines), \`git push -u origin ${branch}\`, then open a pull request: \`gh pr create --base ${main} --title "${ref ? `[${ref}] ` : ""}<short title>" --body "<what changed>${ref ? `\\n\\nTask: ${ref}` : ""}"\`. Tell me the PR link.`,
+      `3. When I say it's done: commit with a clear message, \`git push -u origin ${branch}\`, then open a pull request: \`gh pr create --base ${main} --title "${ref ? `[${ref}] ` : ""}<short title>" --body "<what changed>${ref ? `\\n\\nTask: ${ref}` : ""}"\`. Tell me the PR link.`,
       "4. Don't merge — the team merges in Scoutline.",
+      "5. Never mention Claude, AI or co-authors in commit messages, branch names, PR titles or descriptions (no “Generated with …” footers).",
       "",
       await projectContext(r.p),
     ].join("\n");

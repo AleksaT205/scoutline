@@ -56,6 +56,71 @@ interface Insights {
   errors: string[];
   at: string;
 }
+/** Aktivnost po nedelji: brojevi iznad stubića, zbir gore (menja se pri prelasku mišem / dodiru), bez praznih nedelja unazad. */
+function ActivityChart({ weeks: all }: { weeks: Insights["weeks"] }) {
+  const first = all.findIndex((w) => w.commits || w.merged || w.opened);
+  const weeks = first < 0 ? all.slice(-4) : all.slice(Math.min(first, all.length - 2));
+  const [idx, setIdx] = useState<number | null>(null);
+  const max = Math.max(1, ...weeks.map((w) => Math.max(w.commits, w.merged)));
+  const cur = idx === null ? null : weeks[idx];
+  const sum = (k: "commits" | "merged" | "opened") => (cur ? cur[k] : weeks.reduce((a, w) => a + w[k], 0));
+  const label = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  const few = weeks.length <= 16;
+  return (
+    <section className="rounded-xl border border-line bg-surface p-4">
+      <div className="mb-3 flex flex-wrap items-start gap-x-4 gap-y-1">
+        <div className="min-w-0">
+          <div className="text-[13px] font-semibold">Activity per week</div>
+          <div className="mt-1 flex flex-wrap items-baseline gap-x-3 gap-y-0.5">
+            <span>
+              <span className="num text-[22px] font-semibold leading-none">{sum("commits")}</span> <span className="text-[12px] text-muted">commits</span>
+            </span>
+            <span>
+              <span className="num text-[22px] font-semibold leading-none">{sum("merged")}</span> <span className="text-[12px] text-muted">PRs merged</span>
+            </span>
+            <span className="text-[12px] text-muted">
+              <span className="num text-fg">{sum("opened")}</span> opened
+            </span>
+          </div>
+          <div className="mt-0.5 text-[11.5px] text-faint">{cur ? `Week of ${label(cur.week)}` : weeks[0] ? `Since ${label(weeks[0].week)}` : "\u00a0"}</div>
+        </div>
+        <span className="ml-auto inline-flex items-center gap-3 pt-0.5 text-[11px] text-faint">
+          <span className="inline-flex items-center gap-1">
+            <span className="size-2 rounded-sm bg-accent" /> commits
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="size-2 rounded-sm bg-line-2" /> PRs merged
+          </span>
+        </span>
+      </div>
+      <div className="flex h-[150px] items-end justify-end gap-1" role="img" aria-label="Commits and merged pull requests per week" onMouseLeave={() => setIdx(null)}>
+        {weeks.map((w, i) => (
+          <button
+            type="button"
+            key={w.week}
+            onMouseEnter={() => setIdx(i)}
+            onFocus={() => setIdx(i)}
+            onClick={() => setIdx(idx === i ? null : i)}
+            className={`flex h-full min-w-0 max-w-[44px] flex-1 items-end justify-center gap-[3px] rounded-md px-0.5 outline-none transition-opacity focus-visible:ring-2 focus-visible:ring-accent/40 ${idx !== null && idx !== i ? "opacity-45" : ""}`}
+            aria-label={`Week of ${label(w.week)}: ${w.commits} commits, ${w.merged} merged`}
+          >
+            {(["commits", "merged"] as const).map((k) => (
+              <span key={k} className="flex h-full w-full max-w-[14px] flex-col items-center justify-end">
+                {few && w[k] > 0 && <span className="num mb-0.5 text-[10px] leading-none text-muted">{w[k]}</span>}
+                <span className={`w-full rounded-t-[3px] ${k === "commits" ? "bg-accent" : "bg-line-2"}`} style={{ height: `${w[k] ? Math.max(3, (w[k] / max) * 82) : 0}%` }} />
+              </span>
+            ))}
+          </button>
+        ))}
+      </div>
+      <div className="mt-1.5 flex justify-between text-[11px] text-faint">
+        <span>{weeks[0] ? label(weeks[0].week) : ""}</span>
+        <span>this week</span>
+      </div>
+    </section>
+  );
+}
+
 function InsightsView({ projectId }: { projectId: string }) {
   const [fresh, setFresh] = useState(0);
   const { data, error } = useLoad<Insights>(`/delivery/projects/${projectId}/insights${fresh ? `?fresh=1&t=${fresh}` : ""}`);
@@ -82,31 +147,7 @@ function InsightsView({ projectId }: { projectId: string }) {
         ))}
       </div>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        <section className="rounded-xl border border-line bg-surface p-4">
-          <div className="mb-3 flex items-center text-[13px] font-semibold">
-            Activity per week
-            <span className="ml-auto inline-flex items-center gap-3 text-[11px] font-normal text-faint">
-              <span className="inline-flex items-center gap-1">
-                <span className="size-2 rounded-sm bg-accent" /> commits
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <span className="size-2 rounded-sm bg-success" /> PRs merged
-              </span>
-            </span>
-          </div>
-          <div className="flex h-[140px] items-end gap-1" role="img" aria-label="Commits and merged pull requests per week">
-            {data.weeks.map((w) => (
-              <div key={w.week} className="flex h-full flex-1 items-end gap-[2px]" title={`Week of ${w.week}: ${w.commits} commits, ${w.opened} PRs opened, ${w.merged} merged`}>
-                <div className="flex-1 rounded-t-[2px] bg-accent" style={{ height: `${(w.commits / max) * 100}%` }} />
-                <div className="flex-1 rounded-t-[2px] bg-success" style={{ height: `${(w.merged / max) * 100}%` }} />
-              </div>
-            ))}
-          </div>
-          <div className="mt-1.5 flex justify-between text-[11px] text-faint">
-            <span>{data.weeks[0]?.week.slice(5)}</span>
-            <span>this week</span>
-          </div>
-        </section>
+        <ActivityChart weeks={data.weeks} />
         <section className="rounded-xl border border-line bg-surface p-4">
           <div className="mb-2 text-[13px] font-semibold">Who's shipping</div>
           <ul className="space-y-1.5">

@@ -102,6 +102,7 @@ function contextPack(i: typeof issues.$inferSelect, key: string, p: typeof proje
     "## Rules",
     "- Read AGENTS.md / CLAUDE.md first; touch only the files this task needs.",
     `- Start the pull request title with \`${key}\` so Scoutline links it and moves the task to Done on merge.`,
+    "- Never mention Claude, Codex, AI or co-authors in commit messages, branch names, PR titles or descriptions (no “Generated with …” footers).",
     "",
     agent === "claude" ? "@claude please implement this and open a pull request." : "@codex please implement this and open a pull request.",
   ].join("\n");
