@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { prefetch, useCached } from "../lib/cache";
 import type { LeadStatus, LeadType, ServiceCategory } from "@radar/shared";
 import { CATEGORY_LABEL, STATUS_META, TYPE_META } from "./ui";
@@ -19,7 +19,7 @@ const TIER_LABEL: Record<string, string> = { T1: "Tier 1", T2: "Tier 2", T3: "Ot
 
 function Panel({ title, sub, children, className = "" }: { title: string; sub?: string; children: React.ReactNode; className?: string }) {
   return (
-    <section className={`rounded-xl border border-line bg-surface p-4 ${className}`}>
+    <section className={`min-w-0 rounded-xl border border-line bg-surface p-4 ${className}`}>
       <div className="mb-3">
         <div className="text-[13.5px] font-medium">{title}</div>
         {sub && <div className="text-[12px] text-faint">{sub}</div>}
@@ -39,8 +39,16 @@ function Kpi({ label, value, hint }: { label: string; value: string; hint?: stri
   );
 }
 
-/** Stubičasti grafikon po danima: svi leadovi (svetlo) i dobri ≥70 (akcenat). */
-function DailyBars({ data, days }: { data: Analytics["daily"]; days: number }) {
+/**
+ * Linijski grafikon po danima: svi leadovi (siva linija) i dobri ≥70 (akcenat).
+ * Miš: vertikalna linija prati kursor i gore piše tačna vrednost za taj dan.
+ * Telefon: zadrži prst ~0,4 s pa prevlači levo-desno (stranica se tada ne pomera).
+ * Tastatura: fokus na grafikon + strelice levo/desno.
+ */
+const fmtDay = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short" });
+const shortDay = (iso: string) => new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+
+function DailyLine({ data, days }: { data: Analytics["daily"]; days: number }) {
   const series = useMemo(() => {
     const map = new Map(data.map((d) => [d.day, d]));
     return Array.from({ length: days }, (_, i) => {
@@ -48,24 +56,166 @@ function DailyBars({ data, days }: { data: Analytics["daily"]; days: number }) {
       return { day, leads: map.get(day)?.leads ?? 0, good: map.get(day)?.good ?? 0 };
     });
   }, [data, days]);
-  const max = Math.max(...series.map((s) => s.leads), 1);
+
+  const boxRef = useRef<HTMLDivElement>(null);
+  const [w, setW] = useState(600);
+  const [idx, setIdx] = useState<number | null>(null);
+  const H = 168;
+  const pad = { top: 12, right: 6, bottom: 22, left: 30 };
+
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setW(Math.max(240, Math.round(e!.contentRect.width))));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  // Lepa gornja granica ose (npr. 0 / 150 / 300)
+  const rawMax = Math.max(...series.map((s) => s.leads), 1);
+  const step = 10 ** Math.floor(Math.log10(rawMax));
+  const max = Math.ceil(rawMax / step / 2) * step * 2 || 1;
+  const innerW = w - pad.left - pad.right;
+  const innerH = H - pad.top - pad.bottom;
+  const x = (i: number) => pad.left + (series.length <= 1 ? innerW / 2 : (i / (series.length - 1)) * innerW);
+  const y = (v: number) => pad.top + innerH - (v / max) * innerH;
+  const path = (k: "leads" | "good") => series.map((s, i) => `${i ? "L" : "M"}${x(i).toFixed(1)},${y(s[k]).toFixed(1)}`).join("");
+  const area = (k: "leads" | "good") => `${path(k)}L${x(series.length - 1).toFixed(1)},${y(0)}L${x(0).toFixed(1)},${y(0)}Z`;
+
+  const indexAt = (clientX: number) => {
+    const r = boxRef.current!.getBoundingClientRect();
+    const rel = (clientX - r.left - pad.left) / innerW;
+    return Math.min(series.length - 1, Math.max(0, Math.round(rel * (series.length - 1))));
+  };
+
+  // Dodir: dugo držanje uključuje očitavanje, pa prevlačenje ne pomera stranicu
+  useEffect(() => {
+    const el = boxRef.current;
+    if (!el) return;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let hide: ReturnType<typeof setTimeout> | undefined;
+    let active = false;
+    let start = { x: 0, y: 0 };
+    const onStart = (e: TouchEvent) => {
+      const t = e.touches[0]!;
+      start = { x: t.clientX, y: t.clientY };
+      clearTimeout(hide);
+      timer = setTimeout(() => {
+        active = true;
+        setIdx(indexAt(start.x));
+        navigator.vibrate?.(8);
+      }, 380);
+    };
+    const onMove = (e: TouchEvent) => {
+      const t = e.touches[0]!;
+      if (active) {
+        e.preventDefault();
+        setIdx(indexAt(t.clientX));
+      } else if (Math.hypot(t.clientX - start.x, t.clientY - start.y) > 10) clearTimeout(timer); // korisnik skroluje
+    };
+    const onEnd = () => {
+      clearTimeout(timer);
+      if (active) hide = setTimeout(() => setIdx(null), 1800); // vrednost ostane još malo da se pročita
+      active = false;
+    };
+    el.addEventListener("touchstart", onStart, { passive: true });
+    el.addEventListener("touchmove", onMove, { passive: false });
+    el.addEventListener("touchend", onEnd);
+    el.addEventListener("touchcancel", onEnd);
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(hide);
+      el.removeEventListener("touchstart", onStart);
+      el.removeEventListener("touchmove", onMove);
+      el.removeEventListener("touchend", onEnd);
+      el.removeEventListener("touchcancel", onEnd);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [series.length, innerW]);
+
+  const cur = idx === null ? null : series[idx]!;
+  const ticks = [0, max / 2, max];
+  const tipLeft = idx === null ? 0 : Math.min(Math.max(x(idx), 70), w - 70);
+  const mid = Math.floor((series.length - 1) / 2);
+
   return (
     <div>
-      <div className="flex h-40 items-end gap-[3px]">
-        {series.map((s) => (
-          <div key={s.day} className="relative h-full flex-1" title={`${s.day}: ${s.leads} leads · ${s.good} high fit`}>
-            <div className="absolute bottom-0 w-full rounded-sm bg-line-2" style={{ height: `${(s.leads / max) * 100}%` }} />
-            <div className="absolute bottom-0 w-full rounded-sm bg-accent" style={{ height: `${(s.good / max) * 100}%` }} />
+      <div
+        ref={boxRef}
+        tabIndex={0}
+        role="img"
+        aria-label={`Leads per day, last ${days} days. Use left and right arrow keys to read each day.`}
+        className="relative w-full min-w-0 select-none outline-none [-webkit-touch-callout:none] focus-visible:ring-2 focus-visible:ring-accent/40 rounded-md"
+        style={{ height: H }}
+        onPointerMove={(e) => e.pointerType === "mouse" && setIdx(indexAt(e.clientX))}
+        onPointerLeave={(e) => e.pointerType === "mouse" && setIdx(null)}
+        onContextMenu={(e) => e.preventDefault()}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+            e.preventDefault();
+            setIdx((i) => Math.min(series.length - 1, Math.max(0, (i ?? series.length) + (e.key === "ArrowLeft" ? -1 : 1))));
+          } else if (e.key === "Escape") setIdx(null);
+        }}
+        onBlur={() => setIdx(null)}
+      >
+        <svg width={w} height={H} className="absolute inset-0 block overflow-visible">
+          <defs>
+            <linearGradient id="dl-good" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0" stopColor="var(--color-accent)" stopOpacity="0.22" />
+              <stop offset="1" stopColor="var(--color-accent)" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          {/* Mreža i vrednosti na osi — tiho, u pozadini */}
+          {ticks.map((t) => (
+            <g key={t}>
+              <line x1={pad.left} x2={w - pad.right} y1={y(t)} y2={y(t)} stroke="var(--color-line)" strokeDasharray={t ? "3 4" : undefined} />
+              <text x={pad.left - 6} y={y(t) + 3.5} textAnchor="end" className="num fill-faint text-[10.5px]">
+                {Math.round(t).toLocaleString()}
+              </text>
+            </g>
+          ))}
+          <path d={area("leads")} fill="var(--color-muted)" fillOpacity="0.07" />
+          <path d={path("leads")} fill="none" stroke="var(--color-muted)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+          <path d={area("good")} fill="url(#dl-good)" />
+          <path d={path("good")} fill="none" stroke="var(--color-accent)" strokeWidth="2" strokeLinejoin="round" strokeLinecap="round" />
+          {/* Datumi */}
+          {[0, mid, series.length - 1].map((i, k) => (
+            <text key={i} x={x(i)} y={H - 5} textAnchor={k === 0 ? "start" : k === 2 ? "end" : "middle"} className="fill-faint text-[10.5px]">
+              {k === 2 ? "Today" : shortDay(series[i]!.day)}
+            </text>
+          ))}
+          {/* Očitavanje: tanka vertikalna linija + tačke */}
+          {cur && idx !== null && (
+            <g>
+              <line x1={x(idx)} x2={x(idx)} y1={pad.top - 4} y2={y(0)} stroke="var(--color-fg)" strokeOpacity="0.35" strokeWidth="1" />
+              <circle cx={x(idx)} cy={y(cur.leads)} r="4.5" fill="var(--color-muted)" stroke="var(--color-surface)" strokeWidth="2" />
+              <circle cx={x(idx)} cy={y(cur.good)} r="4.5" fill="var(--color-accent)" stroke="var(--color-surface)" strokeWidth="2" />
+            </g>
+          )}
+        </svg>
+        {cur && (
+          <div className="pointer-events-none absolute -top-2 z-10 -translate-x-1/2 -translate-y-full rounded-lg border border-line bg-surface px-2.5 py-1.5 shadow-lg" style={{ left: tipLeft }}>
+            <div className="whitespace-nowrap text-[11px] text-faint">{fmtDay(cur.day)}</div>
+            <div className="mt-0.5 flex items-center gap-1.5 whitespace-nowrap text-[12px]">
+              <i className="h-0.5 w-3 rounded-full bg-muted" />
+              <b className="num font-semibold text-fg">{cur.leads}</b>
+              <span className="text-muted">leads</span>
+            </div>
+            <div className="flex items-center gap-1.5 whitespace-nowrap text-[12px]">
+              <i className="h-0.5 w-3 rounded-full bg-accent" />
+              <b className="num font-semibold text-fg">{cur.good}</b>
+              <span className="text-muted">score ≥ 70</span>
+            </div>
           </div>
-        ))}
+        )}
       </div>
-      <div className="mt-2 flex justify-between text-[11px] text-faint">
-        <span>{series[0]?.day.slice(5)}</span>
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] text-faint">
         <span className="flex gap-3">
-          <span className="inline-flex items-center gap-1"><i className="size-2 rounded-sm bg-line-2" /> all leads</span>
-          <span className="inline-flex items-center gap-1"><i className="size-2 rounded-sm bg-accent" /> score ≥ 70</span>
+          <span className="inline-flex items-center gap-1.5"><i className="h-0.5 w-3 rounded-full bg-muted" /> all leads</span>
+          <span className="inline-flex items-center gap-1.5"><i className="h-0.5 w-3 rounded-full bg-accent" /> score ≥ 70</span>
         </span>
-        <span>today</span>
+        <span className="hidden sm:inline">Hover to see each day</span>
+        <span className="sm:hidden">Press and hold to see each day</span>
       </div>
     </div>
   );
@@ -143,7 +293,7 @@ export function OverviewPage() {
 
       <div className="grid gap-4 xl:grid-cols-3">
         <Panel title="Leads per day" sub="New leads and how many scored 70+" className="xl:col-span-2">
-          {data ? <DailyBars data={data.daily} days={days} /> : <div className="h-40 animate-pulse rounded-lg bg-surface-2" />}
+          {data ? <DailyLine data={data.daily} days={days} /> : <div className="h-40 animate-pulse rounded-lg bg-surface-2" />}
         </Panel>
 
         <Panel title="Outreach funnel" sub="All time">
