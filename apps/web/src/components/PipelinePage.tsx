@@ -173,8 +173,8 @@ export function PipelinePage({ leads, live, onUpdated }: { leads: UiLead[]; live
 
       {error && <div className="mb-3 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[12.5px] text-danger">{error}</div>}
 
-      <div className="-mx-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:px-6">
-        <div className="grid min-w-[1100px] grid-cols-6 gap-3">
+      <div className="-mx-4 snap-x snap-proximity scroll-px-4 overflow-x-auto px-4 pb-2 sm:-mx-6 sm:scroll-px-6 sm:px-6">
+        <div className="grid min-w-[1650px] grid-cols-6 gap-3 sm:min-w-[1100px] [&>*]:snap-start">
           {COLUMNS.map(({ status, hint }) => {
             const list = byStatus.get(status) ?? [];
             const items = status === "new" ? list.slice(0, limit) : list;

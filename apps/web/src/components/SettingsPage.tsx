@@ -123,17 +123,17 @@ function Team() {
       <Card title="Team members" sub="Everyone signs in with their own email and password.">
         <ul className="divide-y divide-line rounded-lg border border-line">
           {(data?.users ?? []).map((u) => (
-            <li key={u.id} className="flex items-center gap-3 px-3 py-2.5">
-              <div className="grid size-8 place-items-center rounded-full bg-accent-soft text-[12px] font-semibold text-accent">{u.name.slice(0, 2).toUpperCase()}</div>
-              <div className="min-w-0 flex-1">
+            <li key={u.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2.5">
+              <div className="grid size-8 shrink-0 place-items-center rounded-full bg-accent-soft text-[12px] font-semibold text-accent">{u.name.slice(0, 2).toUpperCase()}</div>
+              <div className={`min-w-0 flex-1 ${isOwner && u.id !== me?.id ? "basis-[calc(100%-6rem)] sm:basis-0" : ""}`}>
                 <div className="text-[13.5px] font-medium">
                   {u.name} {u.id === me?.id && <span className="text-[11.5px] font-normal text-faint">(you)</span>}
                 </div>
                 <div className="truncate text-[12px] text-muted">{u.email}</div>
               </div>
               {isOwner && u.id !== me?.id ? (
-                <>
-                  <select value={u.role} onChange={(e) => act(() => teamFetch(`/team/users/${u.id}`, { method: "PATCH", body: JSON.stringify({ role: e.target.value }) }))} className="h-[30px] rounded-lg border border-line bg-bg px-2 text-[12.5px]">
+                <div className="flex w-full items-center gap-2 sm:w-auto">
+                  <select value={u.role} onChange={(e) => act(() => teamFetch(`/team/users/${u.id}`, { method: "PATCH", body: JSON.stringify({ role: e.target.value }) }))} className="h-[32px] w-[96px] shrink-0 rounded-lg border border-line bg-bg px-2 text-[12.5px] sm:h-[30px] sm:w-auto">
                     <option value="owner">Owner</option>
                     <option value="member">Member</option>
                     <option value="viewer">Viewer</option>
@@ -142,7 +142,7 @@ function Team() {
                     <select
                       value={(u as { access?: string }).access ?? "all"}
                       onChange={(e) => act(() => teamFetch(`/team/users/${u.id}`, { method: "PATCH", body: JSON.stringify({ access: e.target.value }) }))}
-                      className="h-[30px] rounded-lg border border-line bg-bg px-2 text-[12.5px]"
+                      className="h-[32px] min-w-0 flex-1 rounded-lg border border-line bg-bg px-2 text-[12.5px] sm:h-[30px] sm:flex-none"
                       title="Which part of the app this person can use"
                       aria-label={`${u.name} access`}
                     >
@@ -151,10 +151,10 @@ function Team() {
                       <option value="delivery">Delivery only</option>
                     </select>
                   )}
-                  <button onClick={async () => (await askConfirm(`Remove ${u.name} from the team?`)) && act(() => teamFetch(`/team/users/${u.id}`, { method: "DELETE" }))} className="text-faint hover:text-danger" aria-label={`Remove ${u.name}`}>
+                  <button onClick={async () => (await askConfirm(`Remove ${u.name} from the team?`)) && act(() => teamFetch(`/team/users/${u.id}`, { method: "DELETE" }))} className="grid size-[32px] shrink-0 place-items-center rounded-lg text-faint hover:bg-surface-2 hover:text-danger sm:size-[30px]" aria-label={`Remove ${u.name}`}>
                     <Trash2 size={14} />
                   </button>
-                </>
+                </div>
               ) : (
                 <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11.5px] capitalize text-muted ring-1 ring-line ring-inset">{u.role}</span>
               )}

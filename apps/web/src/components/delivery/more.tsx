@@ -64,23 +64,23 @@ export function InboxPage() {
       ) : (
         <div className="overflow-hidden rounded-xl border border-line bg-surface">
           {items.map((i) => (
-            <div key={i.id} className="flex flex-wrap items-center gap-3 border-b border-line px-4 py-3 last:border-0">
+            <div key={i.id} className="flex flex-wrap items-center gap-x-3 gap-y-2.5 border-b border-line px-4 py-3 last:border-0">
               <StatusIcon status="triage" />
-              <button onClick={() => setSelected(i.id)} className="min-w-0 flex-1 text-left">
+              <button onClick={() => setSelected(i.id)} className="min-w-0 flex-1 basis-[calc(100%-2rem)] text-left sm:basis-0">
                 <div className="truncate text-[13.5px] font-medium hover:underline">{i.title}</div>
                 <div className="mt-0.5 truncate text-[12px] text-muted">
                   <span className="num">{i.key}</span> · {i.projectName} · {i.createdBy === "Client: Client" ? "Client portal" : (i.createdBy ?? "team")} · {ago(i.createdAt)}
                 </div>
               </button>
               {editable && (
-                <div className="flex gap-1.5">
-                  <button disabled={busy === i.id} onClick={() => void decide(i, "todo", true)} className="inline-flex h-[30px] items-center gap-1.5 rounded-md bg-fg px-2.5 text-[12px] font-medium text-bg disabled:opacity-50" title="Accept into Todo in the current cycle">
+                <div className="flex w-full gap-1.5 pl-7 sm:w-auto sm:pl-0">
+                  <button disabled={busy === i.id} onClick={() => void decide(i, "todo", true)} className="inline-flex h-[32px] flex-1 items-center justify-center gap-1.5 rounded-md bg-fg px-2.5 sm:h-[30px] sm:flex-none text-[12px] font-medium text-bg disabled:opacity-50" title="Accept into Todo in the current cycle">
                     {busy === i.id ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Accept
                   </button>
-                  <button disabled={busy === i.id} onClick={() => void decide(i, "backlog")} className="h-[30px] rounded-md border border-line bg-surface px-2.5 text-[12px] font-medium hover:bg-surface-2 disabled:opacity-50" title="Accept for later">
+                  <button disabled={busy === i.id} onClick={() => void decide(i, "backlog")} className="h-[32px] flex-1 rounded-md border border-line bg-surface px-2.5 text-[12px] font-medium hover:bg-surface-2 disabled:opacity-50 sm:h-[30px] sm:flex-none" title="Accept for later">
                     Backlog
                   </button>
-                  <button disabled={busy === i.id} onClick={() => void decide(i, "canceled")} className="grid size-[30px] place-items-center rounded-md border border-line text-muted hover:bg-surface-2 hover:text-danger disabled:opacity-50" aria-label="Decline" title="Decline">
+                  <button disabled={busy === i.id} onClick={() => void decide(i, "canceled")} className="grid size-[32px] shrink-0 place-items-center rounded-md border border-line text-muted sm:size-[30px] hover:bg-surface-2 hover:text-danger disabled:opacity-50" aria-label="Decline" title="Decline">
                     <X size={13} />
                   </button>
                 </div>

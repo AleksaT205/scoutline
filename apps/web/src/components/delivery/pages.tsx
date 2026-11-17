@@ -556,7 +556,7 @@ export function ProjectPage({ id }: { id: string }) {
             </div>
           )}
         </div>
-        <div className="flex w-full flex-wrap gap-2 sm:ml-auto sm:w-auto [&>button]:whitespace-nowrap">
+        <div className="grid w-full grid-cols-2 gap-2 sm:ml-auto sm:flex sm:w-auto sm:flex-wrap [&>button]:whitespace-nowrap">
           {p && (
             <button onClick={() => setStatusOpen(true)} className={btnSecondary} title="AI summary for the team or the client">
               <Sparkles size={13} /> Status update
@@ -581,8 +581,8 @@ export function ProjectPage({ id }: { id: string }) {
       </div>
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div className="-mx-4 max-w-[calc(100%+2rem)] overflow-x-auto px-4 sm:mx-0 sm:max-w-full sm:px-0 [scrollbar-width:none]">
-        <div className="inline-flex whitespace-nowrap rounded-lg border border-line bg-surface p-0.5 text-[12.5px]">
+        <div className="w-full overflow-x-auto sm:w-auto [scrollbar-width:none]">
+        <div className="flex w-full whitespace-nowrap rounded-lg border border-line bg-surface p-0.5 text-[12.5px] sm:inline-flex sm:w-auto">
           {(
             [
               ["board", "Board", SquareKanban],
@@ -592,8 +592,8 @@ export function ProjectPage({ id }: { id: string }) {
               ["ask", "Ask AI", MessagesSquare],
             ] as const
           ).map(([v, l, Icon]) => (
-            <button key={v} onClick={() => pickView(v)} className={`inline-flex h-[28px] items-center gap-1.5 rounded-md px-2.5 ${view === v ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}>
-              <Icon size={13} /> {l}
+            <button key={v} onClick={() => pickView(v)} className={`inline-flex h-[30px] flex-1 items-center justify-center gap-1.5 rounded-md px-2 sm:h-[28px] sm:flex-none sm:px-2.5 ${view === v ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`}>
+              <Icon size={13} className="hidden sm:block" /> {l}
             </button>
           ))}
         </div>

@@ -683,7 +683,7 @@ export function CodeTab({ projectId, initialSection }: { projectId: string; init
         ))}
         {canEdit(user) && (
           <form
-            className="inline-flex flex-wrap gap-1.5"
+            className="flex w-full flex-wrap gap-1.5 sm:inline-flex sm:w-auto"
             onSubmit={async (e) => {
               e.preventDefault();
               setErr(null);
@@ -696,9 +696,9 @@ export function CodeTab({ projectId, initialSection }: { projectId: string; init
               }
             }}
           >
-            <input className={`${inp} num h-[30px] w-56`} value={adding.repo} onChange={(e) => setAdding({ ...adding, repo: e.target.value })} placeholder={list.length ? "owner/repo or GitHub link" : "Paste a GitHub link…"} aria-label="GitHub repo link or owner/repo" />
-            <input className={`${inp} h-[30px] w-36`} value={adding.label} onChange={(e) => setAdding({ ...adding, label: e.target.value })} placeholder="Label (optional)" aria-label="Repo label, e.g. frontend" />
-            <button disabled={!adding.repo.trim()} className={small}>
+            <input className={`${inp} num h-[32px] w-full sm:h-[30px] sm:w-56`} value={adding.repo} onChange={(e) => setAdding({ ...adding, repo: e.target.value })} placeholder={list.length ? "owner/repo or GitHub link" : "Paste a GitHub link…"} aria-label="GitHub repo link or owner/repo" />
+            <input className={`${inp} h-[32px] min-w-0 flex-1 sm:h-[30px] sm:w-36 sm:flex-none`} value={adding.label} onChange={(e) => setAdding({ ...adding, label: e.target.value })} placeholder="Label (optional)" aria-label="Repo label, e.g. frontend" />
+            <button disabled={!adding.repo.trim()} className={small.replace("h-[28px]", "h-[32px] sm:h-[30px]")}>
               <Plus size={12} /> {list.length ? "Add repo" : "Link repo"}
             </button>
           </form>

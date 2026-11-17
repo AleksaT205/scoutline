@@ -148,20 +148,24 @@ export function NewIssueDialog({
           </div>
           {error && <ErrorNote>{error}</ErrorNote>}
         </div>
-        <div className="flex items-center gap-2 border-t border-line px-4 py-3">
-          <label className="inline-flex items-center gap-1.5 text-[12.5px] text-muted">
-            <input type="checkbox" checked={more} onChange={(e) => setMore(e.target.checked)} className="accent-[var(--accent)]" /> Create more
-          </label>
-          <label className="inline-flex items-center gap-1.5 text-[12.5px] text-muted">
-            <input type="checkbox" checked={inCycle} onChange={(e) => setInCycle(e.target.checked)} className="accent-[var(--accent)]" /> Current cycle
-          </label>
+        <div className="flex flex-col gap-3 border-t border-line px-4 py-3 sm:flex-row sm:items-center sm:gap-2">
+          <div className="flex items-center gap-4 sm:gap-2">
+            <label className="inline-flex items-center gap-1.5 whitespace-nowrap text-[12.5px] text-muted">
+              <input type="checkbox" checked={more} onChange={(e) => setMore(e.target.checked)} className="accent-[var(--accent)]" /> Create more
+            </label>
+            <label className="inline-flex items-center gap-1.5 whitespace-nowrap text-[12.5px] text-muted">
+              <input type="checkbox" checked={inCycle} onChange={(e) => setInCycle(e.target.checked)} className="accent-[var(--accent)]" /> Current cycle
+            </label>
+          </div>
           <span className="ml-auto hidden text-[11.5px] text-faint sm:inline">⌘ Enter to create</span>
-          <button type="button" onClick={onClose} className={btnSecondary}>
-            Cancel
-          </button>
-          <button disabled={busy || !title.trim() || !pid} className={btnPrimary}>
-            {busy ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Create task
-          </button>
+          <div className="grid grid-cols-2 gap-2 sm:flex">
+            <button type="button" onClick={onClose} className={btnSecondary}>
+              Cancel
+            </button>
+            <button disabled={busy || !title.trim() || !pid} className={`${btnPrimary} whitespace-nowrap`}>
+              {busy ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} Create task
+            </button>
+          </div>
         </div>
       </form>
     </Dialog>

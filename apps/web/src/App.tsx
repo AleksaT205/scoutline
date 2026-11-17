@@ -144,6 +144,18 @@ function Dashboard({ page, projectId, needsSetup }: { page: Page; projectId?: st
     warmUp(space);
   }, [space]);
   const [menuOpen, setMenuOpen] = useState(false);
+  // Meni na telefonu: zatvara se pri promeni stranice i na Escape
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [page]);
+  useEffect(() => {
+    if (!menuOpen) return;
+    const on = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMenuOpen(false);
+    };
+    window.addEventListener("keydown", on);
+    return () => window.removeEventListener("keydown", on);
+  }, [menuOpen]);
   const [addOpen, setAddOpen] = useState(false);
   // „Add lead“ sa bilo koje stranice (npr. Sources) otvara prozor na mestu
   useEffect(() => {

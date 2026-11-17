@@ -117,12 +117,15 @@ export function SourcesPage() {
 
       <section className="mb-5 grid grid-cols-3 gap-2 sm:gap-3">
         {[
-          ["Healthy sources", items ? `${healthy} / ${automatic}` : "—"],
-          ["Leads total", items ? total.toLocaleString() : "—"],
-          ["New in last 24 h", items ? today.toLocaleString() : "—"],
-        ].map(([label, value]) => (
+          ["Healthy sources", "Healthy", items ? `${healthy} / ${automatic}` : "—"],
+          ["Leads total", "Leads", items ? total.toLocaleString() : "—"],
+          ["New in last 24 h", "New · 24 h", items ? today.toLocaleString() : "—"],
+        ].map(([label, short, value]) => (
           <div key={label} className="rounded-xl border border-line bg-surface px-3 py-3 sm:px-4 sm:py-4">
-            <div className="truncate text-[11.5px] text-muted sm:text-[12.5px]">{label}</div>
+            <div className="truncate text-[11.5px] text-muted sm:text-[12.5px]" title={label}>
+              <span className="sm:hidden">{short}</span>
+              <span className="hidden sm:inline">{label}</span>
+            </div>
             <div className="num mt-1 text-[20px] font-semibold leading-tight tracking-tight sm:mt-1.5 sm:text-[28px]">{value}</div>
           </div>
         ))}

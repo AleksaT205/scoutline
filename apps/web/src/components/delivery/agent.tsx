@@ -195,7 +195,7 @@ const savedModel = () => {
     return "";
   }
 };
-function ModelSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function ModelSelect({ value, onChange, className = "" }: { value: string; onChange: (v: string) => void; className?: string }) {
   return (
     <select
       value={value}
@@ -207,7 +207,7 @@ function ModelSelect({ value, onChange }: { value: string; onChange: (v: string)
           /* ništa */
         }
       }}
-      className="h-[32px] rounded-md border border-line bg-surface px-2 text-[12.5px]"
+      className={`h-[34px] min-w-0 rounded-md border border-line bg-surface px-2 text-[12.5px] ${className}`}
       aria-label="Claude model"
       title="Model for this task. Opus is strongest (uses more of your subscription), Haiku is fastest."
     >
@@ -234,7 +234,7 @@ const savedEffort = () => {
   }
 };
 /** Koliko Claude razmišlja pre rada. Auto: pitanje → Low, rad → Medium, redizajn/refaktor → High. */
-function EffortSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+function EffortSelect({ value, onChange, className = "" }: { value: string; onChange: (v: string) => void; className?: string }) {
   return (
     <select
       value={value}
@@ -246,7 +246,7 @@ function EffortSelect({ value, onChange }: { value: string; onChange: (v: string
           /* ništa */
         }
       }}
-      className="h-[32px] rounded-md border border-line bg-surface px-2 text-[12.5px]"
+      className={`h-[34px] min-w-0 rounded-md border border-line bg-surface px-2 text-[12.5px] ${className}`}
       aria-label="Effort"
       title="How hard Claude thinks before working. Auto picks it from the task: questions → Low, normal work → Medium, redesigns and refactors → High. Higher = better results, slower, uses more of your subscription."
     >
@@ -258,6 +258,8 @@ function EffortSelect({ value, onChange }: { value: string; onChange: (v: string
     </select>
   );
 }
+/** Dugme samo sa ikonicom, iste visine kao polja (34px). */
+const iconBtn = "inline-grid size-[34px] shrink-0 place-items-center rounded-md border border-line bg-surface text-muted hover:text-fg [&>span]:hidden";
 const repoQ = (repo: string) => `repo=${encodeURIComponent(repo)}`;
 /** Pregled grane u StackBlitz-u (aplikacije sa build korakom). */
 export const previewUrl = (repo: string, branch: string) => `https://stackblitz.com/github/${repo}/tree/${encodeURIComponent(branch)}`;
@@ -477,10 +479,10 @@ export function ClaudeSetup({ projectId, repo, compact }: { projectId: string; r
 // ── Ask AI na projektu: „Build with Claude“ (radi u repou) ili „Ask“ (samo odgovara) ──
 export function ProjectAI({ projectId, hasRepo }: { projectId: string; hasRepo: boolean }) {
   const [mode, setMode] = useHashParam<"build" | "ask">("ai", hasRepo ? "build" : "ask", ["build", "ask"]);
-  const seg = (on: boolean) => `inline-flex h-[28px] items-center gap-1.5 rounded-md px-3 text-[12.5px] ${on ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`;
+  const seg = (on: boolean) => `inline-flex h-[30px] flex-1 items-center justify-center gap-1.5 rounded-md px-3 text-[12.5px] sm:h-[28px] sm:flex-none ${on ? "bg-surface-2 text-fg ring-1 ring-line" : "text-muted hover:text-fg"}`;
   return (
     <div className="space-y-3">
-      <div className="inline-flex rounded-lg border border-line bg-surface p-0.5">
+      <div className="flex w-full rounded-lg border border-line bg-surface p-0.5 sm:inline-flex sm:w-auto">
         <button className={seg(mode === "build")} onClick={() => setMode("build")}>
           <Sparkles size={13} /> Build with Claude
         </button>
@@ -578,19 +580,24 @@ function BuildPanel({ projectId }: { projectId: string }) {
                 <AttachedThumbs items={att.items} onRemove={att.remove} />
               </div>
             )}
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <span className="text-[11.5px] text-faint">⌘ Enter to start · runs on your Claude subscription via GitHub Actions (usually 3–15 min)</span>
-              <span className="ml-auto" />
-              <AttachButton onFiles={att.add} />
-              <ModelSelect value={model} onChange={setModel} />
-              <EffortSelect value={effort} onChange={setEffort} />
-              <button type="button" disabled={prompt.trim().length < 3 || !repo} onClick={() => setLocalOpen(true)} className={btnSecondary} title="Run Claude Code on your computer instead of GitHub — live preview on localhost">
-                Work locally
-              </button>
-              <button disabled={busy || prompt.trim().length < 3 || !repo || att.uploading} className={btnPrimary} title={att.uploading ? "Uploading image…" : undefined}>
-                {busy ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />} Start
-              </button>
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <div className="flex min-w-0 items-center gap-2">
+                <AttachButton onFiles={att.add} className={iconBtn} />
+                <ModelSelect value={model} onChange={setModel} className="flex-1 sm:flex-none" />
+                <EffortSelect value={effort} onChange={setEffort} className="flex-1 sm:flex-none" />
+              </div>
+              <div className="grid grid-cols-2 gap-2 sm:ml-auto sm:flex">
+                <button type="button" disabled={prompt.trim().length < 3 || !repo} onClick={() => setLocalOpen(true)} className={btnSecondary} title="Run Claude Code on your computer instead of GitHub — live preview on localhost">
+                  Work locally
+                </button>
+                <button disabled={busy || prompt.trim().length < 3 || !repo || att.uploading} className={btnPrimary} title={att.uploading ? "Uploading image…" : undefined}>
+                  {busy ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />} Start
+                </button>
+              </div>
             </div>
+            <p className="mt-2 text-[11.5px] leading-snug text-faint">
+              <span className="hidden sm:inline">⌘ Enter to start · </span>Runs on your Claude subscription via GitHub Actions — usually 3–15 min.
+            </p>
             {note && <p className="mt-1.5 text-[12px] text-muted">{note}</p>}
             {error && (
               <div className="mt-2">
@@ -816,19 +823,21 @@ function RunThread({ projectId, repo, run, onChanged, onDeleted }: { projectId: 
               <AttachedThumbs items={att.items} onRemove={att.remove} />
             </div>
           )}
-          <input value={reply} onPaste={att.onPaste} onChange={(e) => setReply(e.target.value)} placeholder={pr?.state === "open" ? "Ask Claude to change something in this PR…" : "Reply to Claude — e.g. “go ahead and build it”"} className="h-[36px] min-w-[200px] flex-1 rounded-lg border border-line bg-surface px-3 text-[13px] outline-none placeholder:text-faint focus:border-accent/60" />
-          <AttachButton onFiles={att.add} />
-          <ModelSelect value={model ?? t.data?.issue.model ?? ""} onChange={setModel} />
-          <EffortSelect value={effort} onChange={setEffort} />
+          <input value={reply} onPaste={att.onPaste} onChange={(e) => setReply(e.target.value)} placeholder={pr?.state === "open" ? "Ask Claude to change something in this PR…" : "Reply to Claude — e.g. “go ahead and build it”"} className="h-[38px] w-full min-w-0 rounded-lg border border-line bg-surface px-3 text-[13px] outline-none placeholder:text-faint focus:border-accent/60 sm:w-auto sm:flex-1" />
+          <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto">
+            <AttachButton onFiles={att.add} className={iconBtn} />
+            <ModelSelect value={model ?? t.data?.issue.model ?? ""} onChange={setModel} className="flex-1 sm:flex-none" />
+            <EffortSelect value={effort} onChange={setEffort} className="flex-1 sm:flex-none" />
+            <button disabled={busy === "reply" || (!reply.trim() && !att.ids.length) || att.uploading} className={`${btnPrimary} w-[42px] shrink-0 px-0`} aria-label="Send to Claude">
+              {busy === "reply" ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
+            </button>
+          </div>
           {pr?.state === "open" && (
-            <label className="inline-flex h-[32px] items-center gap-1.5 rounded-md border border-line bg-surface px-2.5 text-[12px] text-muted" title="Off: the message stays in this conversation and the PR only has the code. On: it's posted as a comment on the pull request.">
+            <label className="inline-flex items-center gap-1.5 text-[12px] text-muted" title="Off: the message stays in this conversation and the PR only has the code. On: it's posted as a comment on the pull request.">
               <input type="checkbox" checked={onPr} onChange={(e) => setOnPr(e.target.checked)} className="accent-[var(--accent)]" />
-              Post on PR
+              Also post on the PR
             </label>
           )}
-          <button disabled={busy === "reply" || (!reply.trim() && !att.ids.length) || att.uploading} className={btnPrimary} aria-label="Send to Claude">
-            {busy === "reply" ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
-          </button>
         </form>
       )}
       {msg && <p className={`text-[12px] ${msg.ok ? "text-success" : "text-danger"}`}>{msg.text}</p>}
