@@ -6,7 +6,8 @@ import type { Connector, RawItem } from "../connectors/types.js";
 const TEST_DB = process.env.TEST_DATABASE_URL;
 describe.skipIf(!TEST_DB)("duplicates across sources", () => {
   let db: import("@radar/db").Db;
-  const stamp = Date.now();
+  // Oznaka od slova (titleKey namerno izbacuje brojeve iz naslova)
+  const stamp = Array.from({ length: 10 }, () => String.fromCharCode(97 + Math.floor(Math.random() * 26))).join("");
   const item = (url: string, title: string): RawItem => ({ externalId: url, url, title, body: "Development of an online booking platform for municipal sports centres, web and mobile.", companyName: "City of Testville", location: "Ireland", salaryText: null, postedAt: new Date(), leadType: "tender", country: "IE" });
   const conn = (id: string, items: RawItem[]): Connector => ({ id, name: id, kind: "api", intervalMinutes: 60, defaultType: "tender", curated: true, fetch: async () => items }) as Connector;
 
