@@ -3,6 +3,9 @@ import { Bot, Check, GitBranch, Loader2, Mail, Send, ShieldCheck, Landmark, Plug
 import { teamFetch } from "../lib/team";
 import { useSessionUser } from "../lib/session";
 
+/** Bez automatskog popunjavanja (Chrome, 1Password, LastPass, Bitwarden): ovo su ključevi, ne prijava. */
+const NO_AUTOFILL = { autoComplete: "new-password", "data-1p-ignore": true, "data-lpignore": "true", "data-bwignore": true, "data-form-type": "other", spellCheck: false } as const;
+
 /** Settings → Integrations: lično (svako svoj GitHub) i firma (vlasnik: GitHub, Telegram, Email-in, SAM.gov). */
 type Source = "app" | "server" | "none";
 interface SecretView {
@@ -105,7 +108,7 @@ function IntegrationCard({
           <div className="text-[12.5px] text-muted">{desc}</div>
         </div>
       </div>
-      <form
+      <form autoComplete="off"
         className="grid gap-2.5 sm:grid-cols-2"
         onSubmit={(e) => {
           e.preventDefault();
@@ -120,7 +123,9 @@ function IntegrationCard({
             <input
               className={`${input} ${f.secret ? "num" : ""}`}
               type={f.secret ? "password" : (f.type ?? "text")}
-              autoComplete="off"
+              // Pregledač ne sme da upiše lozinku za prijavu u polja za ključeve (Chrome ignoriše "off" kod lozinki)
+              {...NO_AUTOFILL}
+              name={`integration-${section}-${f.key}`}
               disabled={!canEdit}
               value={vals[f.key] ?? ""}
               onChange={(e) => setVals({ ...vals, [f.key]: e.target.value })}
@@ -218,14 +223,14 @@ function MyIntegrations() {
           <div className="text-[12.5px] text-muted">Issues you create and tasks you hand to Claude/Codex are opened under your name, in your repos. Without it, the workspace token is used.</div>
         </div>
       </div>
-      <form
+      <form autoComplete="off"
         className="flex flex-wrap gap-2"
         onSubmit={(e) => {
           e.preventDefault();
           if (token.trim()) void put({ githubToken: token }, "GitHub connected.");
         }}
       >
-        <input className={`${input} num min-w-[240px] flex-1`} type="password" autoComplete="off" value={token} onChange={(e) => setToken(e.target.value)} placeholder={me.github?.set ? `Saved ${me.github.hint ?? ""} · paste a new token to replace` : "github_pat_…"} />
+        <input className={`${input} num min-w-[240px] flex-1`} type="password" {...NO_AUTOFILL} name="integration-personal-github" value={token} onChange={(e) => setToken(e.target.value)} placeholder={me.github?.set ? `Saved ${me.github.hint ?? ""} · paste a new token to replace` : "github_pat_…"} />
         <button disabled={busy || !token.trim()} className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] bg-fg px-3 text-[12.5px] font-medium text-bg disabled:opacity-50">
           {busy ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />} Connect
         </button>
@@ -274,7 +279,7 @@ function MyIntegrations() {
 function ClaudeKeyForm({ saved, busy, onSave, placeholder = "sk-ant-…" }: { saved: boolean; busy: boolean; onSave: (k: string | null) => void; placeholder?: string; validate?: boolean }) {
   const [k, setK] = useState("");
   return (
-    <form
+    <form autoComplete="off"
       className="mt-2 flex flex-wrap gap-2"
       onSubmit={(e) => {
         e.preventDefault();
@@ -284,7 +289,7 @@ function ClaudeKeyForm({ saved, busy, onSave, placeholder = "sk-ant-…" }: { sa
         }
       }}
     >
-      <input className={`${input} num min-w-[240px] flex-1`} type="password" autoComplete="off" value={k} onChange={(e) => setK(e.target.value)} placeholder={saved ? "Saved · paste a new key to replace" : placeholder} />
+      <input className={`${input} num min-w-[240px] flex-1`} type="password" {...NO_AUTOFILL} name="integration-personal-key" value={k} onChange={(e) => setK(e.target.value)} placeholder={saved ? "Saved · paste a new key to replace" : placeholder} />
       <button disabled={busy || !k.trim()} className="inline-flex h-[34px] items-center gap-1.5 rounded-[7px] bg-fg px-3 text-[12.5px] font-medium text-bg disabled:opacity-50">
         <Check size={13} /> Save
       </button>
