@@ -1,9 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Check, Copy, KeyRound, Loader2, Lock, Plus, Route, ShieldOff, X, Zap } from "lucide-react";
+import { AlertTriangle, KeyRound, Loader2, Lock, Plus, Route, ShieldOff, X, Zap } from "lucide-react";
 import { API_URL } from "../lib/api";
 import { askConfirm } from "../lib/confirm";
-import { input } from "../lib/ui";
+import { Segmented, input } from "../lib/ui";
 import { ApiError, getTeamToken, setTeamToken, teamFetch, usd } from "../lib/team";
+import { AnalyticsPanel } from "./router/AnalyticsPanel";
+import { AuditPanel } from "./router/AuditPanel";
+import { ClientMembers, ClientSettings, ReportButton } from "./router/ClientExtras";
+import { RulesPanel } from "./router/RulesPanel";
+import { CopyButton, GroupTag, ms } from "./router/shared";
 
 interface Client {
   id: string;
@@ -14,41 +19,46 @@ interface Client {
   defaultMode: "auto" | "fast" | "smart";
   status: "active" | "revoked";
   createdAt: string;
+  confidential: boolean;
+  allowedGroups: string[];
+  effectiveGroups: string[];
+  shadow: boolean;
+  maskSecrets: boolean;
+  members: number;
   spendUsd: number;
   requests: number;
   tokens: number;
   baselineUsd: number;
   savingsUsd: number;
-  split: { fast: number; smart: number };
+  cacheHitRate: number | null;
+  split: { fast: number; smart: number; local: number };
 }
 interface Overview {
   items: Client[];
   totals: { spendUsd: number; requests: number; baselineUsd: number; savingsUsd: number; activeClients: number };
-  baseline: { inputPerM: number; outputPerM: number };
+  baseline: { inputPerM: number; outputPerM: number; pricesAsOf?: string };
 }
 interface Usage {
   daily: Array<{ day: string; requests: number; spendUsd: number; baselineUsd: number }>;
-  recent: Array<{ at: string; mode: string; model: string; tokens: number; spendUsd: number; baselineUsd: number; status: string | null }>;
+  recent: Array<{
+    at: string;
+    requested: string | null;
+    chosen: string | null;
+    applied: string | null;
+    rule: string | null;
+    requestClass: string | null;
+    sticky: boolean;
+    shadow: boolean;
+    masked: number;
+    status: number | null;
+    blocked: string | null;
+    ttfbMs: number | null;
+    totalMs: number | null;
+    fallback: boolean;
+  }>;
 }
 
 const BASE_URL = `${API_URL}/llm/v1`;
-
-function CopyButton({ text, label = "Copy" }: { text: string; label?: string }) {
-  const [done, setDone] = useState(false);
-  return (
-    <button
-      type="button"
-      onClick={async () => {
-        await navigator.clipboard.writeText(text);
-        setDone(true);
-        setTimeout(() => setDone(false), 1500);
-      }}
-      className="inline-flex h-[28px] shrink-0 items-center gap-1.5 rounded-md border border-line bg-surface px-2 text-[12px] font-medium text-muted hover:bg-surface-2 hover:text-fg"
-    >
-      {done ? <Check size={12} className="text-success" /> : <Copy size={12} />} {done ? "Copied" : label}
-    </button>
-  );
-}
 
 function Kpi({ label, value, hint, accent }: { label: string; value: string; hint?: React.ReactNode; accent?: boolean }) {
   return (
@@ -332,12 +342,17 @@ function ClientDetail({ client, onChanged }: { client: Client; onChanged: () => 
         <div className="mb-2 text-[12px] uppercase tracking-wider text-faint">Recent requests</div>
         {usage?.recent.length ? (
           <ul className="divide-y divide-line rounded-lg border border-line bg-bg text-[13px]">
-            {usage.recent.slice(0, 6).map((r, i) => (
-              <li key={i} className="flex items-center gap-2 px-2.5 py-1.5">
-                <span className={`rounded px-1.5 py-px font-mono text-[11px] ${r.mode === "smart" ? "bg-accent-soft text-accent" : "bg-success-soft text-success"}`}>{r.mode}</span>
-                <span className="min-w-0 flex-1 truncate text-muted">{r.model}</span>
-                <span className="num text-faint">{r.tokens.toLocaleString()} tok</span>
-                <span className="num w-16 text-right">{usd(r.spendUsd)}</span>
+            {usage.recent.slice(0, 8).map((r, i) => (
+              <li key={i} className="flex items-center gap-2 px-2.5 py-1.5" title={r.blocked ?? undefined}>
+                <GroupTag g={r.applied} />
+                <span className="min-w-0 flex-1 truncate text-muted">
+                  {r.blocked ? <span className="text-danger">{r.blocked}</span> : (r.rule ?? (r.requested && ["fast", "smart", "local"].includes(r.requested) ? "asked directly" : "default"))}
+                  {r.requestClass && <span className="text-faint"> · {r.requestClass}</span>}
+                  {r.shadow && r.chosen !== r.applied && <span className="text-faint"> · would use {r.chosen}</span>}
+                  {r.masked > 0 && <span className="text-warning"> · {r.masked} masked</span>}
+                  {r.fallback && <span className="text-warning"> · fallback</span>}
+                </span>
+                <span className={`num w-14 text-right text-[12px] ${r.status && r.status >= 400 ? "text-danger" : "text-faint"}`}>{r.status && r.status >= 400 ? r.status : ms(r.totalMs)}</span>
               </li>
             ))}
           </ul>
@@ -346,13 +361,27 @@ function ClientDetail({ client, onChanged }: { client: Client; onChanged: () => 
         )}
       </div>
 
+      <div className="mt-4 border-t border-line pt-4">
+        <div className="mb-2 text-[12px] uppercase tracking-wider text-faint">Access &amp; privacy</div>
+        <ClientSettings client={client} onChanged={onChanged} />
+      </div>
+
+      <div className="mt-4 border-t border-line pt-4">
+        <div className="mb-2 text-[12px] uppercase tracking-wider text-faint">Engineer keys</div>
+        <ClientMembers client={client} />
+      </div>
+
+      <div className="mt-4 border-t border-line pt-4">
+        <ReportButton client={client} />
+      </div>
+
       {error && <div className="mt-3 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[13px] text-danger">{error}</div>}
 
       {client.status === "active" && (
         <button
           disabled={busy !== null}
           onClick={async () => {
-            if (!await askConfirm(`Revoke ${client.name}'s key? Their apps stop working immediately. History is kept.`)) return;
+            if (!(await askConfirm(`Revoke ${client.name}'s key and all engineer keys? Their apps stop working immediately. History is kept.`))) return;
             setBusy("revoke");
             setError(null);
             try {
@@ -396,6 +425,12 @@ res = client.chat.completions.create(
     model="auto",  # or "fast" / "smart"
     messages=[{"role": "user", "content": "Hello"}],
 )`,
+  "Claude Code": `# Each engineer uses their own key (client → Engineer keys)
+export ANTHROPIC_BASE_URL="${API_URL}/llm"
+export ANTHROPIC_AUTH_TOKEN="$ENGINEER_KEY"
+# Lets the router tell main work from subagents, titles and compaction
+export CLAUDE_CODE_GATEWAY_HINT_HEADERS=1
+claude`,
 };
 
 export function RouterPage() {
@@ -405,6 +440,7 @@ export function RouterPage() {
   const [selectedId, setSelectedId] = useState<string>();
   const [newOpen, setNewOpen] = useState(false);
   const [tab, setTab] = useState("OpenAI SDK");
+  const [view, setView] = useState<"clients" | "rules" | "analytics" | "audit">("clients");
 
   const load = useCallback(async () => {
     try {
@@ -434,14 +470,33 @@ export function RouterPage() {
       <div className="mb-5 flex flex-wrap items-end gap-4">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">AI Router</h1>
-          <p className="mt-0.5 text-[14px] text-muted">One endpoint for your clients' apps. Simple requests go to fast models, complex ones to smart models — with spend tracked per client.</p>
+          <p className="mt-0.5 text-[14px] text-muted">One endpoint for your clients' apps and agents. Rules send each request to the right model — with budgets, privacy and spend per client.</p>
         </div>
         <button onClick={() => setNewOpen(true)} className="inline-flex h-[34px] items-center gap-1.5 rounded-lg bg-fg px-3 text-[13px] font-medium text-bg hover:opacity-90 sm:ml-auto">
           <Plus size={14} /> New client
         </button>
       </div>
 
+      <Segmented
+        value={view}
+        onChange={setView}
+        full
+        className="mb-5"
+        options={[
+          ["clients", "Clients"],
+          ["rules", "Rules"],
+          ["analytics", "Analytics"],
+          ["audit", "Audit"],
+        ] as const}
+      />
+
       {error && <div className="mb-4 rounded-lg border border-danger/40 bg-danger/10 px-3 py-2 text-[13px] text-danger">{error}</div>}
+
+      {view === "rules" && <RulesPanel clients={(data?.items ?? []).map((c) => ({ id: c.id, name: c.name }))} />}
+      {view === "analytics" && <AnalyticsPanel clients={(data?.items ?? []).map((c) => ({ id: c.id, name: c.name }))} />}
+      {view === "audit" && <AuditPanel />}
+      {view === "clients" && (
+        <>
 
       <section className="mb-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
         <Kpi label="Spent this month" value={t ? usd(t.spendUsd) : "—"} hint="Across all clients" />
@@ -457,7 +512,7 @@ export function RouterPage() {
           <code className="num ml-1 min-w-0 truncate rounded-md bg-bg px-2 py-1 text-[13px] ring-1 ring-line">{BASE_URL}</code>
           <CopyButton text={BASE_URL} />
           <span className="ml-auto inline-flex items-center gap-1 text-[12px] text-faint">
-            <Zap size={12} /> model <code className="num text-fg">auto</code> · <code className="num text-fg">fast</code> · <code className="num text-fg">smart</code>
+            <Zap size={12} /> model <code className="num text-fg">auto</code> · <code className="num text-fg">fast</code> · <code className="num text-fg">smart</code> · <code className="num text-fg">local</code> · or any model name
           </span>
         </div>
         <div className="mb-2 inline-flex rounded-lg border border-line bg-bg p-0.5 text-[12px]">
@@ -503,7 +558,7 @@ export function RouterPage() {
                 <tbody>
                   {(data?.items ?? []).map((c) => {
                     const pct = Math.min(100, (c.spendUsd / c.monthlyBudgetUsd) * 100);
-                    const total = c.split.fast + c.split.smart;
+                    const total = c.split.fast + c.split.smart + c.split.local;
                     const sel = c.id === selected?.id;
                     return (
                       <tr
@@ -512,8 +567,15 @@ export function RouterPage() {
                         className={`cursor-pointer border-b border-line transition-colors last:border-0 ${sel ? "bg-accent-soft shadow-[inset_2px_0_0_var(--accent)]" : "hover:bg-surface-2"} ${c.status === "revoked" ? "opacity-50" : ""}`}
                       >
                         <td className="px-3 py-2.5">
-                          <div className="font-medium">{c.name}</div>
-                          <div className="num text-xs text-muted">{c.keyPreview}</div>
+                          <div className="flex flex-wrap items-center gap-1.5 font-medium">
+                            {c.name}
+                            {c.confidential && <span className="rounded bg-warning/15 px-1.5 text-[11px] font-normal text-warning">confidential</span>}
+                            {c.shadow && <span className="rounded bg-surface-2 px-1.5 text-[11px] font-normal text-muted">shadow</span>}
+                          </div>
+                          <div className="num text-xs text-muted">
+                            {c.keyPreview}
+                            {c.members > 0 && ` · ${c.members} engineer${c.members === 1 ? "" : "s"}`}
+                          </div>
                         </td>
                         <td className="w-44 px-3 py-2.5">
                           <div className="num mb-1 text-[12px] text-muted">
@@ -526,9 +588,10 @@ export function RouterPage() {
                         <td className="num px-3 py-2.5">{c.requests.toLocaleString()}</td>
                         <td className="hidden px-3 py-2.5 md:table-cell">
                           {total ? (
-                            <div className="flex h-1.5 w-24 overflow-hidden rounded-full bg-surface-2" title={`${c.split.fast} fast · ${c.split.smart} smart`}>
+                            <div className="flex h-1.5 w-24 overflow-hidden rounded-full bg-surface-2" title={`${c.split.fast} fast · ${c.split.smart} smart · ${c.split.local} local`}>
                               <div className="bg-success" style={{ width: `${(c.split.fast / total) * 100}%` }} />
                               <div className="bg-accent" style={{ width: `${(c.split.smart / total) * 100}%` }} />
+                              <div className="bg-warning" style={{ width: `${(c.split.local / total) * 100}%` }} />
                             </div>
                           ) : (
                             <span className="text-faint">—</span>
@@ -555,8 +618,10 @@ export function RouterPage() {
       </div>
 
       <p className="mt-4 text-[12px] text-faint">
-        Spend is calculated by LiteLLM at the providers' list prices — on free tiers (Groq, Gemini free, OpenRouter :free) nothing is actually billed. “Saved” compares with a premium model at ${data?.baseline.inputPerM ?? 2.5} / ${data?.baseline.outputPerM ?? 10} per 1M input / output tokens.
+        Spend is calculated by LiteLLM at the providers' list prices — on free tiers (Groq, Gemini free, OpenRouter :free) nothing is actually billed. “Saved” compares with what each request would cost without routing: the requested model's list price, or a premium model at ${data?.baseline.inputPerM ?? 2.5} / ${data?.baseline.outputPerM ?? 10} per 1M input / output tokens for “auto”.
       </p>
+        </>
+      )}
 
       <NewClientDialog open={newOpen} onClose={() => setNewOpen(false)} onCreated={load} />
     </>

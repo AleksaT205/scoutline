@@ -9,6 +9,7 @@ import { telegramConfigured } from "@radar/scoring";
 import { clearRunRequest, ingest, lastSuccess, notifyNew, purgeExpired, registerSources, scorePending, sourceControls } from "./pipeline/run.js";
 import { githubConfigured, syncGithub } from "./pipeline/github.js";
 import { refreshRuntime } from "./runtime.js";
+import { maybeLearnRouterRules } from "./pipeline/router-learn.js";
 
 const GITHUB_EVERY_MS = 5 * 60_000;
 let githubAt = 0;
@@ -59,6 +60,8 @@ async function tick() {
       githubAt = Date.now();
       await syncGithub(db);
     }
+    // AI Router: predlozi izmene pravila iz statistike (jednom dnevno, bez poziva modela)
+    await maybeLearnRouterRules(db);
     // Otkucaj srca — API proverava da worker radi (monitoring)
     const beat = { at: new Date().toISOString(), ai: aiConfigured() };
     await db.insert(settings).values({ key: "worker_heartbeat", value: beat }).onConflictDoUpdate({ target: settings.key, set: { value: beat, updatedAt: new Date() } });

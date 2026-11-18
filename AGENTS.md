@@ -3,7 +3,7 @@
 Kratko i tačno, da svaki asistent odmah zna gde je i ne troši tokene na istraživanje.
 
 ## Projekat
-**Scoutline** — platforma za agenciju: (1) **Lead Radar** prati tendere, projekte, signale investicija i oglase (13 izvora), ocenjuje ih (AI ili pravila) i šalje dobre na Telegram; CRM/pipeline za praćenje; (2) **Delivery** — klijenti, projekti, taskovi, sprintovi, Inbox, GitHub PR sync, portal za klijenta (docs/DELIVERY.md), kao Linear (`apps/web/src/components/delivery`, API `/delivery/*`); (3) **AI Router** — jedan endpoint za aplikacije klijenata sa rutiranjem `fast`/`smart`, budžetima i troškovima po klijentu.
+**Scoutline** — platforma za agenciju: (1) **Lead Radar** prati tendere, projekte, signale investicija i oglase (13 izvora), ocenjuje ih (AI ili pravila) i šalje dobre na Telegram; CRM/pipeline za praćenje; (2) **Delivery** — klijenti, projekti, taskovi, sprintovi, Inbox, GitHub PR sync, portal za klijenta (docs/DELIVERY.md), kao Linear (`apps/web/src/components/delivery`, API `/delivery/*`); (3) **AI Router** — jedan endpoint za aplikacije i agente klijenata (i Claude Code): pravila rutiranja `fast`/`smart`/`local` u bazi, poverljivi klijenti, budžeti po klijentu i inženjeru, troškovi i ušteda (docs/ROUTER-PLAN.md).
 
 Stanje i faze: **`docs/PROGRESS.md`** (pročitaj prvo). Plan: `docs/PLAN.md`. Dizajn: `docs/DESIGN.md`. Produkcija: `docs/PRODUCTION.md`.
 

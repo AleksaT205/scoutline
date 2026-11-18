@@ -35,32 +35,69 @@ model_list:
       model: groq/whisper-large-v3-turbo
       api_key: os.environ/GROQ_API_KEY
 
-  # ── AI Router za klijente (Faza 2) ─────────────────────────────────────────
-  # "fast" = brzi/jeftini, "smart" = jači model. Klijent šalje model "auto" i mi biramo.
-  # Za sada besplatni modeli; za produkciju dodati plaćene (npr. OpenAI/Anthropic ključ) u iste grupe.
+  # ── AI Router za klijente (Faza 2 + Router 2.0, docs/ROUTER-PLAN.md) ──────────
+  # "fast" = brzi/jeftini, "smart" = jači model, "local" = Ollama na serveru (privatno).
+  # Ruter (apps/api/src/router.ts) bira grupu po pravilima iz baze. fast i smart su BESPLATNI nivoi —
+  # podaci mogu da se koriste za treniranje, pa poverljivi klijenti idu samo na "local".
+  # timeout = ceo zahtev, stream_timeout = streaming (s); posle num_retries u grupi ide fallback (router_settings).
   - model_name: fast
     litellm_params:
       model: openrouter/google/gemma-4-31b-it:free
       api_key: os.environ/OPENROUTER_API_KEY
+      timeout: 45
+      stream_timeout: 30
   - model_name: fast
     litellm_params:
       model: groq/openai/gpt-oss-20b
       api_key: os.environ/GROQ_API_KEY
+      timeout: 45
+      stream_timeout: 30
   - model_name: smart
     litellm_params:
       model: gemini/gemini-3.8-flash
       api_key: os.environ/GEMINI_API_KEY
+      timeout: 120
+      stream_timeout: 60
   - model_name: smart
     litellm_params:
       model: openrouter/nvidia/nemotron-3-ultra-550b-a55b:free
       api_key: os.environ/OPENROUTER_API_KEY
+      timeout: 120
+      stream_timeout: 60
+  # Lokalni model — podaci ne izlaze sa servera. Radi tek kad se pokrene Ollama:
+  #   docker compose --profile local-ai up -d ollama && docker compose exec ollama ollama pull qwen3:4b
+  # Bez Ollama-e zahtevi ka "local" vraćaju grešku (poverljivi klijenti ne dobijaju rezervu u cloud-u).
+  - model_name: local
+    litellm_params:
+      model: ollama_chat/qwen3:4b
+      api_base: http://ollama:11434
+      timeout: 300
+      stream_timeout: 120
 
 router_settings:
   routing_strategy: latency-based-routing   # bira najbrži model koji trenutno radi
   num_retries: 4          # pokušaj druge modele iz grupe ako jedan padne
   allowed_fails: 1        # model koji padne ide na pauzu…
   cooldown_time: 900      # …od 15 minuta
+  # Kad cela grupa padne: fast → smart → local. Nikad iz "local" ka cloud-u (poverljivi klijenti).
+  fallbacks:
+    - fast: ["smart", "local"]
+    - smart: ["local"]
+  # Ista sesija agenta (x-litellm-session-id, ruter ga postavlja iz x-claude-code-session-id) ostaje na istom modelu u grupi
+  optional_pre_call_checks: ["session_affinity"]
 
 litellm_settings:
   drop_params: true       # izbaci parametre koje neki model ne podržava (npr. response_format)
   request_timeout: 60
+  # Keš identičnih zahteva (exact-match, u memoriji). default_off: kešira se samo kad zahtev traži
+  # ("cache": {"use-cache": true}) — ruter to radi za klijente (odvojeno po klijentu), ne za poverljive
+  # i ne za interne pozive Scoutline-a (npr. „Write with AI“ mora da da novi tekst). Semantički keš je isključen.
+  cache: true
+  cache_params:
+    type: local
+    mode: default_off
+    ttl: 600
+    supported_call_types: ["acompletion", "completion"]
+
+general_settings:
+  store_prompts_in_spend_logs: false   # sadržaj promptova i odgovora se ne čuva u bazi

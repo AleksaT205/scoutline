@@ -1,5 +1,5 @@
-import { boolean, customType, doublePrecision, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
-import { INDUSTRIES, ISSUE_STATUSES, LEAD_STATUSES, LEAD_TYPES, PROJECT_STATUSES, SERVICE_CATEGORIES } from "@radar/shared";
+import { bigserial, boolean, customType, doublePrecision, index, integer, jsonb, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import { INDUSTRIES, ISSUE_STATUSES, LEAD_STATUSES, LEAD_TYPES, PROJECT_STATUSES, SERVICE_CATEGORIES, type RuleCondition } from "@radar/shared";
 
 export const tierEnum = pgEnum("tier", ["T1", "T2", "T3", "DOMESTIC"]);
 export const categoryEnum = pgEnum("service_category", SERVICE_CATEGORIES);
@@ -126,7 +126,100 @@ export const clients = pgTable("clients", {
   defaultMode: routerModeEnum("default_mode").default("auto").notNull(),
   status: clientStatusEnum("status").default("active").notNull(),
   projectId: uuid("project_id"), // Faza 12: AI trošak ovog ključa ide na projekat (veza bez FK — tabela projects je ispod)
+  // Router 2.0: poverljiv klijent ide samo na privatne grupe (local); dozvoljene grupe važe i u LiteLLM ključu
+  confidential: boolean("confidential").default(false).notNull(),
+  allowedGroups: text("allowed_groups").array().default(["fast", "smart"]).notNull(),
+  shadow: boolean("shadow").default(false).notNull(), // samo beleži šta bi ruter izabrao, model se ne menja
+  maskSecrets: boolean("mask_secrets").default(true).notNull(), // maskiranje ključeva/lozinki pre slanja na besplatne nivoe
+  teamId: text("team_id"), // LiteLLM tim (budžet klijenta + ključevi inženjera)
   ...timestamps,
+});
+
+/** Router 2.0 — pravila rutiranja (verzije; predlozi iz statistike čekaju odobrenje). */
+export const routerRuleStatusEnum = pgEnum("router_rule_status", ["proposed", "active", "archived", "rejected"]);
+export const routerRules = pgTable(
+  "router_rules",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clientId: uuid("client_id").references(() => clients.id, { onDelete: "cascade" }), // null = globalno
+    lineage: uuid("lineage").notNull(), // isto za sve verzije jednog pravila
+    version: integer("version").default(1).notNull(),
+    key: text("key"), // podrazumevano pravilo (DEFAULT_RULES.key)
+    name: text("name").notNull(),
+    condition: jsonb("condition").$type<RuleCondition>().notNull(),
+    target: text("target").notNull(), // fast | smart | local
+    priority: integer("priority").default(100).notNull(),
+    status: routerRuleStatusEnum("status").default("active").notNull(),
+    reason: text("reason"), // obrazloženje predloga (brojke)
+    createdBy: text("created_by"),
+    decidedBy: text("decided_by"),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    ...timestamps,
+  },
+  (t) => [index("router_rules_status_idx").on(t.status), index("router_rules_lineage_idx").on(t.lineage, t.version)],
+);
+
+/** Svaka odluka rutera (bez sadržaja prompta). callId = LiteLLM_SpendLogs.request_id → tokeni i trošak. */
+export const routerDecisions = pgTable(
+  "router_decisions",
+  {
+    id: bigserial("id", { mode: "number" }).primaryKey(),
+    at: timestamp("at", { withTimezone: true }).defaultNow().notNull(),
+    clientId: uuid("client_id"),
+    memberId: uuid("member_id"),
+    callId: text("call_id"),
+    requested: text("requested"), // traženi model
+    chosen: text("chosen"), // šta je ruter izabrao
+    applied: text("applied"), // šta je stvarno poslato (u shadow režimu = bez rutiranja)
+    ruleId: uuid("rule_id"),
+    sticky: boolean("sticky").default(false).notNull(), // zadržano po sesiji agenta
+    shadow: boolean("shadow").default(false).notNull(),
+    requestClass: text("request_class"),
+    sessionId: text("session_id"),
+    chars: integer("chars"),
+    tools: boolean("tools"),
+    stream: boolean("stream"),
+    masked: integer("masked").default(0).notNull(),
+    status: integer("status"),
+    ttfbMs: integer("ttfb_ms"),
+    totalMs: integer("total_ms"),
+    fallback: boolean("fallback").default(false).notNull(),
+    blocked: text("blocked"), // razlog odbijanja (npr. grupa nije dozvoljena)
+    promptHash: text("prompt_hash"), // sha256 tela — za ponovljene zahteve, ne sadržaj
+  },
+  (t) => [index("router_decisions_at_idx").on(t.at), index("router_decisions_client_idx").on(t.clientId, t.at), index("router_decisions_rule_idx").on(t.ruleId, t.at)],
+);
+
+/** Ključevi inženjera u okviru klijenta (LiteLLM ključ u timu klijenta, sopstveni budžet). */
+export const routerMembers = pgTable(
+  "router_members",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clientId: uuid("client_id")
+      .references(() => clients.id, { onDelete: "cascade" })
+      .notNull(),
+    name: text("name").notNull(),
+    email: text("email"),
+    keyToken: text("key_token").notNull().unique(),
+    keyAlias: text("key_alias").notNull(),
+    keyPreview: text("key_preview").notNull(),
+    monthlyBudgetUsd: doublePrecision("monthly_budget_usd").notNull(),
+    status: clientStatusEnum("status").default("active").notNull(),
+    ...timestamps,
+  },
+  (t) => [index("router_members_client_idx").on(t.clientId)],
+);
+
+/** Zapis otporan na izmene: svaki red nosi heš prethodnog (lanac). */
+export const routerAudit = pgTable("router_audit", {
+  id: bigserial("id", { mode: "number" }).primaryKey(),
+  at: timestamp("at", { withTimezone: true }).defaultNow().notNull(),
+  actor: text("actor"),
+  action: text("action").notNull(),
+  entity: text("entity"),
+  data: jsonb("data").$type<Record<string, unknown>>().notNull(),
+  prevHash: text("prev_hash").notNull(),
+  hash: text("hash").notNull().unique(),
 });
 
 /** Podešavanja aplikacije (npr. koje leadove šaljemo na Telegram). */

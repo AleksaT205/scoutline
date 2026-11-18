@@ -133,7 +133,7 @@ export function createApp(getDb: () => Db) {
   });
 
   // AI Router: javni endpoint za aplikacije klijenata (ključ klijenta) + upravljanje (timska lozinka)
-  app.route("/llm", llmProxy());
+  app.route("/llm", llmProxy(getDb));
   app.use("/router/*", a.require("member"));
   app.route("/router", routerAdmin(getDb));
 

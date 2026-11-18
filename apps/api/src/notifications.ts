@@ -1,6 +1,8 @@
 import { Hono, type Context, type MiddlewareHandler } from "hono";
 import { and, desc, eq, gte, inArray, isNotNull, lte, ne, notInArray, sql } from "drizzle-orm";
-import { issueEvents, issues, leads, projects, rawItems, type Db } from "@radar/db";
+import { issueEvents, issues, leads, projects, rawItems, settings, type Db } from "@radar/db";
+
+const money = (v: number) => (v > 0 && v < 0.01 ? `$${v.toFixed(4)}` : `$${v.toFixed(2)}`);
 
 /**
  * Zvonce u zaglavlju: šta je novo za tim i za mene (poslednjih 7 dana).
@@ -9,7 +11,7 @@ import { issueEvents, issues, leads, projects, rawItems, type Db } from "@radar/
 type Actor = { id: string | null; name: string; role?: string; access?: string };
 interface Note {
   id: string;
-  kind: "lead" | "inbox" | "assigned" | "comment" | "github" | "done" | "followup";
+  kind: "lead" | "inbox" | "assigned" | "comment" | "github" | "done" | "followup" | "budget";
   title: string;
   sub: string;
   at: string;
@@ -78,6 +80,15 @@ export function notificationRoutes(getDb: () => Db, readGuard: MiddlewareHandler
       else if (e.type === "comment" && me?.id && e.assigneeId === me.id) out.push({ id: `ev:${e.id}`, kind: "comment", title: e.title, sub: `${key} · ${e.actorName ?? "Someone"} commented`, at: e.at.toISOString(), href });
       else if (e.type === "github" && (d.state === "merged" || d.state === "open")) out.push({ id: `ev:${e.id}`, kind: "github", title: e.title, sub: `${key} · PR #${d.pr} ${d.state === "merged" ? "merged" : "opened"}`, at: e.at.toISOString(), href });
       else if (e.type === "status" && d.to === "done" && me?.id && e.assigneeId !== me.id) out.push({ id: `ev:${e.id}`, kind: "done", title: e.title, sub: `${key} · done by ${e.actorName ?? "the team"}`, at: e.at.toISOString(), href });
+    }
+
+    // AI Router: budžet klijenta ili inženjera na 75% / 95% (piše ga router-jobs.ts)
+    if (canSales && me?.role !== "viewer") {
+      const [b] = await db.select().from(settings).where(eq(settings.key, "router_budget_alerts")).limit(1);
+      type Alert = { id: string; at: string; level: number; kind: string; name: string; clientName: string; spendUsd: number; budgetUsd: number };
+      const alerts = ((b?.value as { alerts?: Alert[] } | undefined)?.alerts ?? []).filter((a) => Date.parse(a.at) >= week.getTime());
+      for (const a of alerts)
+        out.push({ id: `budget:${a.id}`, kind: "budget", title: `${a.kind === "client" ? a.name : `${a.name} · ${a.clientName}`}: AI budget ${a.level}%`, sub: `${money(a.spendUsd)} of ${money(a.budgetUsd)} this month`, at: a.at, href: "#/router" });
     }
 
     out.sort((a, b) => b.at.localeCompare(a.at));

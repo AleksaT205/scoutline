@@ -9,6 +9,7 @@ import { recordError } from "./errors.js";
 import { startAutodeploy } from "./autodeploy.js";
 import { startSalesJobs } from "./sales.js";
 import { startSiteMonitor } from "./project-extras.js";
+import { startRouterJobs } from "./router-jobs.js";
 import { refreshRuntime } from "./runtime.js";
 import { ensureEnvOwner } from "./auth.js";
 
@@ -33,6 +34,7 @@ startAgentPoller(() => db);
 startAutodeploy(() => db);
 startSalesJobs(() => db);
 startSiteMonitor(() => db);
+startRouterJobs(() => db);
 // Greške van zahteva (pozadinski poslovi): zabeleži, ne obaraj server
 process.on("unhandledRejection", (e) => {
   const err = e instanceof Error ? e : new Error(String(e));

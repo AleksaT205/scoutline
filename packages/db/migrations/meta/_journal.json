@@ -155,6 +155,13 @@
       "when": 1794947723765,
       "tag": "0021_bizarre_justin_hammer",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1795014724793,
+      "tag": "0022_slippery_iron_lad",
+      "breakpoints": true
     }
   ]
 }

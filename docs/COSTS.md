@@ -11,7 +11,7 @@ Server je mini PC (i5 10. gen, 16 GB, bez GPU-a), pa je lokalni AI spor — zato
 
 | Redosled | Opcija | Cena | Napomena |
 |---|---|---|---|
-| 1 | **Besplatni cloud nivoi**: Gemini API free tier, Groq free tier, OpenRouter `:free` modeli | 0 € | Ograničen broj zahteva. Kod nekih besplatnih nivoa podaci mogu da se koriste za treniranje — u redu za javne oglase, **ne za podatke klijenata** |
+| 1 | **Besplatni cloud nivoi**: Gemini API free tier, Groq free tier, OpenRouter `:free` modeli | 0 € | Ograničen broj zahteva. Kod nekih besplatnih nivoa podaci mogu da se koriste za treniranje — u redu za javne oglase, **ne za podatke klijenata** (AI Router: poverljivi klijenti idu samo na `local`, vidi [ROUTER-PLAN.md](ROUTER-PLAN.md)) |
 | 2 | **Ollama na mini PC-u** — mali model ~3–4B | 0 € | Rezerva kad se pređu limiti; ~3–4 GB RAM-a, sporo ali radi |
 | 3 | *(opciono)* Ollama na Mac-u (M2 Pro) preko Tailscale-a, model ~8B | 0 € | Brže i kvalitetnije, samo kad je Mac uključen |
 | 4 | *(opciono)* Ključevi koje već imate | po vašem planu | Dodaju se u `litellm.config.yaml` |

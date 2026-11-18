@@ -4,3 +4,4 @@ export * from "./score.js";
 export * from "./alerts.js";
 export * from "./delivery.js";
 export * from "./dedupe.js";
+export * from "./router.js";

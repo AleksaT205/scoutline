@@ -20,10 +20,19 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 | 10 | Delivery MVP: prekidač Sales/Delivery, Projects, Clients, My issues, tabla taskova (Linear stil, prevlačenje), detalj taska (status, prioritet, osoba, procena, oznake, rok, komentari, istorija), prečica C, Lead (Won) → Project · #10 | ✅ |
 | 11 | Cycles (sprintovi + burn-up), Inbox (triage), GitHub PR sync (PR → In Review / Done, issues → Inbox), Assign to Claude/Codex (brief u GitHub issue), portal za klijenta (+ zahtevi) · [DELIVERY.md](DELIVERY.md) · #11 | ✅ |
 | 12 | Izveštaji: evidencija vremena na tasku, cena rada (po osobi), naplata fiksno/po satu, profitabilnost po projektu (vrednost, trošak, marža, potrošen budžet, €/h), sati po nedelji i osobi, AI trošak i ušteda po projektu, taskovi agenata, CSV · [DELIVERY.md](DELIVERY.md) | ✅ |
+| R2 | AI Router 2.0: pravila u bazi (verzije, predlozi iz statistike), Claude Code (klasa zahteva, lepljivost sesije), keš po klijentu, fallback i timeout, poverljivi klijenti + maskiranje tajni, ključevi i budžeti inženjera, shadow i ušteda po ceni modela, analitika + CSV, lanac zapisa · [ROUTER-PLAN.md](ROUTER-PLAN.md) | ✅ (kod) |
 
 **Sledeći korak:** Redeploy u Coolify-ju → podesiti Email-in po [EMAIL-IN.md](EMAIL-IN.md) (Gmail + App password u Coolify) i, po želji, `SAM_API_KEY`. Za Delivery + GitHub: `GITHUB_TOKEN` sa pristupom repoima projekata ([DELIVERY.md](DELIVERY.md)). Roadmap 3.0 je završen. Sledeće: Redeploy + podešavanja (DELIVERY.md), stvarni rad, pa nove ideje u GitHub Issues.
 
 ## Urađeno
+
+- **18. 11. 2026. — AI Router 2.0** ([ROUTER-PLAN.md](ROUTER-PLAN.md), [ROUTER-TASKS.md](ROUTER-TASKS.md))
+  - Pravila rutiranja u bazi (`router_rules`, migracija 0022): verzije, vraćanje, probni zahtev; stara logika = podrazumevana pravila. Bez poziva modela.
+  - Claude Code / agenti: konkretan model → grupa, `x-claude-code-*` zaglavlja, subagent/pozadina → fast, glavni tok → traženi, ista sesija = isti model.
+  - LiteLLM: grupa `local` (Ollama), timeout po grupi, fallback fast → smart → local, keš po klijentu (default_off), afinitet sesije, promptovi se ne čuvaju.
+  - Poverljivi klijenti (samo local, i u LiteLLM ključu), dozvoljene grupe, maskiranje tajni; ključevi inženjera u LiteLLM timu klijenta sa budžetom; upozorenja 75/95% (Telegram + zvonce).
+  - Shadow režim, ušteda po ceni traženog modela; analitika (klijent, projekat, inženjer, model, vrsta zahteva, keš, p50/p95, greške) + mesečni CSV; „učenje“ u workeru (predlozi sa brojkama); lanac zapisa sa pečatom odluka.
+  - Provereno lokalno sa pravim LiteLLM-om (ista slika kao produkcija) i lažnim modelima: 45 provera toka + budžeti, lanac, predlozi. AI Router i dalje sakriven u meniju.
 
 - **17. 11. 2026. — Faza 16 (Claude Code iz aplikacije)**
   - Povezivanje repoa GitHub linkom + **Set up automatically** (workflow `scoutline-agent.yml` i secret `CLAUDE_CODE_OAUTH_TOKEN`, šifrovano libsodium-om); checklist šta fali.
