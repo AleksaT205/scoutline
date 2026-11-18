@@ -7,7 +7,7 @@ Taskovi i kriterijumi „gotovo kad“ su u [ROUTER-TASKS.md](ROUTER-TASKS.md).
 - **0 € dodatno.** Rutiranje radi po pravilima u kodu, bez poziva modela. „Učenje“ je SQL statistika nad našim odlukama i `LiteLLM_SpendLogs`.
 - **Poverljivi klijenti nikad ne idu na besplatne nivoe** (tamo podaci mogu da se koriste za treniranje, vidi [COSTS.md](COSTS.md)). Dozvoljen je samo `local` (Ollama), a provera radi na dva mesta: u ruteru i u samom LiteLLM ključu.
 - **Ključevi i sadržaj promptova se ne beleže.** `router_decisions` čuva samo odluku, brojke i heš tela. LiteLLM ima `store_prompts_in_spend_logs: false`.
-- AI Router ostaje **skriven u meniju** (stranica je na `#/router`).
+- AI Router je u meniju (grupa „AI Ops“) i u pretrazi (Cmd+K), stranica je na `#/router`.
 
 ## Kako radi jedan zahtev
 ```

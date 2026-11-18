@@ -32,7 +32,7 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
   - LiteLLM: grupa `local` (Ollama), timeout po grupi, fallback fast → smart → local, keš po klijentu (default_off), afinitet sesije, promptovi se ne čuvaju.
   - Poverljivi klijenti (samo local, i u LiteLLM ključu), dozvoljene grupe, maskiranje tajni; ključevi inženjera u LiteLLM timu klijenta sa budžetom; upozorenja 75/95% (Telegram + zvonce).
   - Shadow režim, ušteda po ceni traženog modela; analitika (klijent, projekat, inženjer, model, vrsta zahteva, keš, p50/p95, greške) + mesečni CSV; „učenje“ u workeru (predlozi sa brojkama); lanac zapisa sa pečatom odluka.
-  - Provereno lokalno sa pravim LiteLLM-om (ista slika kao produkcija) i lažnim modelima: 45 provera toka + budžeti, lanac, predlozi. AI Router i dalje sakriven u meniju.
+  - Provereno lokalno sa pravim LiteLLM-om (ista slika kao produkcija) i lažnim modelima: 45 provera toka + budžeti, lanac, predlozi. Deploy-ovano i provereno na produkciji; AI Router vraćen u meni (AI Ops) i Cmd+K.
 
 - **17. 11. 2026. — Faza 16 (Claude Code iz aplikacije)**
   - Povezivanje repoa GitHub linkom + **Set up automatically** (workflow `scoutline-agent.yml` i secret `CLAUDE_CODE_OAUTH_TOKEN`, šifrovano libsodium-om); checklist šta fali.
