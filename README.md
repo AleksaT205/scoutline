@@ -17,7 +17,7 @@ pnpm typecheck && pnpm test && pnpm build
 
 | Deo | Gde | Deploy |
 |---|---|---|
-| `apps/web` | React + Vite + Tailwind | **Netlify** (`netlify.toml`) |
+| `apps/web` | React + Vite + Tailwind | **Cloudflare Pages** (`wrangler.jsonc`) |
 | `apps/api` | Hono REST API | mini PC (Docker / Coolify) |
 | `apps/worker` | prikupljanje + ocenjivanje | mini PC (Docker / Coolify) |
 | `packages/shared` | tier-ovi, kategorije, ocena | — |
@@ -35,7 +35,7 @@ Server: `cp .env.example .env`, popuni, pa iz korena repoa `docker compose --env
 | [docs/PLAN.md](docs/PLAN.md) | Cilj, arhitektura, moduli, filter zemalja, faze razvoja |
 | [docs/SOURCES.md](docs/SOURCES.md) | Izvori oglasa, kako se pristupa, pravni status |
 | [docs/COSTS.md](docs/COSTS.md) | Sve što se koristi, šta je besplatno, šta se plaća |
-| [docs/DEPLOY.md](docs/DEPLOY.md) | Mini PC kao server + Netlify za frontend, kasnije VPS |
+| [docs/DEPLOY.md](docs/DEPLOY.md) | Mini PC kao server + Cloudflare Pages za frontend, kasnije VPS |
 | [docs/DESIGN.md](docs/DESIGN.md) | Dizajn sistem: principi, boje, tipografija, komponente; mockup u [design/mockup.html](design/mockup.html) |
 | [docs/WORKFLOW.md](docs/WORKFLOW.md) | Kako radimo: taskovi (GitHub Issues), Claude Code / @claude / Codex preko pretplate |
 | [docs/PRODUCTION.md](docs/PRODUCTION.md) | Backup, monitoring, domen, Cloudflare Tunnel, auto-deploy, plaćeni modeli |

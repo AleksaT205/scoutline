@@ -9,7 +9,7 @@ Stanje i faze: **`docs/PROGRESS.md`** (pročitaj prvo). Plan: `docs/PLAN.md`. Di
 
 ## Struktura (pnpm monorepo, TypeScript)
 ```
-apps/web        React + Vite + Tailwind 4 → Netlify (VITE_API_URL u netlify.toml)
+apps/web        React + Vite + Tailwind 4 → Cloudflare Pages (VITE_API_URL u Cloudflare build env)
 apps/api        Hono REST API (+ /llm proxy, auth, monitoring) → Docker na mini PC-u (Coolify)
 apps/worker     konektori izvora, ocenjivanje, Telegram → Docker
 packages/db     Drizzle šema + migracije (packages/db/migrations)
@@ -39,5 +39,5 @@ API pokreće migracije sam pri startu. Lokalni test sa bazom: Postgres u Dockeru
 - Posle završenog taska: ažuriraj `docs/PROGRESS.md` (jedan red) ako se menja stanje faze.
 
 ## Deploy
-- Web: push na `main` → Netlify automatski.
+- Web: push na `main` → Cloudflare Pages automatski (docs/PRODUCTION.md §4b).
 - Backend: Coolify (Docker Compose, `/docker-compose.yml`) → **Redeploy** u Coolify-ju (auto-deploy tek sa domenom, vidi PRODUCTION.md).
