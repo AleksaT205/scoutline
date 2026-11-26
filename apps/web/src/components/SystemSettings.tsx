@@ -92,7 +92,7 @@ function AutoDeploy() {
             Coolify → <b className="text-fg">Keys &amp; Tokens → API tokens</b> → create one with the <b className="text-fg">deploy</b> permission.
           </li>
           <li>
-            Coolify → this project → <b className="text-fg">Environment Variables</b>: <code className="num text-fg">COOLIFY_API_TOKEN</code> = that token, <code className="num text-fg">COOLIFY_API_URL</code> = the Coolify address (e.g. <code className="num">http://192.168.100.60:8000</code>), <code className="num text-fg">DEPLOY_REPO</code> = <code className="num">owner/repo</code>.
+            Coolify → this project → <b className="text-fg">Environment Variables</b>: <code className="num text-fg">COOLIFY_API_TOKEN</code> = that token, <code className="num text-fg">COOLIFY_API_URL</code> = the Coolify address (e.g. <code className="num">http://192.168.x.x:8000</code>), <code className="num text-fg">DEPLOY_REPO</code> = <code className="num">owner/repo</code>.
           </li>
           <li>
             In the project's settings turn on <b className="text-fg">Include Source Commit in Build</b>, then Redeploy once.

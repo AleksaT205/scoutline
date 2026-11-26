@@ -175,7 +175,7 @@ export function setupRoutes(getDb: () => Db, a: { require: (r: "owner" | "member
       title: "Auto-deploy",
       state: miss.length ? "warn" : "ok",
       detail: miss.length ? "Off — after every push you click Redeploy in Coolify" : "On — the server redeploys itself when CI passes",
-      steps: miss.length ? ["Coolify → Keys & Tokens → API tokens → create one with the “deploy” permission.", "Coolify → Environment Variables: COOLIFY_API_TOKEN, COOLIFY_API_URL (e.g. http://192.168.100.60:8000) and DEPLOY_REPO (owner/repo).", "Project settings in Coolify: turn on “Include Source Commit in Build”, then Redeploy once."] : [],
+      steps: miss.length ? ["Coolify → Keys & Tokens → API tokens → create one with the “deploy” permission.", "Coolify → Environment Variables: COOLIFY_API_TOKEN, COOLIFY_API_URL (e.g. http://192.168.x.x:8000) and DEPLOY_REPO (owner/repo).", "Project settings in Coolify: turn on “Include Source Commit in Build”, then Redeploy once."] : [],
       link: "#/settings?tab=system",
       required: false,
     });

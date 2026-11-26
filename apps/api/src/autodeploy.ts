@@ -7,7 +7,7 @@ import { runtime } from "./runtime.js";
  * Auto-deploy bez javnog domena: server na 2 minuta proveri `main` na GitHub-u. Kad je novi commit i CI na njemu
  * prođe (testovi + build), pozove Coolify API da uradi Redeploy. Ako CI padne — ne deploy-uje i javi na Telegram.
  *
- * Env (Coolify → Environment Variables): COOLIFY_API_URL (npr. http://192.168.100.60:8000), COOLIFY_API_TOKEN
+ * Env (Coolify → Environment Variables): COOLIFY_API_URL (npr. http://192.168.x.x:8000), COOLIFY_API_TOKEN
  * (Coolify → Keys & Tokens → API tokens, dozvola „deploy“). COOLIFY_RESOURCE_UUID i SOURCE_COMMIT daje Coolify sam.
  * Repo: DEPLOY_REPO (ili GITHUB_REPO), grana: DEPLOY_BRANCH (podrazumevano main).
  */

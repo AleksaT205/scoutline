@@ -30,7 +30,7 @@ Monitoring iznutra ne može da javi ako padne ceo mini PC ili internet. Za to:
 Backup je na istom disku kao baza — ako disk otkaže, nestaje i backup. Jednom nedeljno kopiraj na Mac:
 
 ```bash
-ssh IME@192.168.100.60 "sudo docker run --rm -v pgym4kazqlkwp5yi03fbcajg_backups:/b alpine sh -c 'ls -t /b/radar-*.sql.gz | head -1 | xargs cat'" > ~/scoutline-backup-$(date +%F).sql.gz
+ssh IME@192.168.x.x "sudo docker run --rm -v <COOLIFY_STACK_ID>_backups:/b alpine sh -c 'ls -t /b/radar-*.sql.gz | head -1 | xargs cat'" > ~/scoutline-backup-$(date +%F).sql.gz
 ```
 
 (Ime volume-a proveri sa `sudo docker volume ls | grep backups`.)
@@ -70,7 +70,7 @@ Server sam pokrene Redeploy kad commit na `main` prođe CI (testovi + build). Ak
 1. Coolify → **Keys & Tokens → API tokens** → napravi token sa dozvolom **deploy**.
 2. Coolify → projekat → **Environment Variables**:
    - `COOLIFY_API_TOKEN` = taj token
-   - `COOLIFY_API_URL` = adresa Coolify-ja kako je vidi server, npr. `http://192.168.100.60:8000`
+   - `COOLIFY_API_URL` = adresa Coolify-ja kako je vidi server, npr. `http://192.168.x.x:8000`
    - `DEPLOY_REPO` = `AleksaT205/scoutline` (GitHub token u Settings → Integrations mora da vidi taj repo)
 3. U podešavanjima projekta uključi **Include Source Commit in Build** (Coolify tada sam daje `SOURCE_COMMIT` i `COOLIFY_RESOURCE_UUID`).
 4. Redeploy jednom. Stanje se vidi u **Settings → System → Auto-deploy** (i dugme *Check now*).
@@ -84,7 +84,7 @@ Netlify na besplatnom planu dodaje oznaku na sajt i ona ne može da se isključi
    - Build command: `pnpm --filter @radar/web build`
    - Build output directory: `apps/web/dist`
    - Root directory: prazno (koren repoa)
-   - Environment variables: `NODE_VERSION=20.19.4`, `PNPM_VERSION=10.20.0`, `VITE_API_URL=https://aleksaserver.tail32786c.ts.net`
+   - Environment variables: `NODE_VERSION=20.19.4`, `PNPM_VERSION=10.20.0`, `VITE_API_URL=https://<server>.<tailnet>.ts.net`
 3. Posle prvog deploy-a dobiješ adresu `https://<ime>.pages.dev`.
 4. Coolify → Environment Variables: u `CORS_ORIGINS` dodaj novu adresu (zarezom, bez razmaka), a `DASHBOARD_URL` postavi na nju → Redeploy.
 5. Kad sve radi na novoj adresi, Netlify sajt može da se obriše (ili ostavi kao rezerva).

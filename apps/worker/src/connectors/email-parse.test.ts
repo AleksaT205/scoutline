@@ -31,7 +31,7 @@ describe("Email-in parsiranje", () => {
 
   it("prosleđen mejl: platforma iz „From:“ u telu", () => {
     const { links } = linkify(alertHtml);
-    const p = detectPlatform({ from: "aleksa@gmail.com", subject: "Fwd: New jobs", html: null, text: "---------- Forwarded message ---------\nFrom: Upwork <donotreply@upwork.com>\n", date: null, messageId: "x" }, links);
+    const p = detectPlatform({ from: "owner@example.com", subject: "Fwd: New jobs", html: null, text: "---------- Forwarded message ---------\nFrom: Upwork <donotreply@upwork.com>\n", date: null, messageId: "x" }, links);
     expect(p.id).toBe("email-upwork");
   });
 

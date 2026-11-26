@@ -156,10 +156,10 @@ Ažurirati posle svakog radnog dana. Najnovije gore.
 - [x] Faza 0 — kostur koda
 - [x] Repo na GitHub (privatni): github.com/AleksaT205/scoutline
 - [x] Netlify povezan sa `apps/web` → https://scoutline-app.netlify.app (auto-deploy na push u `main`)
-- [x] Coolify instaliran na mini PC (`http://192.168.100.60:8000`)
+- [x] Coolify instaliran na mini PC (`http://192.168.x.x:8000`)
 - [x] Dashboard: dizajn iz mockup-a + prikaz za telefon
-- [x] Radar (api + worker + baza + LiteLLM) deploy preko Coolify-ja → `http://192.168.100.60:3100/health` radi (port 3000 je na serveru zauzet)
-- [x] Javna HTTPS adresa za API: https://aleksaserver.tail32786c.ts.net (Tailscale Funnel → port 3100); `VITE_API_URL` u `netlify.toml`
+- [x] Radar (api + worker + baza + LiteLLM) deploy preko Coolify-ja → `http://192.168.x.x:3100/health` radi (port 3000 je na serveru zauzet)
+- [x] Javna HTTPS adresa za API: https://<server>.<tailnet>.ts.net (Tailscale Funnel → port 3100); `VITE_API_URL` u Netlify Environment variables
 - [x] Faza 1 — 5 izvora (RemoteOK, WWR, Remotive, Arbeitnow, HN), prefilter po nazivu pozicije, zemlja/tier, ocena (AI preko LiteLLM ili pravila kao rezerva), Telegram, API `/leads` i `/stats`, dashboard sa pravim podacima
 - [ ] Uneti besplatne AI ključeve (Gemini/Groq) i Telegram bot u Coolify → Redeploy
 - [x] Novi izvori: Himalayas, Jobicy (oba traže navođenje izvora + link na original — ispunjeno dugmetom "Post")

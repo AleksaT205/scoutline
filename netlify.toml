@@ -6,8 +6,8 @@
 
 [build.environment]
   NODE_VERSION = "20.19.4"
-  # Javna adresa API-ja (mini PC preko Tailscale Funnel-a). Kad uzmemo domen → api.<domen>.
-  VITE_API_URL = "https://aleksaserver.tail32786c.ts.net"
+  # VITE_API_URL (javna adresa API-ja) se ne drži u repou: podešava se u
+  # Netlify → Site configuration → Environment variables. Bez nje build koristi localhost.
 
 [[redirects]]
   from = "/*"
